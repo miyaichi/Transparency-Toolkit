@@ -102,4 +102,15 @@ export class DbSellersProvider implements SellersJsonProvider {
       status: 'success',
     };
   }
+
+  async getRecentFiles(limit = 100) {
+    const res = await query(
+      `SELECT id, domain, fetched_at, http_status, etag 
+       FROM raw_sellers_files 
+       ORDER BY fetched_at DESC 
+       LIMIT $1`,
+      [limit],
+    );
+    return res.rows;
+  }
 }

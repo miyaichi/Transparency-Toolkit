@@ -102,4 +102,32 @@ app.openapi(getSellersRoute, async (c) => {
   });
 });
 
+// New Route: List Scanned Files
+const SellersFilesResponseSchema = z.array(z.object({
+  id: z.string(),
+  domain: z.string(),
+  fetched_at: z.string(),
+  http_status: z.number().nullable(),
+  etag: z.string().nullable()
+}));
+
+const getFilesRoute = createRoute({
+  method: 'get',
+  path: '/files',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: SellersFilesResponseSchema } },
+      description: 'List of recent sellers.json scan files'
+    }
+  }
+});
+
+import { DbSellersProvider } from '../services/db_sellers_provider';
+const provider = new DbSellersProvider();
+
+app.openapi(getFilesRoute, async (c) => {
+  const files = await provider.getRecentFiles(100);
+  return c.json(files as any);
+});
+
 export default app;

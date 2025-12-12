@@ -39,6 +39,9 @@ export default function RootLayout({
               <Link href="/monitor" className="transition-colors hover:text-foreground/80 text-foreground/60">
                 Monitor
               </Link>
+              <Link href="/sellers/status" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                Sellers
+              </Link>
             </nav>
           </div>
         </header>
