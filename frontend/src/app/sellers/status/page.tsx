@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Clock, Database } from "lucide-react"
+import { useEffect, useState } from "react"
 import useSWR from "swr"
 
 type SellersFile = {
@@ -14,6 +15,27 @@ type SellersFile = {
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+const ClientDate = ({ date }: { date: string }) => {
+  const [formatted, setFormatted] = useState<string>("")
+
+  useEffect(() => {
+    if (date) {
+      setFormatted(new Date(date).toLocaleString())
+    }
+  }, [date])
+
+  if (!formatted) {
+    return <div className="h-4 w-20 bg-muted/20 animate-pulse rounded" />
+  }
+
+  return (
+    <div className="flex items-center text-muted-foreground">
+      <Clock className="mr-2 h-4 w-4" />
+      {formatted}
+    </div>
+  )
+}
 
 export default function SellersStatusPage() {
   const { data, isLoading } = useSWR<SellersFile[]>("/api/proxy/sellers/files", fetcher)
@@ -59,15 +81,12 @@ export default function SellersStatusPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center text-muted-foreground">
-                        <Clock className="mr-2 h-4 w-4" />
-                        {new Date(file.fetched_at).toLocaleString()}
-                      </div>
+                      <ClientDate date={file.fetched_at} />
                     </TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${file.http_status === 200
-                          ? 'bg-green-50 text-green-700 ring-green-600/20'
-                          : 'bg-red-50 text-red-700 ring-red-600/20'
+                        ? 'bg-green-50 text-green-700 ring-green-600/20'
+                        : 'bg-red-50 text-red-700 ring-red-600/20'
                         }`}>
                         {file.http_status || 'N/A'}
                       </span>
@@ -84,6 +103,6 @@ export default function SellersStatusPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </div >
   )
 }
