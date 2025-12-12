@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.DS_Store
+.next
+out
+coverage
+postgres_data_v2
+docker-compose.override.yml
+*.log

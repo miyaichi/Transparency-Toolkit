@@ -1,0 +1,38 @@
+{
+  "name": "adstxt-manager-v2-backend",
+  "version": "1.0.0",
+  "description": "Backend for Ads.txt Manager V2",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "ingest": "ts-node src/ingest/runner.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hono/node-server": "^1.19.7",
+    "@hono/swagger-ui": "^0.5.2",
+    "@hono/zod-openapi": "^1.1.5",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0",
+    "hono": "^4.10.8",
+    "pg": "^8.11.0",
+    "pg-copy-streams": "^6.0.0",
+    "stream-chain": "^2.2.5",
+    "stream-json": "^1.8.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.10.0",
+    "@types/pg-copy-streams": "^1.2.0",
+    "@types/stream-chain": "^2.0.0",
+    "@types/stream-json": "^1.7.0",
+    "nodemon": "^3.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

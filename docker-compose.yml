@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: adstxt-v2-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: adstxt_v2
+    ports:
+      - "5433:5432" # ホストの5432と競合しないように5433を使用
+    volumes:
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data_v2:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: adstxt-v2-backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/adstxt_v2
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+    command: npm run dev
+    ports:
+      - "3002:3000"
+
+volumes:
+  postgres_data_v2:
