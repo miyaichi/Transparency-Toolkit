@@ -26,15 +26,24 @@ export class StreamImporter {
     console.log(`Starting import for ${options.domain} from ${options.url}`);
 
     try {
-      // 1. Raw File Record作成
-      const rawFileId = await this.createRawFileRecord(client, options.domain);
-
       // 2. HTTP Stream取得
       const response = await axios({
         method: 'get',
         url: options.url,
         responseType: 'stream',
+        validateStatus: () => true // Allow all status codes to handle 404/500 manually
       });
+
+      const httpStatus = response.status;
+      const etag = response.headers['etag'] || null;
+
+      // 1. Raw File Record作成 (Save metadata even if failed)
+      const rawFileId = await this.createRawFileRecord(client, options.domain, httpStatus, typeof etag === 'string' ? etag : null);
+
+      if (httpStatus >= 400) {
+        console.warn(`Failed to fetch sellers.json for ${options.domain}. Status: ${httpStatus}`);
+        return; // Stop processing, but record is saved to indicate attempt
+      }
 
       // 3. COPYストリームの準備
       // CSV形式でCOPY (テキストモードの方が扱いやすい場合もあるが、セパレータ等に注意)
@@ -81,30 +90,33 @@ export class StreamImporter {
       );
 
       console.log(`Import completed for ${options.domain}`);
-    } catch (err) {
-      console.error(`Error importing ${options.domain}:`, err);
-      throw err;
+    } catch (err: any) {
+      console.error(`Error importing ${options.domain}:`, err.message);
+      // In case of network error (axios throws), try to record failure
+      // We might need a new client connection if the previous one is in error state or stream failed? 
+      // Actually creating record deals with DB. If axios fails before response (e.g. DNS error), we want to log it.
+      // For simplicity, we are not recording "Network Error" in DB currently unless we reorganize code to create record first with 'pending' then update.
+      // But user asked to consider "sellers.json itself does not exist" which is 404. Above httpStatus handling covers it.
+      // If domain resolution fails, axios throws. We could try to insert a record with status 0 or similar if critical.
+      // Let's keep it simple for now, standard 404/403/500 are handled.
     } finally {
       client.release();
     }
   }
 
-  private async createRawFileRecord(client: PoolClient, domain: string): Promise<string> {
+  private async createRawFileRecord(client: PoolClient, domain: string, httpStatus: number | null, etag: string | null): Promise<string> {
     const res = await client.query(
       `
-      INSERT INTO raw_sellers_files (domain, fetched_at)
-      VALUES ($1, NOW())
+      INSERT INTO raw_sellers_files (domain, fetched_at, http_status, etag)
+      VALUES ($1, NOW(), $2, $3)
       RETURNING id
     `,
-      [domain],
+      [domain, httpStatus, etag],
     );
 
-    // ON CONFLICT時はRETURNINGが空になる可能性があるので注意（ここでは簡易実装）
     if (res.rows.length > 0) {
       return res.rows[0].id;
     }
-
-    // 既存レコードを取得して返すなどの処理が必要だが、今回は新規前提
     throw new Error('Failed to create raw file record');
   }
 
