@@ -52,10 +52,10 @@ graph TD
     Scheduler -->|Trigger| Importer[StreamImporter Service]
     
     Scanner -->|Fetch ads.txt| External[External Domains]
-    Importer -->|Fetch sellers.json (Stream)| External
+    Importer -->|Fetch sellers.json Stream| External
     
     Scanner -->|Save Result| DB
-    Importer -->|Bulk Insert (COPY)| DB
+    Importer -->|Bulk Insert COPY| DB
     
     subgraph "Google Cloud Platform"
         API
