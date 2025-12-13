@@ -8,9 +8,9 @@ const connectionString = process.env.DATABASE_URL || 'postgres://postgres:passwo
 
 export const pool = new Pool({
   connectionString,
-  max: 20,
+  max: 5, // Reduced for Cloud SQL micro instance compatibility
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000, // Increased timeout slightly
 });
 
 export const query = async (text: string, params?: any[]) => {

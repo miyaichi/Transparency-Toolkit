@@ -18,6 +18,9 @@ export class StreamImporter {
   constructor(connectionString: string) {
     this.pool = new Pool({
       connectionString,
+      max: 2, // Limit connections for background jobs
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
     });
   }
 
