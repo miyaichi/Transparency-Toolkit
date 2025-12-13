@@ -12,6 +12,7 @@ const scanner = new AdsTxtScanner();
 // Schemas
 const ValidationRequestSchema = z.object({
   domain: z.string().openapi({ example: 'example-publisher.com', description: 'Domain to fetch ads.txt from' }),
+  type: z.enum(['ads.txt', 'app-ads.txt']).optional().openapi({ description: 'File type (default: ads.txt)' }),
   save: z.enum(['true', 'false']).optional().openapi({ description: 'Save snapshot to database' }),
 });
 
@@ -67,8 +68,9 @@ const validateRoute = createRoute({
 });
 
 app.openapi(validateRoute, async (c) => {
-  const { domain, save } = c.req.valid('query');
+  const { domain, save, type } = c.req.valid('query');
   const shouldSave = save === 'true';
+  const fileType = type || 'ads.txt';
 
   if (!domain) return c.json({ error: 'Domain is required' }, 400);
 
@@ -80,13 +82,13 @@ app.openapi(validateRoute, async (c) => {
   // If save requested, use scanner
   if (shouldSave) {
     try {
-      const scanResult = await scanner.scanAndSave(domain);
+      const scanResult = await scanner.scanAndSave(domain, fileType);
       content = scanResult.content || '';
       finalUrl = scanResult.url;
       scanId = scanResult.id;
 
       if (!content && scanResult.error_message) {
-        return c.json({ error: `Failed to fetch ads.txt: ${scanResult.error_message}` }, 500);
+        return c.json({ error: `Failed to fetch ${fileType}: ${scanResult.error_message}` }, 500);
       }
     } catch (e: any) {
       return c.json({ error: e.message }, 500);
@@ -95,18 +97,18 @@ app.openapi(validateRoute, async (c) => {
     // Ephemeral Fetch
     try {
       try {
-        finalUrl = `https://${domain}/ads.txt`;
+        finalUrl = `https://${domain}/${fileType}`;
         const res = await client.get(finalUrl, { maxRedirects: 5 });
         content = res.data;
       } catch {
         // Fallback to HTTP
-        finalUrl = `http://${domain}/ads.txt`;
+        finalUrl = `http://${domain}/${fileType}`;
         const res = await client.get(finalUrl, { maxRedirects: 5 });
         content = res.data;
       }
       if (typeof content !== 'string') content = JSON.stringify(content);
     } catch (err: any) {
-      return c.json({ error: `Failed to fetch ads.txt from ${domain}: ${err.message}` }, 500);
+      return c.json({ error: `Failed to fetch ${fileType} from ${domain}: ${err.message}` }, 500);
     }
   }
 
@@ -178,9 +180,11 @@ const historyRoute = createRoute({
   request: {
     query: z.object({
       domain: z.string(),
+      type: z.enum(['ads.txt', 'app-ads.txt']).optional(),
     }),
   },
   responses: {
+    // ... (abbrev)
     200: {
       description: 'Scan history',
       content: {
@@ -191,6 +195,7 @@ const historyRoute = createRoute({
               scanned_at: z.string(),
               records_count: z.number(),
               valid_count: z.number(),
+              file_type: z.enum(['ads.txt', 'app-ads.txt']).optional(),
             }),
           ),
         },
@@ -200,8 +205,8 @@ const historyRoute = createRoute({
 });
 
 app.openapi(historyRoute, async (c) => {
-  const { domain } = c.req.valid('query');
-  const history = await scanner.getHistory(domain);
+  const { domain, type } = c.req.valid('query');
+  const history = await scanner.getHistory(domain, 10, type || 'ads.txt');
   return c.json(history);
 });
 
