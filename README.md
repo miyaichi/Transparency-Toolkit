@@ -52,10 +52,10 @@ graph TD
     Scheduler -->|Trigger| Importer[StreamImporter Service]
     
     Scanner -->|Fetch ads.txt| External[External Domains]
-    Importer -->|Fetch sellers.json Stream| External
+    Importer -->|Fetch sellers.json (Stream)| External
     
     Scanner -->|Save Result| DB
-    Importer -->|Bulk Insert COPY| DB
+    Importer -->|Bulk Insert (COPY)| DB
     
     subgraph "Google Cloud Platform"
         API
@@ -65,6 +65,15 @@ graph TD
         DB
     end
 ```
+
+### Domain Search Validator
+The V2 frontend features a unified "Domain Search Validator". By entering a domain name (e.g., `nytimes.com`), users can instantly validate and inspect:
+- **Ads.txt**: Publisher's authorized digital sellers.
+- **App-ads.txt**: Mobile app developer's authorized sellers.
+- **Sellers.json**: SSP/Exchange's seller inventory (SupplyChain).
+
+The results are displayed in separate tabs with validation status, stats, and downloadable CSV reports.
+
 
 ## Checking Data
 

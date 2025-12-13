@@ -52,9 +52,7 @@ export default function SellersStatusPage() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Scans</CardTitle>
-          <CardDescription>
-            List of recently fetched sellers.json files.
-          </CardDescription>
+          <CardDescription>List of recently fetched sellers.json files.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -86,16 +84,19 @@ export default function SellersStatusPage() {
                       <ClientDate date={file.fetched_at} />
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${file.http_status === 200
-                        ? 'bg-green-50 text-green-700 ring-green-600/20'
-                        : 'bg-red-50 text-red-700 ring-red-600/20'
-                        }`}>
-                        {file.http_status || 'N/A'}
+                      <span
+                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                          file.http_status === 200
+                            ? "bg-green-50 text-green-700 ring-green-600/20"
+                            : "bg-red-50 text-red-700 ring-red-600/20"
+                        }`}
+                      >
+                        {file.http_status || "N/A"}
                       </span>
                     </TableCell>
                     <TableCell>
                       <span className="font-mono text-xs text-muted-foreground">
-                        {file.etag ? file.etag.substring(0, 20) + (file.etag.length > 20 ? '...' : '') : '-'}
+                        {file.etag ? file.etag.substring(0, 20) + (file.etag.length > 20 ? "..." : "") : "-"}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -105,6 +106,6 @@ export default function SellersStatusPage() {
           )}
         </CardContent>
       </Card>
-    </div >
+    </div>
   )
 }

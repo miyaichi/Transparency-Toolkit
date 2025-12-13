@@ -8,6 +8,7 @@ const service = new MonitoredDomainsService();
 const MonitoredDomainSchema = z.object({
   id: z.string(),
   domain: z.string(),
+  file_type: z.enum(['ads.txt', 'app-ads.txt', 'sellers.json']),
   is_active: z.boolean(),
   last_scanned_at: z.string().nullable(),
   scan_interval_minutes: z.number(),
@@ -15,6 +16,7 @@ const MonitoredDomainSchema = z.object({
 
 const AddMonitorRequest = z.object({
   domain: z.string().min(1),
+  file_type: z.enum(['ads.txt', 'app-ads.txt', 'sellers.json']).optional(),
 });
 
 // Routes
@@ -61,7 +63,7 @@ const deleteRoute = createRoute({
   method: 'delete',
   path: '/',
   request: {
-    query: z.object({ domain: z.string() }),
+    query: z.object({ domain: z.string(), file_type: z.enum(['ads.txt', 'app-ads.txt', 'sellers.json']).optional() }),
   },
   responses: {
     200: { description: 'Deleted' },
@@ -74,14 +76,14 @@ app.openapi(listRoute, async (c) => {
 });
 
 app.openapi(addRoute, async (c) => {
-  const { domain } = c.req.valid('json');
-  const res = await service.addDomain(domain);
+  const { domain, file_type } = c.req.valid('json');
+  const res = await service.addDomain(domain, file_type || 'ads.txt');
   return c.json(res as any);
 });
 
 app.openapi(deleteRoute, async (c) => {
-  const { domain } = c.req.valid('query');
-  await service.removeDomain(domain);
+  const { domain, file_type } = c.req.valid('query');
+  await service.removeDomain(domain, file_type || 'ads.txt');
   return c.json({ success: true });
 });
 

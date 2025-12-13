@@ -1,173 +1,117 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
+import { SellersResult } from "@/components/sellers/sellers-result"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table"
-import { Loader2, Search } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ValidatorResult } from "@/components/validator/validator-result"
+import { Search } from "lucide-react"
 import { useState } from "react"
-import useSWR from "swr"
 
-// 型定義
-type Seller = {
-  seller_id: string
-  domain: string
-  seller_type: string
-  name: string
-  is_confidential: boolean
-  updated_at: string
-}
-
-type APIResponse = {
-  data: Seller[]
-  meta: {
-    total: number
-    page: number
-    limit: number
-    pages: number
-  }
-}
-
-// Fetcher
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
-
-export default function SellersPage() {
-  const [keyword, setKeyword] = useState("")
-  // Debounce処理は簡易的に実装（本来は専用フック推奨）
-  const [debouncedKeyword, setDebouncedKeyword] = useState("")
+export default function DomainSearchPage() {
+  const [searchInput, setSearchInput] = useState("")
+  const [activeDomain, setActiveDomain] = useState("")
 
   const handleSearch = () => {
-    setDebouncedKeyword(keyword)
+    // Basic domain validation/normalization
+    const domain = searchInput
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/\/.*$/, "")
+    if (domain) {
+      setActiveDomain(domain)
+      // Optional: Clear input or keep it? Keeping it allows easy modification.
+    }
   }
 
-  const { data, error, isLoading } = useSWR<APIResponse>(`/api/proxy/sellers?q=${debouncedKeyword}&limit=20`, fetcher)
-
-  const columns: ColumnDef<Seller>[] = [
-    {
-      accessorKey: "domain",
-      header: "Domain",
-      cell: ({ row }) => <div className="font-medium">{row.getValue("domain")}</div>
-    },
-    {
-      accessorKey: "seller_id",
-      header: "Seller ID",
-      cell: ({ row }) => <div className="font-mono text-xs">{row.getValue("seller_id")}</div>
-    },
-    {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => (
-        <div className="max-w-[300px] truncate" title={row.getValue("name")}>
-          {row.getValue("name") || <span className="text-muted-foreground italic">(No Name)</span>}
-        </div>
-      )
-    },
-    {
-      accessorKey: "seller_type",
-      header: "Type",
-      cell: ({ row }) => {
-        const type = row.getValue("seller_type") as string
-        return <Badge variant={type === "PUBLISHER" ? "default" : "secondary"}>{type}</Badge>
-      }
-    },
-    {
-      accessorKey: "is_confidential",
-      header: "Confidential",
-      cell: ({ row }) =>
-        row.getValue("is_confidential") ? (
-          <Badge variant="destructive" className="text-[10px]">
-            Confidential
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground text-xs">-</span>
-        )
-    }
-  ]
-
-  const table = useReactTable({
-    data: data?.data || [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    // PaginationはServer Sideで行うため、ここでは表示用のみ
-    manualPagination: true,
-    pageCount: data?.meta?.pages || -1
-  })
-
   return (
-    <div className="container mx-auto py-10 space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Global Sellers Search</h1>
-        <p className="text-muted-foreground">
-          Ads.txt Manager V2 Data Lakeから 100万件超のセラー情報を瞬時に検索します。
+    <div className="container mx-auto py-10 space-y-8 max-w-6xl">
+      {/* Hero / Header */}
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Ads.txt Validator
+        </h1>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          Enter a domain to instantly validate their Ads.txt, App-ads.txt, and Sellers.json files. Monitor status and
+          ensure authorized digital selling.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Search Filters</CardTitle>
-          <CardDescription>Enter domain, seller ID, or company name.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex w-full max-w-sm items-center space-x-2">
-            <Input
-              placeholder="Search..."
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <Button onClick={handleSearch}>
-              <Search className="mr-2 h-4 w-4" /> Search
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="rounded-md border">
-        {isLoading ? (
-          <div className="h-24 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    )
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
+      {/* Search Bar */}
+      <div className="flex w-full max-w-xl mx-auto items-center space-x-2 p-2 bg-white rounded-xl shadow-lg border transition-all focus-within:ring-2 focus-within:ring-primary/20">
+        <Input
+          placeholder="e.g. nytimes.com, google.com"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          className="border-0 shadow-none focus-visible:ring-0 text-lg h-12"
+        />
+        <Button size="lg" onClick={handleSearch} className="h-12 px-8 rounded-lg shadow-sm">
+          <Search className="mr-2 h-5 w-5" /> Analyze
+        </Button>
       </div>
 
-      {data?.meta && (
-        <div className="text-xs text-muted-foreground text-right">
-          Total: {data.meta.total.toLocaleString()} records / Page: {data.meta.page}
+      {/* Results Area */}
+      {activeDomain ? (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">
+              Results for <span className="text-primary">{activeDomain}</span>
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setActiveDomain("")
+                setSearchInput("")
+              }}
+            >
+              Clear
+            </Button>
+          </div>
+
+          <Tabs defaultValue="ads.txt" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/50 p-1 rounded-xl">
+              <TabsTrigger
+                value="ads.txt"
+                className="text-base rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                ads.txt
+              </TabsTrigger>
+              <TabsTrigger
+                value="app-ads.txt"
+                className="text-base rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                app-ads.txt
+              </TabsTrigger>
+              <TabsTrigger
+                value="sellers.json"
+                className="text-base rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                sellers.json
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="mt-6">
+              <TabsContent value="ads.txt" className="mt-0">
+                <ValidatorResult domain={activeDomain} type="ads.txt" />
+              </TabsContent>
+              <TabsContent value="app-ads.txt" className="mt-0">
+                <ValidatorResult domain={activeDomain} type="app-ads.txt" />
+              </TabsContent>
+              <TabsContent value="sellers.json" className="mt-0">
+                <SellersResult domain={activeDomain} />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      ) : (
+        <div className="text-center py-20 opacity-50">
+          <div className="inline-block p-6 rounded-full bg-muted mb-4">
+            <Search className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <p className="text-lg font-medium text-muted-foreground">Start by entering a publisher domain above.</p>
         </div>
       )}
     </div>

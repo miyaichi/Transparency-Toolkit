@@ -66,24 +66,42 @@ async function processMonitoredDomains() {
   const dueDomains = await monitoredDomainsService.getDueDomains();
   console.log(`Found ${dueDomains.length} domains due for ads.txt scan.`);
 
+  const importer = new StreamImporter(DATABASE_URL);
+
   for (const item of dueDomains) {
-    console.log(`Scanning ads.txt for monitored domain: ${item.domain}`);
+    console.log(`Scanning ${item.file_type} for monitored domain: ${item.domain}`);
     try {
-      const result = await scanner.scanAndSave(item.domain);
-      console.log(`Scan completed for ${item.domain} (ID: ${result.id})`);
-      await monitoredDomainsService.updateLastScanned(item.domain);
+      if (item.file_type === 'sellers.json') {
+        let url = `https://${item.domain}/sellers.json`;
+        if (item.domain in SPECIAL_DOMAINS) {
+          url = SPECIAL_DOMAINS[item.domain];
+        }
+
+        await importer.importSellersJson({ domain: item.domain, url });
+        console.log(`Sellers.json import completed for ${item.domain}`);
+
+        // Wait a bit
+        await new Promise((r) => setTimeout(r, 1000));
+      } else {
+        // ads.txt or app-ads.txt
+        const result = await scanner.scanAndSave(item.domain, item.file_type);
+        console.log(`Scan completed for ${item.domain} (${item.file_type}, ID: ${result.id})`);
+      }
+
+      await monitoredDomainsService.updateLastScanned(item.domain, item.file_type);
 
       // Wait to be polite
-      await new Promise((r) => setTimeout(r, 1000));
+      if (item.file_type !== 'sellers.json') await new Promise((r) => setTimeout(r, 1000));
     } catch (e: any) {
-      console.error(`Failed to scan ${item.domain}: ${e.message}`);
-      // Even if failed, update last scanned so we don't retry immediately?
-      // Or maybe we want to retry. For now, let's update so we try again after interval.
-      // But if it's permanent error, we might spin.
-      // Let's update last_scanned_at anyway to respect interval.
-      await monitoredDomainsService.updateLastScanned(item.domain);
+      console.error(`Failed to scan ${item.domain} (${item.file_type}): ${e.message}`);
+      await monitoredDomainsService.updateLastScanned(item.domain, item.file_type);
     }
   }
+
+  // Close importer pool if we opened it (though StreamImporter manages its own pool, we should probably close it if it's designed that way)
+  // Current StreamImporter usage in processMissingSellers closes it. Ideally we should share or close here.
+  // The StreamImporter class creates a pool in constructor. We should close it.
+  await importer.close();
 }
 
 /**
