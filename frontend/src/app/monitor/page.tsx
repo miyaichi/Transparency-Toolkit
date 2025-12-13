@@ -81,7 +81,7 @@ export default function MonitorPage() {
         <CardContent>
           {!data ? (
             <div>Loading...</div>
-          ) : data.length === 0 ? (
+          ) : !Array.isArray(data) || data.length === 0 ? (
             <div className="text-muted-foreground">No domains monitored yet.</div>
           ) : (
             <Table>

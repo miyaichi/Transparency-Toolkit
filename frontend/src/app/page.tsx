@@ -92,7 +92,7 @@ export default function SellersPage() {
     getCoreRowModel: getCoreRowModel(),
     // PaginationはServer Sideで行うため、ここでは表示用のみ
     manualPagination: true,
-    pageCount: data?.meta.pages || -1
+    pageCount: data?.meta?.pages || -1
   })
 
   return (

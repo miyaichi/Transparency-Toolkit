@@ -117,7 +117,7 @@ export default function ValidatorPage() {
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{result.stats.total}</div>
+                <div className="text-2xl font-bold">{result.stats?.total || 0}</div>
               </CardContent>
             </Card>
             <Card>
@@ -126,7 +126,7 @@ export default function ValidatorPage() {
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{result.stats.valid}</div>
+                <div className="text-2xl font-bold text-green-600">{result.stats?.valid || 0}</div>
               </CardContent>
             </Card>
             <Card>
@@ -135,7 +135,7 @@ export default function ValidatorPage() {
                 <AlertCircle className="h-4 w-4 text-yellow-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">{result.stats.warnings}</div>
+                <div className="text-2xl font-bold text-yellow-600">{result.stats?.warnings || 0}</div>
               </CardContent>
             </Card>
             <Card>
@@ -144,7 +144,7 @@ export default function ValidatorPage() {
                 <XCircle className="h-4 w-4 text-red-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">{result.stats.invalid}</div>
+                <div className="text-2xl font-bold text-red-600">{result.stats?.invalid || 0}</div>
               </CardContent>
             </Card>
           </div>
@@ -165,7 +165,7 @@ export default function ValidatorPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {result.records.map((rec, i) => (
+                    {result.records?.map((rec, i) => (
                       <TableRow key={i} className={!rec.is_valid ? "bg-red-50" : rec.has_warning ? "bg-yellow-50" : ""}>
                         <TableCell className="font-mono text-xs">{rec.line_number}</TableCell>
                         <TableCell>
