@@ -164,7 +164,7 @@ export function ValidatorResult({ domain, type }: Props) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-[60px]">Line</TableHead>
+                <TableHead className="w-15">Line</TableHead>
                 <TableHead>Advertising System</TableHead>
                 <TableHead>Publisher Account ID</TableHead>
                 <TableHead>Relationship</TableHead>
@@ -223,7 +223,7 @@ export function ValidatorResult({ domain, type }: Props) {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-xs max-w-[300px]">
+                    <TableCell className="text-xs max-w-75">
                       {record.warning_message ? (
                         <span className="text-yellow-700">{record.warning_message}</span>
                       ) : record.validation_key && !record.is_valid ? (
