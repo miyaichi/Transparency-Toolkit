@@ -1,6 +1,8 @@
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { Navigation } from "@/components/navigation"
+import { LanguageProvider } from "@/lib/i18n/language-context"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import Link from "next/link"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -26,23 +28,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <header className="border-b">
-          <div className="container mx-auto flex h-16 items-center px-4">
-            <div className="mr-8 font-bold text-lg">Ads.txt Manager V2</div>
-            <nav className="flex items-center space-x-6 text-sm font-medium">
-              <Link href="/" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Validator
-              </Link>
-              <Link href="/explorer" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Data Explorer
-              </Link>
-              <Link href="/status" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Scan Status
-              </Link>
-            </nav>
-          </div>
-        </header>
-        <main>{children}</main>
+        <LanguageProvider>
+          <header className="border-b">
+            <div className="container mx-auto flex h-16 items-center px-4">
+              <div className="mr-8 font-bold text-lg">Ads.txt Manager V2</div>
+              <Navigation />
+              <div className="ml-auto">
+                <LanguageSwitcher />
+              </div>
+            </div>
+          </header>
+          <main>{children}</main>
+        </LanguageProvider>
       </body>
     </html>
   )
