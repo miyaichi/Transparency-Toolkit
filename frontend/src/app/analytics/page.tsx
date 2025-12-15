@@ -11,11 +11,25 @@ import useSWR from "swr"
 // Type definition for Analytics Data
 type AnalyticsData = {
   domain: string
+  name?: string
+  status?: string
+  pub_description?: string
+  primary_supply_type?: string
+  categories?: string[]
   rank: number | null
   adstxt_lines: number | null
   app_adstxt_lines: number | null
   direct_ratio: number | null
   reseller_ratio: number | null
+  avg_ads_in_view?: number | null
+  avg_page_weight?: number | null
+  avg_cpu?: number | null
+  total_supply_paths?: number | null
+  avg_ads_to_content_ratio?: number | null
+  avg_ad_refresh?: number | null
+  total_unique_gpids?: number | null
+  reseller_count?: number | null
+  id_absorption_rate?: number | null
   updated_at?: string
 }
 
@@ -100,49 +114,130 @@ export default function AnalyticsPage() {
             </div>
           ) : data ? (
             <div className="space-y-8">
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Publisher Info Header */}
+              <div className="bg-white p-6 rounded-xl border shadow-sm">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-3">
+                      {data.name || data.domain}
+                      {data.status && (
+                        <span className={`text-xs px-2 py-1 rounded-full border ${data.status === 'available' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600'}`}>
+                          {data.status}
+                        </span>
+                      )}
+                    </h2>
+                    <p className="text-muted-foreground mt-2 max-w-3xl">{data.pub_description}</p>
+
+                    {data.categories && data.categories.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {data.categories.map((cat, i) => (
+                          <span key={i} className="text-xs font-medium px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100">
+                            {cat}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Supply Type</p>
+                    <p className="font-semibold capitalize">{data.primary_supply_type || 'Unknown'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Metrics */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="bg-blue-50/50 border-blue-100 overflow-hidden relative">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100 rounded-full -mr-12 -mt-12 opacity-50 blur-xl" />
+                  <CardHeader className="pb-2 relative">
+                    <CardTitle className="text-sm font-medium text-blue-900">Directness</CardTitle>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <div className="text-3xl font-bold text-blue-700">
+                      {data.id_absorption_rate ? `${Math.round(data.id_absorption_rate * 100)}%` : "N/A"}
+                    </div>
+                    <p className="text-xs text-blue-600/80 mt-1">ID Absorption Rate</p>
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Global Rank</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Ads / Content</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{data.rank ? `#${data.rank.toLocaleString()}` : "N/A"}</div>
-                    <p className="text-xs text-muted-foreground mt-1">OpenSincera Rank</p>
+                    <div className="text-3xl font-bold">
+                      {data.avg_ads_to_content_ratio ? `${Math.round(data.avg_ads_to_content_ratio * 100)}%` : "N/A"}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">A2CR Ratio</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Ad Refresh</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">
+                      {data.avg_ad_refresh ? `${Math.round(data.avg_ad_refresh)}s` : "N/A"}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Avg. Time</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Inventory</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">
+                      {data.total_unique_gpids ? data.total_unique_gpids.toLocaleString() : "N/A"}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Unique GPIDs</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Technical Metrics */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Ad Quality</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{data.avg_ads_in_view ? `${Math.round(data.avg_ads_in_view * 100)}%` : "N/A"}</div>
+                    <p className="text-xs text-muted-foreground mt-1">Avg. Ads In View</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Lines</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Performance</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold flex items-baseline gap-2">
-                      {data.adstxt_lines?.toLocaleString() || 0}
-                      <span className="text-sm font-normal text-muted-foreground">ads.txt</span>
+                    <div className="text-3xl font-bold">
+                      {data.avg_page_weight ? `${Math.round(data.avg_page_weight)} MB` : "N/A"}
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      + {data.app_adstxt_lines?.toLocaleString() || 0} app-ads.txt
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Avg. Page Weight</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Relationship Ratio</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Complexity</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-blue-700 font-medium">DIRECT</span>
-                        <span>{Math.round((data.direct_ratio || 0) * 100)}%</span>
-                      </div>
-                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${(data.direct_ratio || 0) * 100}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-slate-600">RESELLER</span>
-                        <span>{Math.round((data.reseller_ratio || 0) * 100)}%</span>
+                    <div className="text-3xl font-bold">{data.avg_cpu ? `${Math.round(data.avg_cpu)}%` : "N/A"}</div>
+                    <p className="text-xs text-muted-foreground mt-1">Avg. CPU Usage</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Supply Chain</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-1">
+                      <div className="text-3xl font-bold">{data.total_supply_paths || "N/A"}</div>
+                      <div className="text-xs text-muted-foreground flex justify-between">
+                        <span>Paths</span>
+                        <span>{data.reseller_count ? `${data.reseller_count} Resellers` : "0 Resellers"}</span>
                       </div>
                     </div>
                   </CardContent>

@@ -5,11 +5,25 @@ const app = new OpenAPIHono();
 // Schema for Analytics Response
 const AnalyticsResponseSchema = z.object({
   domain: z.string(),
+  name: z.string().optional(),
+  status: z.string().optional(),
+  pub_description: z.string().optional(),
+  primary_supply_type: z.string().optional(),
+  categories: z.array(z.string()).optional(),
   rank: z.number().nullable(),
-  adstxt_lines: z.number().nullable(),
-  app_adstxt_lines: z.number().nullable(),
-  direct_ratio: z.number().nullable(),
-  reseller_ratio: z.number().nullable(),
+  adstxt_lines: z.number().nullable(), // Deprecated
+  app_adstxt_lines: z.number().nullable(), // Deprecated
+  direct_ratio: z.number().nullable(), // Deprecated
+  reseller_ratio: z.number().nullable(), // Deprecated
+  avg_ads_in_view: z.number().nullable().optional(),
+  avg_page_weight: z.number().nullable().optional(),
+  avg_cpu: z.number().nullable().optional(),
+  total_supply_paths: z.number().nullable().optional(),
+  avg_ads_to_content_ratio: z.number().nullable().optional(),
+  avg_ad_refresh: z.number().nullable().optional(),
+  total_unique_gpids: z.number().nullable().optional(),
+  reseller_count: z.number().nullable().optional(),
+  id_absorption_rate: z.number().nullable().optional(),
   updated_at: z.string().optional()
 });
 
@@ -73,51 +87,68 @@ app.openapi(getAnalyticsRoute, async (c) => {
   const { domain } = c.req.valid('query');
   const apiKey = process.env.OPENSINCERA_API_KEY;
 
+  console.log(`[Analytics] Received request for domain: ${domain}`);
+
   if (!apiKey) {
+    console.error('[Analytics] OpenSincera API Key is missing');
     return c.json({ error: 'OpenSincera API Key is not configured' }, 500);
   }
 
+  const url = `https://open.sincera.io/api/publishers?domain=${domain}`;
+  console.log(`[Analytics] Fetching from: ${url}`);
+
   try {
-    const response = await fetch(`https://opensincera.com/api/v1/publishers/${domain}`, {
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Accept': 'application/json'
       }
     });
 
+    console.log(`[Analytics] OpenSincera Response Status: ${response.status}`);
+
     if (!response.ok) {
       if (response.status === 404) {
+        console.warn(`[Analytics] Domain not found: ${domain}`);
         return c.json({ error: 'Domain not found in OpenSincera database' }, 404);
       }
+      const errorText = await response.text();
+      console.error(`[Analytics] OpenSincera API Error: ${response.status} - ${errorText}`);
       throw new Error(`OpenSincera API responded with ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('[Analytics] Successfully received data');
 
     // Map OpenSincera response to our schema
-    // Note: Adjust mapping based on actual OpenSincera API response structure
-    // For now assuming a direct mapping or close to it.
-    // Based on knowledge: OpenSincera API returns detailed object.
-
-    // Simplification for the example:
     const result = {
       domain: data.domain || domain,
-      rank: data.rank || null,
-      adstxt_lines: data.adstxtLines || 0,
-      app_adstxt_lines: data.appAdstxtLines || 0,
-      // Calculate basic ratios if available or use mock placeholders if raw data needs aggregation
-      // Assuming the API returns count of direct/reseller lines
-      direct_ratio: data.directRatio || 0,
-      reseller_ratio: data.resellerRatio || 0,
-      updated_at: data.lastCrawledAt || new Date().toISOString()
+      name: data.name,
+      status: data.status,
+      pub_description: data.pub_description,
+      primary_supply_type: data.primary_supply_type,
+      categories: data.categories || [],
+      rank: null,
+      adstxt_lines: data.avg_ads_to_content_ratio ? Math.round(data.avg_ads_to_content_ratio * 1000) : 0,
+      app_adstxt_lines: null,
+      direct_ratio: data.id_absorption_rate || 0,
+      reseller_ratio: data.reseller_count > 0 ? 1 : 0,
+      avg_ads_in_view: data.avg_ads_in_view,
+      avg_page_weight: data.avg_page_weight,
+      avg_cpu: data.avg_cpu,
+      total_supply_paths: data.total_supply_paths,
+      avg_ads_to_content_ratio: data.avg_ads_to_content_ratio,
+      avg_ad_refresh: data.avg_ad_refresh,
+      total_unique_gpids: data.total_unique_gpids,
+      reseller_count: data.reseller_count,
+      id_absorption_rate: data.id_absorption_rate,
+      updated_at: data.updated_at || new Date().toISOString()
     };
-
-    // Ideally we might want to do calculations here if the API provides raw line counts by type
 
     return c.json(result, 200);
 
   } catch (error: any) {
-    console.error('OpenSincera API Error:', error);
+    console.error('[Analytics] Handler Error:', error);
     return c.json({ error: 'Failed to fetch analytics data' }, 500);
   }
 });
