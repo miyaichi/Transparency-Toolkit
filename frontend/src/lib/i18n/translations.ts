@@ -13,6 +13,10 @@ export const translations = {
       en: "Data Explorer",
       ja: "データエクスプローラー"
     },
+    dataExplorerDescription: {
+      en: "Explore raw data from Ads.txt, App-ads.txt, and Sellers.json files without validation checks.",
+      ja: "バリデーションチェックを行わずに、Ads.txt、App-ads.txt、Sellers.jsonファイルの生データを探索します。"
+    },
     scanStatus: {
       en: "Scan Status",
       ja: "スキャン状況"

@@ -8,7 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search } from "lucide-react"
 import { useState } from "react"
 
+import { useTranslation } from "@/lib/i18n/language-context"
+
 export default function ExplorerPage() {
+  const { t } = useTranslation()
   const [searchInput, setSearchInput] = useState("")
   const [activeDomain, setActiveDomain] = useState("")
   const [searchType, setSearchType] = useState("ads.txt")
@@ -45,7 +48,7 @@ export default function ExplorerPage() {
           Data Explorer
         </h1>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Explore raw data from Ads.txt, App-ads.txt, and Sellers.json files without validation checks.
+          {t('common.dataExplorerDescription')}
         </p>
       </div>
 
