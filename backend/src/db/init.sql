@@ -56,10 +56,12 @@ CREATE INDEX IF NOT EXISTS idx_ads_txt_scans_domain_scanned ON ads_txt_scans(dom
 
 -- 4. Monitored Domains Table
 CREATE TABLE IF NOT EXISTS monitored_domains (
-    domain TEXT PRIMARY KEY,
+    domain TEXT,
+    file_type TEXT DEFAULT 'ads.txt',
     added_at TIMESTAMPTZ DEFAULT NOW(),
     last_scanned_at TIMESTAMPTZ,
     next_scan_at TIMESTAMPTZ,
     scan_interval_minutes INT DEFAULT 60,
-    is_active BOOLEAN DEFAULT true
+    is_active BOOLEAN DEFAULT true,
+    PRIMARY KEY (domain, file_type)
 );

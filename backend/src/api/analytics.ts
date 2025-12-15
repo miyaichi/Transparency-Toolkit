@@ -82,6 +82,9 @@ const getAnalyticsRoute = createRoute({
   },
 });
 
+// Simple in-memory cache
+const analyticsCache = new Map<string, { timestamp: number; data: any }>();
+
 // Implementation
 app.openapi(getAnalyticsRoute, async (c) => {
   const { domain } = c.req.valid('query');
@@ -94,16 +97,51 @@ app.openapi(getAnalyticsRoute, async (c) => {
     return c.json({ error: 'OpenSincera API Key is not configured' }, 500);
   }
 
+  const cacheKey = `analytics:${domain}`;
+  const cached = analyticsCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < 3600 * 1000) { // 1 hour cache
+    console.log(`[Analytics] Serving from cache: ${domain}`);
+    return c.json(cached.data, 200);
+  }
+
   const url = `https://open.sincera.io/api/publishers?domain=${domain}`;
   console.log(`[Analytics] Fetching from: ${url}`);
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Accept': 'application/json'
+  const fetchWithRetry = async (url: string, retries: number = 2, timeout: number = 5000) => {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Accept': 'application/json'
+          },
+          signal: controller.signal
+        });
+        clearTimeout(id);
+
+        if (!response.ok && response.status >= 500 && i < retries) {
+          console.warn(`[Analytics] Request failed with ${response.status}, retrying... (${i + 1}/${retries})`);
+          await new Promise(res => setTimeout(res, 1000 * Math.pow(2, i)));
+          continue;
+        }
+        return response;
+      } catch (err: any) {
+        if (i < retries) {
+          console.warn(`[Analytics] Network error: ${err.message}, retrying... (${i + 1}/${retries})`);
+          await new Promise(res => setTimeout(res, 1000 * Math.pow(2, i)));
+          continue;
+        }
+        throw err;
       }
-    });
+    }
+    throw new Error('Max retries exceeded');
+  };
+
+  try {
+    const response = await fetchWithRetry(url);
 
     console.log(`[Analytics] OpenSincera Response Status: ${response.status}`);
 
@@ -144,6 +182,9 @@ app.openapi(getAnalyticsRoute, async (c) => {
       id_absorption_rate: data.id_absorption_rate,
       updated_at: data.updated_at || new Date().toISOString()
     };
+
+    // Update Cache
+    analyticsCache.set(cacheKey, { timestamp: Date.now(), data: result });
 
     return c.json(result, 200);
 

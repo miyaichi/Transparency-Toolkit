@@ -46,6 +46,7 @@ export function setupCronJobs() {
     } catch (e) {
       console.error('Job failed:', e);
     } finally {
+      isJobRunning = false;
       console.log('Scheduled jobs finished');
     }
   });
