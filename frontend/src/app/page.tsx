@@ -7,7 +7,10 @@ import { ValidatorResult } from "@/components/validator/validator-result"
 import { Search } from "lucide-react"
 import { useState } from "react"
 
+import { useTranslation } from "@/lib/i18n/language-context"
+
 export default function DomainSearchPage() {
+  const { t } = useTranslation()
   const [searchInput, setSearchInput] = useState("")
   const [activeDomain, setActiveDomain] = useState("")
   const [searchType, setSearchType] = useState("ads.txt")
@@ -44,7 +47,7 @@ export default function DomainSearchPage() {
           Ads.txt Validator
         </h1>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Fetch, validate, display, and download Ads.txt and App-ads.txt files.
+          {t('common.validatorDescription')}
         </p>
       </div>
 
