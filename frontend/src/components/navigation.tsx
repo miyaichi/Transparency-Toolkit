@@ -9,13 +9,13 @@ export function Navigation() {
   return (
     <nav className="flex items-center space-x-6 text-sm font-medium">
       <Link href="/" className="transition-colors hover:text-foreground/80 text-foreground/60">
-        {t("common.validator.en") === "Validator" ? t("common.validator") : "Validator"}
+        Validator
       </Link>
       <Link href="/explorer" className="transition-colors hover:text-foreground/80 text-foreground/60">
-        {t("common.dataExplorer")}
+        Data Explorer
       </Link>
       <Link href="/status" className="transition-colors hover:text-foreground/80 text-foreground/60">
-        {t("common.scanStatus")}
+        Scan Status
       </Link>
     </nav>
   )
