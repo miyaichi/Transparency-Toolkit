@@ -1,3 +1,4 @@
+import { Footer } from "@/components/footer"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { Navigation } from "@/components/navigation"
 import { LanguageProvider } from "@/lib/i18n/language-context"
@@ -27,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-screen flex-col`}>
         <LanguageProvider>
           <header className="border-b">
             <div className="container mx-auto flex h-16 items-center px-4">
@@ -38,7 +39,8 @@ export default function RootLayout({
               </div>
             </div>
           </header>
-          <main>{children}</main>
+          <main className="flex-1">{children}</main>
+          <Footer />
         </LanguageProvider>
       </body>
     </html>
