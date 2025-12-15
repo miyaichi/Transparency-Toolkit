@@ -46,9 +46,7 @@ export default function DomainSearchPage() {
         <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
           Ads.txt Validator
         </h1>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          {t('common.validatorDescription')}
-        </p>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{t("common.validatorDescription")}</p>
       </div>
 
       {/* Search Bar */}

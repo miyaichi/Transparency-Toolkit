@@ -22,12 +22,20 @@ export const translations = {
       ja: "スキャン状況"
     },
     validatorDescription: {
-      en: 'Fetch, validate, display, and download Ads.txt and App-ads.txt files.',
-      ja: 'Ads.txtおよびApp-ads.txtファイルを取得、検証、表示、ダウンロードします。'
+      en: "Fetch, validate, display, and download Ads.txt and App-ads.txt files.",
+      ja: "Ads.txtおよびApp-ads.txtファイルを取得、検証、表示、ダウンロードします。"
     },
     scanStatusDescription: {
-      en: 'Recent scan results for ads.txt, app-ads.txt, and sellers.json files.',
-      ja: 'Ads.txt、App-ads.txt、およびSellers.jsonファイルの最近のスキャン結果です。'
+      en: "Recent scan results for ads.txt, app-ads.txt, and sellers.json files.",
+      ja: "Ads.txt、App-ads.txt、およびSellers.jsonファイルの最近のスキャン結果です。"
+    },
+    analytics: {
+      en: "Insite Analytics",
+      ja: "インサイト分析"
+    },
+    analyticsDescription: {
+      en: "Analyze publisher domain data using OpenSincera API.",
+      ja: "OpenSincera APIを使用してパブリッシャードメインデータを分析します。"
     },
     title: {
       en: "Ads.txt Validator",

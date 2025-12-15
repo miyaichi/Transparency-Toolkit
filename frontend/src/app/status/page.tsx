@@ -112,10 +112,11 @@ function AdsTxtScanStatus() {
                   <TableCell>
                     {scan.status_code ? (
                       <span
-                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${scan.status_code >= 200 && scan.status_code < 300
-                          ? "bg-green-50 text-green-700 ring-green-600/20"
-                          : "bg-red-50 text-red-700 ring-red-600/20"
-                          }`}
+                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                          scan.status_code >= 200 && scan.status_code < 300
+                            ? "bg-green-50 text-green-700 ring-green-600/20"
+                            : "bg-red-50 text-red-700 ring-red-600/20"
+                        }`}
                       >
                         {scan.status_code}
                       </span>
@@ -173,10 +174,11 @@ function SellersJsonStatus() {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${file.http_status === 200
-                        ? "bg-green-50 text-green-700 ring-green-600/20"
-                        : "bg-red-50 text-red-700 ring-red-600/20"
-                        }`}
+                      className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                        file.http_status === 200
+                          ? "bg-green-50 text-green-700 ring-green-600/20"
+                          : "bg-red-50 text-red-700 ring-red-600/20"
+                      }`}
                     >
                       {file.http_status || "N/A"}
                     </span>
@@ -204,7 +206,7 @@ export default function StatusPage() {
     <div className="container mx-auto py-10 space-y-8">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Scan Status</h1>
-        <p className="text-muted-foreground">{t('common.scanStatusDescription')}</p>
+        <p className="text-muted-foreground">{t("common.scanStatusDescription")}</p>
       </div>
 
       <Tabs defaultValue="adstxt" className="space-y-4">

@@ -17,6 +17,9 @@ export function Navigation() {
       <Link href="/status" className="transition-colors hover:text-foreground/80 text-foreground/60">
         Scan Status
       </Link>
+      <Link href="/analytics" className="transition-colors hover:text-foreground/80 text-foreground/60">
+        Insite Analytics
+      </Link>
     </nav>
   )
 }

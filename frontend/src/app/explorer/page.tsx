@@ -47,9 +47,7 @@ export default function ExplorerPage() {
         <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
           Data Explorer
         </h1>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          {t('common.dataExplorerDescription')}
-        </p>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{t("common.dataExplorerDescription")}</p>
       </div>
 
       {/* Search Bar */}

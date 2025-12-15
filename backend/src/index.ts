@@ -3,6 +3,7 @@ import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import dotenv from 'dotenv';
 import adstxtParams from './api/adstxt';
+import analyticsParams from './api/analytics';
 import monitorParams from './api/monitor';
 import sellersParams from './api/sellers';
 
@@ -30,6 +31,7 @@ app.get('/', (c) => {
 app.route('/api/sellers', sellersParams);
 app.route('/api/adstxt', adstxtParams);
 app.route('/api/monitor', monitorParams);
+app.route('/api/analytics', analyticsParams);
 
 // OpenAPI Docs
 app.doc('/doc', {
