@@ -7,27 +7,27 @@ export const translations = {
   common: {
     validator: {
       en: "Validator",
-      ja: "バリデータ"
+      ja: "バリデーター"
     },
     dataExplorer: {
       en: "Data Explorer",
       ja: "データエクスプローラー"
     },
     dataExplorerDescription: {
-      en: "Explore raw data from Ads.txt, App-ads.txt, and Sellers.json files without validation checks.",
-      ja: "バリデーションチェックを行わずに、Ads.txt、App-ads.txt、Sellers.jsonファイルの生データを探索します。"
+      en: "Explore raw data from Ads.txt, App-ads.txt, and Sellers.json files.",
+      ja: "ads.txt、app-ads.txt、sellers.jsonファイルの生データを探索します。"
     },
     scanStatus: {
       en: "Scan Status",
       ja: "スキャン状況"
     },
     validatorDescription: {
-      en: "Fetch, validate, display, and download Ads.txt and App-ads.txt files.",
-      ja: "Ads.txtおよびApp-ads.txtファイルを取得、検証、表示、ダウンロードします。"
+      en: "Validate and download Ads.txt and App-ads.txt files.",
+      ja: "ads.txtおよびapp-ads.txtファイルを検証、ダウンロードします。"
     },
     scanStatusDescription: {
       en: "Recent scan results for ads.txt, app-ads.txt, and sellers.json files.",
-      ja: "Ads.txt、App-ads.txt、およびSellers.jsonファイルの最近のスキャン結果です。"
+      ja: "ads.txt、app-ads.txt、およびsellers.jsonファイルの最近のスキャン結果です。"
     },
     analytics: {
       en: "Insite Analytics",
@@ -39,11 +39,11 @@ export const translations = {
     },
     title: {
       en: "Ads.txt Validator",
-      ja: "Ads.txt バリデータ"
+      ja: "Ads.txt バリデーター"
     },
     description: {
-      en: "Fetch, validate, display, and download Ads.txt and App-ads.txt files.",
-      ja: "Ads.txtおよびApp-ads.txtファイルを取得、検証、表示、ダウンロードします。"
+      en: "Validate and download Ads.txt and App-ads.txt files.",
+      ja: "Ads.txtおよびApp-ads.txtファイルを検証、ダウンロードします。"
     },
     searchPlaceholder: {
       en: "e.g. nytimes.com",
@@ -187,14 +187,14 @@ export const translations = {
     messages: {
       enterDomain: {
         en: "Enter a domain to fetch sellers.json.",
-        ja: "ドメインを入力してSellers.jsonを取得してください。"
+        ja: "ドメインを入力してsellers.jsonを取得してください。"
       },
-      fetching: { en: "Fetching sellers.json from {{domain}}...", ja: "{{domain}}からSellers.jsonを取得中..." },
-      failed: { en: "Failed to fetch sellers.json", ja: "Sellers.jsonの取得に失敗しました" },
+      fetching: { en: "Fetching sellers.json from {{domain}}...", ja: "{{domain}}からsellers.jsonを取得中..." },
+      failed: { en: "Failed to fetch sellers.json", ja: "sellers.jsonの取得に失敗しました" },
       noteTitle: { en: "Note", ja: "注意" },
       noteDescription: {
         en: "This feature fetches the live sellers.json from the domain. If the domain does not host a sellers.json file, this will fail.",
-        ja: "この機能はドメインからライブSellers.jsonを取得します。Sellers.jsonが存在しない場合は失敗します。"
+        ja: "この機能はドメインからライブsellers.jsonを取得します。sellers.jsonが存在しない場合は失敗します。"
       },
       noSellers: { en: "No sellers found matching filter.", ja: "条件に一致するセラーは見つかりませんでした。" }
     }
@@ -235,21 +235,21 @@ export const translations = {
     },
     // ... Additional keys can be added here as needed
     noSellersJson: {
-      title: { en: "No Sellers.json File", ja: "Sellers.jsonファイルがない" },
+      title: { en: "No Sellers.json File", ja: "sellers.jsonファイルがない" },
       description: {
         en: "No sellers.json file was found for the specified advertising system domain {{domain}}.",
         ja: "指定された広告システムドメイン{{domain}}のsellers.jsonファイルが見つかりませんでした。"
       }
     },
     directAccountIdNotInSellersJson: {
-      title: { en: "DIRECT: Account ID Not in Sellers.json", ja: "DIRECT: アカウントIDがSellers.jsonにない" },
+      title: { en: "DIRECT: Account ID Not in Sellers.json", ja: "DIRECT: アカウントIDがsellers.jsonにない" },
       description: {
         en: "Publisher account ID {{account_id}} not found in sellers.json for {{domain}}.",
         ja: "パブリッシャーアカウントID {{account_id}} が {{domain}} のsellers.jsonに見つかりません。"
       }
     },
     resellerAccountIdNotInSellersJson: {
-      title: { en: "RESELLER: Account ID Not in Sellers.json", ja: "RESELLER: アカウントIDがSellers.jsonにない" },
+      title: { en: "RESELLER: Account ID Not in Sellers.json", ja: "RESELLER: アカウントIDがsellers.jsonにない" },
       description: {
         en: "Reseller account ID {{account_id}} not found in sellers.json for {{domain}}.",
         ja: "リセラーアカウントID {{account_id}} が {{domain}} のsellers.jsonに見つかりません。"
@@ -343,17 +343,17 @@ export const translations = {
       sellers: { en: "Sellers.json Scans", ja: "Sellers.jsonスキャン" }
     },
     adstxt: {
-      title: { en: "Recent Ads.txt / App-ads.txt Scans", ja: "最新のAds.txt / App-ads.txtスキャン" },
+      title: { en: "Recent Ads.txt / App-ads.txt Scans", ja: "最新のads.txt / app-ads.txtスキャン" },
       description: {
-        en: "Latest scan results from Data Explorer and automated monitoring.",
-        ja: "データエクスプローラーと自動監視による最新のスキャン結果です。"
+        en: "List of recently fetched ads.txt and app-ads.txt files.",
+        ja: "最近取得されたads.txt / app-ads.txtファイルの一覧です。"
       }
     },
     sellers: {
-      title: { en: "Recent Sellers.json Scans", ja: "最新のSellers.jsonスキャン" },
+      title: { en: "Recent Sellers.json Scans", ja: "最新のsellers.jsonスキャン" },
       description: {
         en: "List of recently fetched sellers.json files.",
-        ja: "最近取得されたSellers.jsonファイルの一覧です。"
+        ja: "最近取得されたsellers.jsonファイルの一覧です。"
       }
     },
     headers: {

@@ -14,11 +14,11 @@ export function Navigation() {
       <Link href="/explorer" className="transition-colors hover:text-foreground/80 text-foreground/60">
         {t("common.dataExplorer")}
       </Link>
-      <Link href="/status" className="transition-colors hover:text-foreground/80 text-foreground/60">
-        {t("common.scanStatus")}
-      </Link>
       <Link href="/analytics" className="transition-colors hover:text-foreground/80 text-foreground/60">
         {t("common.analytics")}
+      </Link>
+      <Link href="/status" className="transition-colors hover:text-foreground/80 text-foreground/60">
+        {t("common.scanStatus")}
       </Link>
     </nav>
   )
