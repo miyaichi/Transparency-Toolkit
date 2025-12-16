@@ -82,10 +82,9 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
         // Variables are also entries
         let key = '';
         if (entry.is_variable) {
-          key = `${entry.variable_type}=${entry.value} `;
+          key = `${entry.variable_type}=${entry.value}`;
         } else {
-          // @ts-expect-error: entry types are mixed
-          key = `${entry.domain},${entry.account_id},${entry.account_type},${entry.relationship} `.toLowerCase();
+          key = `${entry.domain},${entry.account_id},${entry.account_type},${entry.relationship}`.toLowerCase();
         }
 
         if (seen.has(key)) {
