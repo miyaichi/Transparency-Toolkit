@@ -19,6 +19,8 @@ export type ValidationStats = {
   valid: number
   invalid: number
   warnings: number
+  direct_count?: number
+  reseller_count?: number
 }
 
 export type ValidationResponse = {

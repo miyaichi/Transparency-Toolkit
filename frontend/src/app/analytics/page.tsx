@@ -89,13 +89,13 @@ export default function AnalyticsPage() {
 
   return (
     <div className="container mx-auto py-10 space-y-8 max-w-6xl">
-      <div className="space-y-4">
+      <div className="space-y-4 text-center">
         <h1 className="text-3xl font-bold tracking-tight">{t("common.analytics")}</h1>
         <p className="text-muted-foreground text-lg">{t("common.analyticsDescription")}</p>
       </div>
 
       {/* Search Bar */}
-      <div className="flex w-full max-w-xl items-center space-x-2 p-2 bg-white rounded-xl shadow-lg border transition-all focus-within:ring-2 focus-within:ring-purple-500/20">
+      <div className="mx-auto flex w-full max-w-xl items-center space-x-2 p-2 bg-white rounded-xl shadow-lg border transition-all focus-within:ring-2 focus-within:ring-purple-500/20">
         <div className="pl-3 text-muted-foreground">
           <Globe className="h-5 w-5" />
         </div>

@@ -123,7 +123,7 @@ export function ValidatorResult({ domain, type }: Props) {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm text-muted-foreground">{t("common.totalRecords")}</CardTitle>
@@ -136,6 +136,32 @@ export function ValidatorResult({ domain, type }: Props) {
           </CardHeader>
           <CardContent className="p-4 pt-0 text-2xl font-bold text-green-600">{data.stats.valid}</CardContent>
         </Card>
+        {data.stats.direct_count !== undefined && (
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm text-blue-600">DIRECT</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="text-2xl font-bold text-blue-600">
+                {data.stats.valid > 0 ? Math.round((data.stats.direct_count / data.stats.valid) * 100) : 0}%
+              </div>
+              <p className="text-xs text-muted-foreground">{data.stats.direct_count} records</p>
+            </CardContent>
+          </Card>
+        )}
+        {data.stats.reseller_count !== undefined && (
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm text-purple-600">RESELLER</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="text-2xl font-bold text-purple-600">
+                {data.stats.valid > 0 ? Math.round((data.stats.reseller_count / data.stats.valid) * 100) : 0}%
+              </div>
+              <p className="text-xs text-muted-foreground">{data.stats.reseller_count} records</p>
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm text-red-600">{t("common.invalidRecords")}</CardTitle>

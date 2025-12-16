@@ -113,6 +113,15 @@ app.openapi(validateRoute, async (c) => {
     }
   }
 
+  // Validate Content Format
+  const upperContent = content.trim().toUpperCase();
+  if (upperContent.startsWith('<!DOCTYPE') || upperContent.startsWith('<HTML') || upperContent.startsWith('<HEAD')) {
+    return c.json(
+      { error: `Invalid ${fileType} format: The server returned an HTML page instead of a text file.` },
+      400,
+    );
+  }
+
   // 2. Parse
   const parsedEntries = parseAdsTxtContent(content, domain);
 
@@ -147,9 +156,6 @@ app.openapi(validateRoute, async (c) => {
         // Providing a raw message is helpful.
         const msg = createValidationMessage(entry.validation_key, [], 'en'); // Use EN for API default
         if (msg) warning_message = msg.message;
-      } else {
-        const msg = createValidationMessage(entry.validation_key, [], 'en');
-        if (msg) warning_message = msg.message;
       }
     }
 
@@ -159,11 +165,25 @@ app.openapi(validateRoute, async (c) => {
     };
   });
 
+  // Calcluate stats
+  const validRecords = formattedRecords.filter((r: any) => r.is_valid);
+
+  // Count Direct/Reseller (case insensitive)
+  // Use 'any' or check type to safely access relationship
+  const direct_count = validRecords.filter(
+    (r: any) => r.relationship && r.relationship.toUpperCase() === 'DIRECT',
+  ).length;
+  const reseller_count = validRecords.filter(
+    (r: any) => r.relationship && r.relationship.toUpperCase() === 'RESELLER',
+  ).length;
+
   const stats = {
     total: formattedRecords.length,
-    valid: formattedRecords.filter((r) => r.is_valid).length,
+    valid: validRecords.length,
     invalid: formattedRecords.filter((r) => !r.is_valid).length,
     warnings: formattedRecords.filter((r) => r.has_warning).length,
+    direct_count,
+    reseller_count,
   };
 
   return c.json({

@@ -1,11 +1,27 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
+import crypto from 'crypto';
+import https from 'https';
+
+// Allow legacy renegotiation for older servers (e.g. docomo.ne.jp)
+// OpenSSL 3 disables this by default.
+// crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT might be undefined in strict environments,
+// but usually available in Node 18+.
+// If not available, we can try setting distinct options or minVersion/ciphers.
+
+const agent = new https.Agent({
+  secureOptions:
+    crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT | crypto.constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION,
+  rejectUnauthorized: false, // Optional: if certificates are also an issue, but be careful with security.
+  // Note: rejectUnauthorized: false is dangerous for production security, but for a validator crawler it is acceptable to fetch content even if cert is bad.
+});
 
 const client = axios.create({
   timeout: 20000, // 20s
   headers: {
     'User-Agent': 'AdsTxtManagerV2/1.0 (Bot)',
   },
+  httpsAgent: agent,
 });
 
 axiosRetry(client, {

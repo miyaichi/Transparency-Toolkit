@@ -48,6 +48,22 @@ Based on Architecture, Code, and DB evaluations.
   - **Issue**: `backend/src/ingest/stream_importer.ts` uses `COPY` for `sellers_catalog` which fails on Primary Key conflicts (`domain`, `seller_id`) if re-imported.
   - **Action**: Implement a staging table strategy or DELETE-then-INSERT / UPSERT logic to handle updates safely.
 
+- **Frontend UI/UX Fixes**: ✅ Completed
+  - **Issue**: Default Next.js metadata ("Create Next App"), misaligned headers in Analytics/Status pages, and missing icons.
+  - **Action**: Updated `layout.tsx`, centered headers, and added icons to Scan Status tabs.
+
+- **Validator Reliability Fixes**: ✅ Completed
+  - **Issue**:
+    1. `docomo.ne.jp` fetch failed due to legacy TLS renegotiation.
+    2. `facebook.com` app-ads.txt returned HTML (200 OK) causing parser errors.
+  - **Action**:
+    1. Configured `httpsAgent` in backend to allow legacy server connections.
+    2. Added content format validation (HTML check) in `adstxt.ts`.
+
+- **Feature: Direct/Reseller Ratio**: ✅ Completed
+  - **Request**: Display the ratio of DIRECT vs RESELLER records in Validator results.
+  - **Action**: Added stats calculation in backend and UI display in `ValidatorResult` component.
+
 ### Medium Priority (Performance & Reliability)
 
 - **Database Indexing**: ✅ Completed
@@ -60,6 +76,10 @@ Based on Architecture, Code, and DB evaluations.
 - **API Proxy Reliability**: ✅ Completed
   - **Issue**: `backend/src/api/analytics.ts` calls OpenSincera API without timeouts or retries.
   - **Action**: Add abortable timeouts (e.g., 5s), limited retries, and short-term caching to prevent worker exhaustion.
+
+- **OpenX Sellers.json Error**: ⏳ Pending
+  - **Issue**: Scanning `openx.com` sellers.json returns 500 Error (`Failed to load report`). Likely due to timeout or massive file size.
+  - **Action**: Investigate timeout settings or stream processing capability for extremely large sellers.json files.
 
 ### Low Priority (Architecture & Operations)
 

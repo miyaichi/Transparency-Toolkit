@@ -206,15 +206,21 @@ export default function StatusPage() {
   const { t } = useTranslation()
   return (
     <div className="container mx-auto py-10 space-y-8">
-      <div className="space-y-2">
+      <div className="space-y-4 text-center">
         <h1 className="text-3xl font-bold tracking-tight">{t("common.scanStatus")}</h1>
         <p className="text-muted-foreground">{t("common.scanStatusDescription")}</p>
       </div>
 
       <Tabs defaultValue="adstxt" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="adstxt">{t("scanStatusPage.tabs.adstxt")}</TabsTrigger>
-          <TabsTrigger value="sellers">{t("scanStatusPage.tabs.sellers")}</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px] mx-auto">
+          <TabsTrigger value="adstxt" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            {t("scanStatusPage.tabs.adstxt")}
+          </TabsTrigger>
+          <TabsTrigger value="sellers" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            {t("scanStatusPage.tabs.sellers")}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="adstxt">
           <AdsTxtScanStatus />
