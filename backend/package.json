@@ -8,7 +8,7 @@
     "dev": "nodemon --watch src --exec ts-node src/index.ts",
     "build": "tsc",
     "ingest": "ts-node src/ingest/runner.ts",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest"
   },
