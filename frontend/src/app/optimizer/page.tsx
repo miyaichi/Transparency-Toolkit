@@ -17,10 +17,11 @@ export default function OptimizerPage() {
 
   // State for inputs
   const [domain, setDomain] = useState("")
-  const [inputType, setInputType] = useState<"text" | "url">("text")
+  const [inputType, setInputType] = useState<"text" | "url">("url")
   const [fileType, setFileType] = useState<"ads.txt" | "app-ads.txt">("ads.txt")
   const [inputContent, setInputContent] = useState("")
   const [isFetching, setIsFetching] = useState(false)
+  const [ownerDomainInput, setOwnerDomainInput] = useState("")
 
   // State for optimization steps
   const [steps, setSteps] = useState({
@@ -28,7 +29,10 @@ export default function OptimizerPage() {
     invalidAction: "remove" as "remove" | "comment",
     duplicateAction: "remove" as "remove" | "comment",
     fixOwnerDomain: false,
+    fixManagerDomain: false,
+    managerAction: "remove" as "remove" | "comment",
     verifySellers: false,
+    sellersAction: "remove" as "remove" | "comment"
   })
 
   // State for results
@@ -37,26 +41,35 @@ export default function OptimizerPage() {
     originalLines: 0,
     finalLines: 0,
     removedCount: 0,
-    errorsFound: 0,
+    errorsFound: 0
   })
+
+  // Reset owner input when domain changes if user hasn't typed anything custom?
+  // For now, auto-fill it to match domain by default.
+  useEffect(() => {
+    setOwnerDomainInput(domain)
+  }, [domain])
 
   const handleFetch = async () => {
     if (!domain) return
     setIsFetching(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/optimizer/fetch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain, fileType })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/optimizer/fetch`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain, fileType })
+        }
+      )
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Fetch failed");
+        const err = await response.json()
+        throw new Error(err.error || "Fetch failed")
       }
 
-      const data = await response.json();
-      setInputContent(data.content || "");
+      const data = await response.json()
+      setInputContent(data.content || "")
       // Keep inputType as URL
     } catch (e) {
       console.error("Fetch failed", e)
@@ -81,38 +94,45 @@ export default function OptimizerPage() {
 
     const timer = setTimeout(async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/optimizer/process`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: inputContent,
-            domain: domain,
-            fileType: fileType,
-            steps: {
-              removeErrors: steps.removeErrors,
-              invalidAction: steps.invalidAction,
-              duplicateAction: steps.duplicateAction,
-              fixOwnerDomain: steps.fixOwnerDomain,
-              verifySellers: steps.verifySellers
-            }
-          })
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/optimizer/process`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: inputContent,
+              domain: domain,
+              ownerDomain: ownerDomainInput || domain, // Send explicit owner domain or fallback to publisher domain
+              fileType: fileType,
+              steps: {
+                removeErrors: steps.removeErrors,
+                invalidAction: steps.invalidAction,
+                duplicateAction: steps.duplicateAction,
+                fixOwnerDomain: steps.fixOwnerDomain,
+                fixManagerDomain: steps.fixManagerDomain,
+                managerAction: steps.managerAction,
+                verifySellers: steps.verifySellers,
+                sellersAction: steps.sellersAction
+              }
+            })
+          }
+        )
 
         if (!response.ok) {
           throw new Error("API Error")
         }
 
-        const data = await response.json();
-        setOptimizedContent(data.optimizedContent);
-        setStats(data.stats);
+        const data = await response.json()
+        setOptimizedContent(data.optimizedContent)
+        setStats(data.stats)
       } catch (e) {
-        console.error("Optimization failed", e);
+        console.error("Optimization failed", e)
         // Fallback or error state handling
       }
-    }, 500); // 500ms debounce
+    }, 500) // 500ms debounce
 
-    return () => clearTimeout(timer);
-  }, [inputContent, steps, domain, fileType])
+    return () => clearTimeout(timer)
+  }, [inputContent, steps, domain, fileType, ownerDomainInput])
 
   const handleDownload = () => {
     const contentToDownload = optimizedContent || inputContent
@@ -159,7 +179,6 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Input & Configuration */}
         <div className="lg:col-span-5 space-y-6">
-
           {/* Input Card */}
           <Card className="border-muted/60 shadow-md">
             <CardHeader>
@@ -242,7 +261,6 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
                   </div>
                 </div>
               )}
-
             </CardContent>
           </Card>
 
@@ -255,13 +273,12 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-
               {/* Step 1 */}
               <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white transition-colors dark:hover:bg-slate-800">
                 <Switch
                   id="s1"
                   checked={steps.removeErrors}
-                  onCheckedChange={(c) => setSteps(prev => ({ ...prev, removeErrors: c }))}
+                  onCheckedChange={(c) => setSteps((prev) => ({ ...prev, removeErrors: c }))}
                   className="mt-1"
                 />
                 <div className="space-y-4 w-full">
@@ -276,18 +293,19 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
 
                   {steps.removeErrors && (
                     <div className="pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
-
                       {/* Invalid Records Action */}
                       <div className="space-y-2">
-                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Invalid Records</Label>
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Invalid Records
+                        </Label>
                         <div className="flex items-center space-x-4">
                           <label className="flex items-center space-x-2 text-sm cursor-pointer">
                             <input
                               type="radio"
                               name="invalidAction"
                               value="remove"
-                              checked={steps.invalidAction === 'remove'}
-                              onChange={() => setSteps(s => ({ ...s, invalidAction: 'remove' }))}
+                              checked={steps.invalidAction === "remove"}
+                              onChange={() => setSteps((s) => ({ ...s, invalidAction: "remove" }))}
                               className="accent-blue-600"
                             />
                             <span>Remove</span>
@@ -297,8 +315,8 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
                               type="radio"
                               name="invalidAction"
                               value="comment"
-                              checked={steps.invalidAction === 'comment'}
-                              onChange={() => setSteps(s => ({ ...s, invalidAction: 'comment' }))}
+                              checked={steps.invalidAction === "comment"}
+                              onChange={() => setSteps((s) => ({ ...s, invalidAction: "comment" }))}
                               className="accent-blue-600"
                             />
                             <span>Comment out</span>
@@ -308,15 +326,17 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
 
                       {/* Duplicates Action */}
                       <div className="space-y-2">
-                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Duplicates</Label>
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Duplicates
+                        </Label>
                         <div className="flex items-center space-x-4">
                           <label className="flex items-center space-x-2 text-sm cursor-pointer">
                             <input
                               type="radio"
                               name="duplicateAction"
                               value="remove"
-                              checked={steps.duplicateAction === 'remove'}
-                              onChange={() => setSteps(s => ({ ...s, duplicateAction: 'remove' }))}
+                              checked={steps.duplicateAction === "remove"}
+                              onChange={() => setSteps((s) => ({ ...s, duplicateAction: "remove" }))}
                               className="accent-blue-600"
                             />
                             <span>Remove</span>
@@ -326,15 +346,14 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
                               type="radio"
                               name="duplicateAction"
                               value="comment"
-                              checked={steps.duplicateAction === 'comment'}
-                              onChange={() => setSteps(s => ({ ...s, duplicateAction: 'comment' }))}
+                              checked={steps.duplicateAction === "comment"}
+                              onChange={() => setSteps((s) => ({ ...s, duplicateAction: "comment" }))}
                               className="accent-blue-600"
                             />
                             <span>Comment out</span>
                           </label>
                         </div>
                       </div>
-
                     </div>
                   )}
                 </div>
@@ -345,37 +364,143 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
                 <Switch
                   id="s2"
                   checked={steps.fixOwnerDomain}
-                  onCheckedChange={(c) => setSteps(prev => ({ ...prev, fixOwnerDomain: c }))}
+                  onCheckedChange={(c) => setSteps((prev) => ({ ...prev, fixOwnerDomain: c }))}
                   className="mt-1"
                 />
-                <div className="space-y-2 w-full">
-                  <Label htmlFor="s2" className="text-base font-medium cursor-pointer">
-                    2. Owner Domain Verification
-                  </Label>
+                <div className="space-y-4 w-full">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="s2" className="text-base font-medium cursor-pointer">
+                      2. Owner Domain Verification
+                    </Label>
+                  </div>
                   <p className="text-sm text-muted-foreground">
-                    Ensure OWNERDOMAIN matches the Publisher Domain ({domain || "not set"}).
+                    Ensure OWNERDOMAIN matches the specified domain. If missing, it will be added.
                   </p>
+
+                  {steps.fixOwnerDomain && (
+                    <div className="pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <Label
+                        htmlFor="ownerDomain"
+                        className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                      >
+                        Owner Domain
+                      </Label>
+                      <Input
+                        id="ownerDomain"
+                        placeholder={domain || "example.com"}
+                        value={ownerDomainInput}
+                        onChange={(e) => setOwnerDomainInput(e.target.value)}
+                        className="h-9"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Leave empty to use Publisher Domain ({domain || "example.com"}).
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Step 3 */}
+              {/* Step 3: Manager Domain */}
               <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white transition-colors dark:hover:bg-slate-800">
                 <Switch
                   id="s3"
-                  checked={steps.verifySellers}
-                  onCheckedChange={(c) => setSteps(prev => ({ ...prev, verifySellers: c }))}
+                  checked={steps.fixManagerDomain}
+                  onCheckedChange={(c) => setSteps((prev) => ({ ...prev, fixManagerDomain: c }))}
                   className="mt-1"
                 />
-                <div className="space-y-1">
-                  <Label htmlFor="s3" className="text-base font-medium cursor-pointer">
-                    3. Sellers.json Verification
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Remove entries that do not validate against upstream sellers.json files.
-                  </p>
+                <div className="space-y-4 w-full">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="s3" className="text-base font-medium cursor-pointer">
+                      3. Manager Domain Optimization
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Resolve old or unnecessary MANAGERDOMAIN entries.</p>
+
+                  {steps.fixManagerDomain && (
+                    <div className="pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Action
+                      </Label>
+                      <div className="flex items-center space-x-4">
+                        <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                          <input
+                            type="radio"
+                            name="managerAction"
+                            value="remove"
+                            checked={steps.managerAction === "remove"}
+                            onChange={() => setSteps((s) => ({ ...s, managerAction: "remove" }))}
+                            className="accent-blue-600"
+                          />
+                          <span>Remove</span>
+                        </label>
+                        <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                          <input
+                            type="radio"
+                            name="managerAction"
+                            value="comment"
+                            checked={steps.managerAction === "comment"}
+                            onChange={() => setSteps((s) => ({ ...s, managerAction: "comment" }))}
+                            className="accent-blue-600"
+                          />
+                          <span>Comment out</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
+              {/* Step 4 */}
+              <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white transition-colors dark:hover:bg-slate-800">
+                <Switch
+                  id="s4"
+                  checked={steps.verifySellers}
+                  onCheckedChange={(c) => setSteps((prev) => ({ ...prev, verifySellers: c }))}
+                  className="mt-1"
+                />
+                <div className="space-y-4 w-full">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="s4" className="text-base font-medium cursor-pointer">
+                      4. Sellers.json Verification
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Remove entries that do not validate against upstream sellers.json files.
+                  </p>
+
+                  {steps.verifySellers && (
+                    <div className="pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Action
+                      </Label>
+                      <div className="flex items-center space-x-4">
+                        <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                          <input
+                            type="radio"
+                            name="sellersAction"
+                            value="remove"
+                            checked={steps.sellersAction === "remove"}
+                            onChange={() => setSteps((s) => ({ ...s, sellersAction: "remove" }))}
+                            className="accent-blue-600"
+                          />
+                          <span>Remove</span>
+                        </label>
+                        <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                          <input
+                            type="radio"
+                            name="sellersAction"
+                            value="comment"
+                            checked={steps.sellersAction === "comment"}
+                            onChange={() => setSteps((s) => ({ ...s, sellersAction: "comment" }))}
+                            className="accent-blue-600"
+                          />
+                          <span>Comment out</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -403,7 +528,9 @@ rubiconproject.com, 9999, RESELLER, 1234abcd
               <div className="absolute inset-0 p-4">
                 <div className="w-full h-full bg-slate-950 rounded-md p-4 overflow-auto border border-slate-800">
                   <pre className="font-mono text-sm text-slate-300 whitespace-pre">
-                    {optimizedContent || inputContent || <span className="text-slate-600 italic">Preview will appear here...</span>}
+                    {optimizedContent || inputContent || (
+                      <span className="text-slate-600 italic">Preview will appear here...</span>
+                    )}
                   </pre>
                 </div>
               </div>
