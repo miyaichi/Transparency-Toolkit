@@ -87,27 +87,27 @@ export const translations = {
     },
     advertisingSystem: {
       en: "Advertising System",
-      ja: "広告システム"
+      ja: "dvertising System"
     },
     publisherAccountId: {
       en: "Publisher Account ID",
-      ja: "パブリッシャーアカウントID"
+      ja: "Publisher Account ID"
     },
     relationship: {
       en: "Relationship",
-      ja: "関係"
+      ja: "Relationship"
     },
     certId: {
       en: "Cert ID",
-      ja: "認証ID"
+      ja: "Cert ID"
     },
     status: {
       en: "Status",
-      ja: "ステータス"
+      ja: "Status"
     },
     message: {
       en: "Message",
-      ja: "メッセージ"
+      ja: "Message"
     },
     noRecords: {
       en: "No records found.",
