@@ -6,9 +6,10 @@ const app = new OpenAPIHono();
 // Schemas
 const SellerSchema = z.object({
   seller_id: z.string().openapi({ example: 'pub-1234567890' }),
-  domain: z.string().openapi({ example: 'google.com' }),
+  domain: z.string().openapi({ example: 'google.com' }), // This is the seller's domain
   seller_type: z.string().nullable().openapi({ example: 'PUBLISHER' }),
   name: z.string().nullable().openapi({ example: 'Example Publisher' }),
+  identifiers: z.array(z.any()).nullable().optional(),
   is_confidential: z.boolean().nullable().openapi({ example: false }),
   updated_at: z.string().openapi({ example: '2025-01-01T00:00:00Z' }),
 });
@@ -59,7 +60,9 @@ app.openapi(getSellersRoute, async (c) => {
   const offset = (pageNum - 1) * limitNum;
 
   // Build Query
-  let sql = 'SELECT seller_id, domain, seller_type, name, is_confidential, updated_at FROM sellers_catalog WHERE 1=1';
+  // Note: We select seller_domain as 'domain' for the response to match the spec
+  let sql =
+    'SELECT seller_id, domain as source_domain, COALESCE(seller_domain, domain) as domain, seller_type, name, identifiers, is_confidential, updated_at FROM sellers_catalog WHERE 1=1';
   const params: any[] = [];
   let pIdx = 1;
 
@@ -74,7 +77,7 @@ app.openapi(getSellersRoute, async (c) => {
   }
 
   if (q) {
-    sql += ` AND (domain ILIKE $${pIdx} OR seller_id ILIKE $${pIdx} OR name ILIKE $${pIdx})`;
+    sql += ` AND (domain ILIKE $${pIdx} OR seller_domain ILIKE $${pIdx} OR seller_id ILIKE $${pIdx} OR name ILIKE $${pIdx})`;
     params.push(`%${q}%`);
     pIdx++;
   }
@@ -210,7 +213,7 @@ app.openapi(fetchRoute, async (c) => {
       // Reuse getSellers logic but for specific domain and no limit?
 
       const sellersRes = await query(
-        `SELECT seller_id, domain, seller_type, name, is_confidential 
+        `SELECT seller_id, domain as source_domain, COALESCE(seller_domain, domain) as domain, seller_type, name, identifiers, is_confidential 
                  FROM sellers_catalog WHERE domain = $1`,
         [domain],
       );

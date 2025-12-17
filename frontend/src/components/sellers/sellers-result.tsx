@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Download, ExternalLink, Info, Loader2 } from "lucide-react"
+import { Download, Info, Loader2 } from "lucide-react"
 import { useState } from "react"
 import useSWR from "swr"
 
@@ -22,6 +22,7 @@ type SellersJsonResponse = {
     seller_id: string
     name: string
     domain: string
+    identifiers?: { name: string; value: string }[]
     seller_type: string
     is_confidential?: number | boolean // valid spec uses 0 or 1, but some use bool
     is_passthrough?: number | boolean
@@ -88,6 +89,7 @@ export function SellersResult({ domain }: Props) {
       t("sellersPage.headers.name"),
       t("sellersPage.headers.type"),
       t("sellersPage.headers.domain"),
+      "Identifiers",
       t("sellersPage.headers.confidential"),
       t("sellersPage.headers.passthrough")
     ]
@@ -99,6 +101,7 @@ export function SellersResult({ domain }: Props) {
           s.name,
           s.seller_type,
           s.domain || "",
+          s.identifiers ? JSON.stringify(s.identifiers) : "",
           s.is_confidential ? "1" : "0",
           s.is_passthrough ? "1" : "0"
         ]
@@ -230,6 +233,7 @@ export function SellersResult({ domain }: Props) {
                 <TableHead>{t("sellersPage.headers.name")}</TableHead>
                 <TableHead>{t("sellersPage.headers.type")}</TableHead>
                 <TableHead>{t("sellersPage.headers.domain")}</TableHead>
+                <TableHead>Identifiers</TableHead>
                 <TableHead>{t("sellersPage.headers.confidential")}</TableHead>
                 <TableHead>{t("sellersPage.headers.passthrough")}</TableHead>
               </TableRow>
@@ -250,18 +254,19 @@ export function SellersResult({ domain }: Props) {
                         {seller.seller_type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {seller.domain ? (
-                        <a
-                          href={`https://${seller.domain}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center hover:underline hover:text-primary"
-                        >
-                          {seller.domain} <ExternalLink className="ml-1 w-3 h-3 opacity-50" />
-                        </a>
+                    <TableCell className="font-mono text-xs">{seller.domain || "-"}</TableCell>
+                    <TableCell className="text-xs">
+                      {seller.identifiers && seller.identifiers.length > 0 ? (
+                        <div className="space-y-1">
+                          {seller.identifiers.map((id, idx) => (
+                            <div key={idx} className="flex gap-1">
+                              <span className="font-semibold">{id.name}:</span>
+                              <span className="font-mono">{id.value}</span>
+                            </div>
+                          ))}
+                        </div>
                       ) : (
-                        "-"
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-center">
@@ -280,7 +285,7 @@ export function SellersResult({ domain }: Props) {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={7} className="h-24 text-center">
                     {t("sellersPage.messages.noSellers")}
                   </TableCell>
                 </TableRow>

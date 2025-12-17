@@ -75,19 +75,19 @@ export const translations = {
     },
     filterPlaceholder: {
       en: "Filter by domain, ID...",
-      ja: "ドメイン、IDでフィルタ..."
+      ja: "Filter by domain, ID...."
     },
     downloadCsv: {
       en: "Download CSV",
-      ja: "CSVをダウンロード"
+      ja: "Download CSV"
     },
     line: {
       en: "Line",
-      ja: "行"
+      ja: "Line"
     },
     advertisingSystem: {
       en: "Advertising System",
-      ja: "dvertising System"
+      ja: "Advertising System"
     },
     publisherAccountId: {
       en: "Publisher Account ID",
@@ -155,7 +155,7 @@ export const translations = {
     },
     commentRaw: {
       en: "Comment / Raw",
-      ja: "コメント / 元データ"
+      ja: "Comment / Raw"
     }
   },
   validation: {

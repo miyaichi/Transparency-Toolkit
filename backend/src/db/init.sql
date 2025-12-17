@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS sellers_catalog (
     domain TEXT NOT NULL,
     seller_type TEXT,                -- PUBLISHER, INTERMEDIARY, BOTH
     name TEXT,
+    seller_domain TEXT,              -- The domain property from the seller entry
+    identifiers JSONB,               -- The identifiers property from the seller entry
     is_confidential boolean DEFAULT false,
     
     -- Additional attributes stored as JSONB for flexibility
@@ -36,6 +38,7 @@ CREATE TABLE IF NOT EXISTS sellers_catalog (
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_domain ON sellers_catalog(domain);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_seller_id ON sellers_catalog(seller_id);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_name_trgm ON sellers_catalog USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_sellers_catalog_seller_domain_trgm ON sellers_catalog USING GIN (seller_domain gin_trgm_ops);
 
 -- 3. Ads.txt Scans Table
 CREATE TABLE IF NOT EXISTS ads_txt_scans (

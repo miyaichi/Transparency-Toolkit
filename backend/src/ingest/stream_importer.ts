@@ -68,6 +68,8 @@ export class StreamImporter {
               domain, 
               seller_type, 
               name, 
+              seller_domain,
+              identifiers,
               is_confidential, 
               raw_file_id
             ) FROM STDIN
@@ -123,7 +125,24 @@ export class StreamImporter {
                   isConfidential = true;
                 }
 
-                const row = `${sellerId}\t${options.domain}\t${sellerType}\t${name}\t${isConfidential}\t${rawFileId}\n`;
+                // Seller Domain
+                let sellerDomain = (seller.domain || '').toString().trim();
+                sellerDomain = sellerDomain.replace(/[\t\n\r\0]/g, '').trim();
+
+                // Identifiers (JSON)
+                let identifiers = null;
+                if (seller.identifiers && Array.isArray(seller.identifiers)) {
+                  try {
+                    identifiers = JSON.stringify(seller.identifiers);
+                    // Escape backslashes for COPY TEXT format
+                    identifiers = identifiers.replace(/\\/g, '\\\\');
+                  } catch (e) {
+                    identifiers = null;
+                  }
+                }
+                const identifiersStr = identifiers ? identifiers : '\\N'; // \N for NULL in COPY
+
+                const row = `${sellerId}\t${options.domain}\t${sellerType}\t${name}\t${sellerDomain}\t${identifiersStr}\t${isConfidential}\t${rawFileId}\n`;
                 callback(null, row);
               } catch (e) {
                 // Skip malformed record but continue stream
