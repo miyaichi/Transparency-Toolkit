@@ -1,46 +1,34 @@
-# Ads.txt Manager V2
+# Ads.txt Manager V2 🚀
 
-Performance-optimized backend for Ads.txt and Sellers.json processing using Node.js Streams and PostgreSQL.
+**The Next-Gen Ads.txt & Sellers.json Management Platform**
 
-## Prerequisites
+Ads.txt Manager V2 is a performance-optimized toolkit for Publisher Operations and AdTech developers. It provides a unified interface to validate, optimize, and monitor supply chain standards (ads.txt, app-ads.txt, sellers.json).
 
-- Docker Engine & Docker Compose
-- Node.js v20+
+## Key Features
 
-## Setup
+### 🔍 Domain Search Validator & Explorer
+- **Unified Validation**: Validate `ads.txt`, `app-ads.txt`, and `sellers.json` instantly for any domain.
+- **Sellers Explorer**: High-performance search interface over **1 million+** global seller records indexed in PostgreSQL.
+- **Cross-Check**: Verify if `ads.txt` relationships match `sellers.json` declarations (DIRECT/RESELLER checks).
 
-1. Start the database and backend container:
-   ```bash
-   docker compose up -d
-   ```
+### 🛠️ Ads.txt Optimizer
+A step-by-step wizard to clean and fix ads.txt files:
+1.  **Format Fixes**: Remove duplicates, invalid syntax, and formatting errors.
+2.  **Relationship Correction**: Automatically correct `DIRECT` vs `RESELLER` based on sellers.json data.
+3.  **Owner Domain**: Ensure correct `OWNERDOMAIN` declaration.
+4.  **Verification**: Filter out lines that don't exist in the SSP's sellers.json.
 
-2. Install dependencies (on host):
-   ```bash
-   cd backend
-   npm install
-   ```
+### 📊 Monitoring & Analytics
+- **Continuous Monitoring**: Track ads.txt changes over time for specific domains.
+- **Sellers Discovery**: Automatically discover and fetch new sellers.json files from monitored publisher supply chains.
+- **Insite Analytics**: View publisher reputation and supply path insights (powered by OpenSincera API).
 
-## Running Ingestion PoC
+### 🌍 Internationalization
+- Fully localized for **English** and **Japanese**.
 
-Run the streaming ingestion script to fetch Google's sellers.json and insert it into the database:
+## Architecture
 
-```bash
-cd backend
-npm run ingest
-```
-
-## Performance Benchmark
-
-- **Target**: `google.com/sellers.json` (~1M+ records)
-- **Time**: ~35 seconds
-- **Memory Usage**: Minimal (Streaming)
-
-## Database Schema
-
-- `raw_sellers_files`: Metadata of fetched files.
-- `sellers_catalog`: Normalized sellers data for search.
-
-## Architecture Diagram
+Performance is at the core of V2. It utilizes streaming ingestion for large datasets and efficient indexing.
 
 ```mermaid
 graph TD
@@ -66,58 +54,47 @@ graph TD
     end
 ```
 
-### Domain Search Validator
-The V2 frontend features a unified "Domain Search Validator". By entering a domain name (e.g., `nytimes.com`), users can instantly validate and inspect:
-- **Ads.txt**: Publisher's authorized digital sellers.
-- **App-ads.txt**: Mobile app developer's authorized sellers.
-- **Sellers.json**: SSP/Exchange's seller inventory (SupplyChain).
+## Quick Start (Local Development)
 
-The results are displayed in separate tabs with validation status, stats, and downloadable CSV reports.
+### Prerequisites
+- Docker & Docker Compose
+- Node.js v20+
 
-
-## Checking Data
-
+### 1. Start Infrastructure
 ```bash
-docker exec -it adstxt-v2-db psql -U postgres -d adstxt_v2 -c "SELECT count(*) FROM sellers_catalog;"
+docker compose up -d
 ```
+This starts PostgreSQL (port 5433) and the Backend API (port 8080).
 
-## Running Locally (Development)
-
-### 1. Database
-Start the PostgreSQL database container:
-
-```bash
-docker compose up -d db
-```
-The database will be available at `localhost:5433`.
-
-### 2. Backend API
-Start the API server on port 8080. We use port 8080 to avoid conflict with the frontend's default port (3000).
-
-```bash
-cd backend
-npm install
-# Connect to local DB (port 5433) and run on port 8080
-DATABASE_URL=postgres://postgres:password@localhost:5433/adstxt_v2 PORT=8080 npm run dev
-```
-
-### 3. Frontend UI
-Start the Next.js frontend, pointing it to the backend running on port 8080.
-
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
-# Tell frontend where the backend is
-BACKEND_URL=http://localhost:8080 npm run dev
+npm run dev
+```
+Access the application at [http://localhost:3000](http://localhost:3000).
+
+### 3. Backend Setup (Optional for dev)
+If you want to run the backend locally instead of via Docker:
+```bash
+cd backend
+npm install
+# Set env vars and run
+DATABASE_URL=postgres://postgres:password@localhost:5433/adstxt_v2 PORT=8080 OPENSINCERA_API_KEY=your_key npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Deployment
 
-## Features
+The project is designed to be deployed on **Google Cloud Run** and **Cloud SQL**.
+See [DEPLOYMENT_GCP.md](./DEPLOYMENT_GCP.md) for detailed instructions.
 
-- **Sellers Search**: Performant search over 1M+ seller records.
-- **Ads.txt Validator**: Fetch, parse, and cross-check ads.txt files against sellers.json.
-- **Scan History**: View historical scans and their results.
-- **Monitoring**: Schedule periodic ads.txt scans for specific domains.
-  - Manage monitored domains via the "Monitor" UI or API.
-  - Automatically fetches updated sellers.json for supply sources found in scanned ads.txt.
+- **CI/CD**: GitHub Actions workflows are set up for automated deployment. See [CICD_SETUP.md](./CICD_SETUP.md).
+
+## Project Status
+
+Current Phase: **🧪 Private Beta**
+See [PROJECT_STATUS.md](./PROJECT_STATUS.md) for detailed roadmap and changelog.
+
+## License
+
+Private / Proprietary.
