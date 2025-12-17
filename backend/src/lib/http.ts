@@ -12,8 +12,7 @@ import https from 'https';
 const agent = new https.Agent({
   secureOptions:
     crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT | crypto.constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION,
-  rejectUnauthorized: false, // Optional: if certificates are also an issue, but be careful with security.
-  // Note: rejectUnauthorized: false is dangerous for production security, but for a validator crawler it is acceptable to fetch content even if cert is bad.
+  rejectUnauthorized: true, // Enable strict TLS verification
 });
 
 const client = axios.create({

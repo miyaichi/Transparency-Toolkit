@@ -28,8 +28,10 @@ const SPECIAL_DOMAINS: Record<string, string> = {
 export function setupCronJobs() {
   console.log('Setting up cron jobs...');
 
-  // 1分ごとに実行 (開発中のため高頻度)
-  cron.schedule('*/1 * * * *', async () => {
+  // Production: Every 15 minutes, Development: Every 1 minute
+  const schedule = process.env.NODE_ENV === 'production' ? '*/15 * * * *' : '*/1 * * * *';
+
+  cron.schedule(schedule, async () => {
     if (isJobRunning) {
       console.log('Job is already running, skipping...');
       return;
@@ -67,7 +69,7 @@ async function processMonitoredDomains() {
   const dueDomains = await monitoredDomainsService.getDueDomains();
   console.log(`Found ${dueDomains.length} domains due for ads.txt scan.`);
 
-  const importer = new StreamImporter(DATABASE_URL);
+  const importer = new StreamImporter();
 
   for (const item of dueDomains) {
     console.log(`Scanning ${item.file_type} for monitored domain: ${item.domain}`);
@@ -138,7 +140,7 @@ async function processMissingSellers() {
   // 2. 既に raw_sellers_files に取り込み済みのドメインを確認 (直近24時間以内とみなす)
   //    今回は「一度も取り込んでいない」または「古すぎる(例えば7日以上前)」ものを対象とする
 
-  const importer = new StreamImporter(DATABASE_URL);
+  const importer = new StreamImporter();
 
   try {
     for (const supplyDomain of supplyDomains) {

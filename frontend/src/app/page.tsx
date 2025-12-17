@@ -15,29 +15,38 @@ export default function DomainSearchPage() {
   const [activeDomain, setActiveDomain] = useState("")
   const [searchType, setSearchType] = useState("ads.txt")
 
-  // Basic domain validation regex
-  const isValidDomain = (domain: string) => /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(domain)
+  // Robust domain normalization & validation
+  const normalizeDomain = (input: string): string => {
+    try {
+      let urlStr = input.trim().toLowerCase();
+      // Ensure protocol for URL parsing
+      if (!/^https?:\/\//i.test(urlStr)) {
+        urlStr = "http://" + urlStr;
+      }
+      const url = new URL(urlStr);
+      // Return hostname (strips port, path, query, protocol)
+      return url.hostname;
+    } catch {
+      return "";
+    }
+  };
+
+  const isValidDomain = (domain: string) =>
+    /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$/.test(domain) &&
+    !domain.includes("localhost") &&
+    !domain.includes("127.0.0.1");
 
   const handleSearch = () => {
-    const domain = searchInput
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .replace(/\/.*$/, "")
-    if (domain && isValidDomain(domain)) {
-      setActiveDomain(domain)
+    const normalized = normalizeDomain(searchInput);
+    if (normalized && isValidDomain(normalized)) {
+      setActiveDomain(normalized);
+      // Optional: update input to reflect normalized domain
+      // setSearchInput(normalized) 
     }
   }
 
-  const isSearchDisabled =
-    !searchInput ||
-    !isValidDomain(
-      searchInput
-        .trim()
-        .toLowerCase()
-        .replace(/^https?:\/\//, "")
-        .replace(/\/.*$/, "")
-    )
+  const normalizedInput = normalizeDomain(searchInput);
+  const isSearchDisabled = !searchInput || !normalizedInput || !isValidDomain(normalizedInput);
 
   return (
     <div className="container mx-auto py-10 space-y-8 max-w-6xl">

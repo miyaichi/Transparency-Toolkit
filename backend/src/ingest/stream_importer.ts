@@ -1,10 +1,11 @@
-import { Pool, PoolClient } from 'pg';
+import { PoolClient } from 'pg';
 import { from as copyFrom } from 'pg-copy-streams';
 import { Transform } from 'stream';
 import { parser } from 'stream-json';
 import { pick } from 'stream-json/filters/Pick';
 import { streamArray } from 'stream-json/streamers/StreamArray';
 import { pipeline } from 'stream/promises';
+import { pool } from '../db/client';
 import httpClient from '../lib/http';
 
 interface ImportOptions {
@@ -13,19 +14,10 @@ interface ImportOptions {
 }
 
 export class StreamImporter {
-  private pool: Pool;
-
-  constructor(connectionString: string) {
-    this.pool = new Pool({
-      connectionString,
-      max: 2, // Limit connections for background jobs
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-    });
-  }
+  // Removed internal pool management to use singleton
 
   async importSellersJson(options: ImportOptions) {
-    const client = await this.pool.connect();
+    const client = await pool.connect();
     console.log(`Starting import for ${options.domain} from ${options.url}`);
 
     try {
@@ -195,6 +187,6 @@ export class StreamImporter {
   }
 
   async close() {
-    await this.pool.end();
+    // No-op: Singleton pool is managed globally
   }
 }
