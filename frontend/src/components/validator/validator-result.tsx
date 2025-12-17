@@ -197,122 +197,120 @@ export function ValidatorResult({ domain, type }: Props) {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="inline-block min-w-full align-middle">
-            <Table className="min-w-full">
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-15">{t("common.line")}</TableHead>
-                  <TableHead>{t("common.advertisingSystem")}</TableHead>
-                  <TableHead>{t("common.publisherAccountId")}</TableHead>
-                  <TableHead>{t("common.relationship")}</TableHead>
-                  <TableHead>{t("common.certId")}</TableHead>
-                  <TableHead>{t("common.status")}</TableHead>
-                  <TableHead>{t("common.message")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRecords?.length ? (
-                  filteredRecords.map((record, i) => {
-                    // Message Translation Logic
-                    const key = record.validation_key
-                    const params = {
-                      domain: record.domain || "",
-                      account_id: record.account_id || "",
-                      seller_domain: record.domain || "", // Assuming seller domain is same field
-                      publisher_domain: domain,
-                      seller_type: "INTERMEDIARY" // Don't have this in record currently
+      <div className="rounded-md border bg-white shadow-sm">
+        <Table className="min-w-full">
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-15">{t("common.line")}</TableHead>
+              <TableHead>{t("common.advertisingSystem")}</TableHead>
+              <TableHead>{t("common.publisherAccountId")}</TableHead>
+              <TableHead>{t("common.relationship")}</TableHead>
+              <TableHead>{t("common.certId")}</TableHead>
+              <TableHead>{t("common.status")}</TableHead>
+              <TableHead>{t("common.message")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredRecords?.length ? (
+              filteredRecords.map((record, i) => {
+                // Message Translation Logic
+                const key = record.validation_key
+                const params = {
+                  domain: record.domain || "",
+                  account_id: record.account_id || "",
+                  seller_domain: record.domain || "", // Assuming seller domain is same field
+                  publisher_domain: domain,
+                  seller_type: "INTERMEDIARY" // Don't have this in record currently
+                }
+
+                // Try to translate validation key
+                let translatedMessage = ""
+                if (key) {
+                  const path = `warnings.${key}.description`
+                  const val = t(path, params)
+                  if (val !== path) {
+                    translatedMessage = val
+                  }
+                }
+
+                const displayMessage = translatedMessage || record.warning_message || record.validation_key || ""
+
+                return (
+                  <TableRow
+                    key={i}
+                    className={
+                      !record.is_valid
+                        ? "bg-red-50 hover:bg-red-100/50"
+                        : record.has_warning
+                          ? "bg-yellow-50 hover:bg-yellow-100/50"
+                          : "hover:bg-muted/50"
                     }
-
-                    // Try to translate validation key
-                    let translatedMessage = ""
-                    if (key) {
-                      const path = `warnings.${key}.description`
-                      const val = t(path, params)
-                      if (val !== path) {
-                        translatedMessage = val
-                      }
-                    }
-
-                    const displayMessage = translatedMessage || record.warning_message || record.validation_key || ""
-
-                    return (
-                      <TableRow
-                        key={i}
-                        className={
-                          !record.is_valid
-                            ? "bg-red-50 hover:bg-red-100/50"
-                            : record.has_warning
-                              ? "bg-yellow-50 hover:bg-yellow-100/50"
-                              : "hover:bg-muted/50"
-                        }
-                      >
-                        <TableCell className="font-mono text-xs text-muted-foreground">{record.line_number}</TableCell>
-                        <TableCell className="font-medium">
-                          {record.domain || <span className="text-muted-foreground italic">-</span>}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {record.account_id || <span className="text-muted-foreground italic">-</span>}
-                        </TableCell>
-                        <TableCell>
-                          {record.relationship ? (
-                            <Badge
-                              variant="outline"
-                              className={
-                                record.relationship.toUpperCase() === "DIRECT"
-                                  ? "bg-blue-50 text-blue-700 border-blue-200"
-                                  : ""
-                              }
-                            >
-                              {record.relationship}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground italic">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {record.certification_authority_id || "-"}
-                        </TableCell>
-                        <TableCell>
-                          {record.is_valid ? (
-                            <div className="flex items-center text-green-600 font-medium text-xs">
-                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> {t("common.ok")}
-                            </div>
-                          ) : (
-                            <div className="flex items-center text-red-600 font-medium text-xs">
-                              <XCircle className="w-3.5 h-3.5 mr-1" /> {t("common.error")}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs max-w-75">
-                          {record.has_warning ? (
-                            <span className="text-yellow-700">{displayMessage}</span>
-                          ) : !record.is_valid ? (
-                            <span className="text-red-600 font-mono">{displayMessage}</span>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      {t("common.noRecords")}
+                  >
+                    <TableCell className="font-mono text-xs text-muted-foreground">{record.line_number}</TableCell>
+                    <TableCell className="font-medium">
+                      {record.domain || <span className="text-muted-foreground italic">-</span>}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {record.account_id || <span className="text-muted-foreground italic">-</span>}
+                    </TableCell>
+                    <TableCell>
+                      {record.relationship ? (
+                        <Badge
+                          variant="outline"
+                          className={
+                            record.relationship.toUpperCase() === "DIRECT"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : ""
+                          }
+                        >
+                          {record.relationship}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground italic">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {record.certification_authority_id || "-"}
+                    </TableCell>
+                    <TableCell>
+                      {record.is_valid ? (
+                        <div className="flex items-center text-green-600 font-medium text-xs">
+                          <CheckCircle className="w-3.5 h-3.5 mr-1" /> {t("common.ok")}
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-red-600 font-medium text-xs">
+                          <XCircle className="w-3.5 h-3.5 mr-1" /> {t("common.error")}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs max-w-75">
+                      {record.has_warning ? (
+                        <span className="text-yellow-700">{displayMessage}</span>
+                      ) : !record.is_valid ? (
+                        <span className="text-red-600 font-mono">{displayMessage}</span>
+                      ) : null}
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+                )
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  {t("common.noRecords")}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
-      <div className="text-xs text-muted-foreground text-right">
-        {t("common.sourceUrl")}:{" "}
-        <a href={data.ads_txt_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
-          {data.ads_txt_url}
-        </a>
-      </div>
+    </div>
+      </div >
+    <div className="text-xs text-muted-foreground text-right">
+      {t("common.sourceUrl")}:{" "}
+      <a href={data.ads_txt_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+        {data.ads_txt_url}
+      </a>
+    </div>
     </div >
   )
 }
