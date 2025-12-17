@@ -4,26 +4,26 @@
 > These items pose immediate security risks or significant stability/cost issues and must be addressed before improving features.
 
 1.  **Security Hardening**
-    -   **CORS Configuration**: Restrict `Access-Control-Allow-Origin` in production to the frontend domain only. Currently allows `*` with credentials (`backend/src/index.ts`).
-    -   **TLS Verification**: Enable TLS verification for all outbound fetches. Currently disabled, making scans vulnerable to MITM (`backend/src/lib/http.ts`).
-    -   **SSRF Protection**: Validate and sanitize user-provided domains before fetching to prevent internal network access (`backend/src/api/adstxt.ts`).
-    -   **Environment Validation**: Implement startup checks for required environment variables (`DATABASE_URL`, `OPENSINCERA_API_KEY`) to prevent runtime failures.
+    -   [x] **CORS Configuration**: Restrict `Access-Control-Allow-Origin` in production to the frontend domain only. Currently allows `*` with credentials (`backend/src/index.ts`).
+    -   [x] **TLS Verification**: Enable TLS verification for all outbound fetches. Currently disabled, making scans vulnerable to MITM (`backend/src/lib/http.ts`).
+    -   [x] **SSRF Protection**: Validate and sanitize user-provided domains before fetching to prevent internal network access (`backend/src/api/adstxt.ts`).
+    -   [x] **Environment Validation**: Implement startup checks for required environment variables (`DATABASE_URL`, `OPENSINCERA_API_KEY`) to prevent runtime failures.
 
 2.  **Infrastructure & Reliability**
-    -   **Cron Job Optimization**: Reduce scheduler frequency in production (currently runs every 1 minute). Suggest changing to 15+ minutes to save resources and DB connections (`backend/src/jobs/scheduler.ts`).
-    -   **Database Access**: Prevent creating new DB pools per request. Refactor to use a singleton or injected database client (`backend/src/api/sellers.ts`).
+    -   [x] **Cron Job Optimization**: Reduce scheduler frequency in production (currently runs every 1 minute). Suggest changing to 15+ minutes to save resources and DB connections (`backend/src/jobs/scheduler.ts`).
+    -   [x] **Database Access**: Prevent creating new DB pools per request. Refactor to use a singleton or injected database client (`backend/src/api/sellers.ts`).
 
 ## 🛠 High Priority (Architecture & Stability)
 > Improvements necessary for maintainability, testing, and preventing future regressions.
 
 1.  **Refactoring & Code Quality**
-    -   **Service Layer Extraction**: Decouple business logic from API route handlers (specifically `sellers.ts` and `adstxt.ts`). This is a prerequisite for effective unit testing.
-    -   **Type Safety**: Eliminate `any` casts and strengthen TypeScript definitions to catch schema drift early.
-    -   **Code Cleanup**: Replace long inline comments with self-documenting helper functions.
+    -   [x] **Service Layer Extraction**: Decouple business logic from API route handlers (specifically `sellers.ts` and `adstxt.ts`). This is a prerequisite for effective unit testing.
+    -   [x] **Type Safety**: Eliminate `any` casts and strengthen TypeScript definitions to catch schema drift early.
+    -   [x] **Code Cleanup**: Replace long inline comments with self-documenting helper functions.
 
 2.  **Frontend Stability**
-    -   **Dependency Stabilization**: Align Next.js and React versions to stable releases. Currently using unreleased/canary versions which risks build stability.
-    -   **Input Normalization**: Implement stricter domain validation (handling IDN/punycode, stripping ports) in the frontend before sending requests.
+    -   [x] **Dependency Stabilization**: Align Next.js and React versions to stable releases. Currently using unreleased/canary versions which risks build stability.
+    -   [x] **Input Normalization**: Implement stricter domain validation (handling IDN/punycode, stripping ports) in the frontend before sending requests.
 
 ## 🚀 Feature Roadmap
 
