@@ -198,7 +198,7 @@ export function ValidatorResult({ domain, type }: Props) {
 
       {/* Table */}
       <div className="rounded-md border bg-white shadow-sm">
-        <Table className="min-w-full">
+        <Table className="min-w-max">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="w-15">{t("common.line")}</TableHead>
@@ -303,14 +303,12 @@ export function ValidatorResult({ domain, type }: Props) {
           </TableBody>
         </Table>
       </div>
-    </div>
-      </div >
-    <div className="text-xs text-muted-foreground text-right">
-      {t("common.sourceUrl")}:{" "}
-      <a href={data.ads_txt_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
-        {data.ads_txt_url}
-      </a>
-    </div>
+      <div className="text-xs text-muted-foreground text-right">
+        {t("common.sourceUrl")}:{" "}
+        <a href={data.ads_txt_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+          {data.ads_txt_url}
+        </a>
+      </div>
     </div >
   )
 }
