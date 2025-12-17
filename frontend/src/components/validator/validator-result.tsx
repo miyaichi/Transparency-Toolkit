@@ -198,7 +198,7 @@ export function ValidatorResult({ domain, type }: Props) {
 
       {/* Table */}
       <div className="rounded-md border bg-white shadow-sm">
-        <Table className="min-w-max">
+        <Table className="min-w-max bg-white">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="w-15">{t("common.line")}</TableHead>
