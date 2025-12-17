@@ -173,20 +173,20 @@ export const translations = {
   sellersPage: {
     metadata: { en: "Metadata", ja: "メタデータ" },
     stats: { en: "Stats", ja: "統計" },
-    totalSellers: { en: "Total Sellers", ja: "総セラー" },
-    publishers: { en: "Publishers", ja: "パブリッシャー" },
-    intermediaries: { en: "Intermediaries", ja: "仲介者" },
-    both: { en: "Both", ja: "両方" },
-    filterPlaceholder: { en: "Filter sellers...", ja: "セラーをフィルタ..." },
-    confidential: { en: "Confidential", ja: "機密" },
-    passthrough: { en: "Passthrough", ja: "パススルー" },
+    totalSellers: { en: "Total Sellers", ja: "Total Sellers" },
+    publishers: { en: "Publishers", ja: "Publishers" },
+    intermediaries: { en: "Intermediaries", ja: "Intermediaries" },
+    both: { en: "Both", ja: "Both" },
+    filterPlaceholder: { en: "Filter sellers...", ja: "Filter sellers..." },
+    confidential: { en: "Confidential", ja: "Confidential" },
+    passthrough: { en: "Passthrough", ja: "Passthrough" },
     headers: {
-      sellerId: { en: "Seller ID", ja: "セラーID" },
-      name: { en: "Name", ja: "名称" },
-      type: { en: "Type", ja: "タイプ" },
-      domain: { en: "Domain", ja: "ドメイン" },
-      confidential: { en: "Confidential", ja: "機密" },
-      passthrough: { en: "Passthrough", ja: "パススルー" }
+      sellerId: { en: "Seller ID", ja: "Seller ID" },
+      name: { en: "Name", ja: "Name" },
+      type: { en: "Type", ja: "Type" },
+      domain: { en: "Domain", ja: "Domain" },
+      confidential: { en: "Confidential", ja: "Confidential" },
+      passthrough: { en: "Passthrough", ja: "Passthrough" }
     },
     messages: {
       enterDomain: {
