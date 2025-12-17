@@ -53,7 +53,7 @@ jobs:
             --region ${{ env.REGION }} \
             --project ${{ env.PROJECT_ID }} \
             --add-cloudsql-instances ${DB_CONNECTION_NAME} \
-            --set-env-vars DATABASE_URL="postgres://postgres:${{ secrets.DB_PASSWORD }}@/${{ secrets.DB_NAME }}?host=/cloudsql/${DB_CONNECTION_NAME}" \
+            --set-env-vars DATABASE_URL="postgres://postgres:${{ secrets.DB_PASSWORD }}@/${{ secrets.DB_NAME }}?host=/cloudsql/${DB_CONNECTION_NAME}",OPENSINCERA_API_KEY=${{ secrets.OPENSINCERA_API_KEY }} \
             --allow-unauthenticated
 
       # Frontend Build & Push
