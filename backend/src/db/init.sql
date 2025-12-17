@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS ads_txt_scans (
     error_message TEXT,
     records_count INT DEFAULT 0,
     valid_count INT DEFAULT 0,
-    warning_count INT DEFAULT 0
+    warning_count INT DEFAULT 0,
+    file_type VARCHAR(20) DEFAULT 'ads.txt'
 );
 
 -- Indexes for Ads.txt Scans
