@@ -15,7 +15,7 @@ const TARGETS = [
 
 async function main() {
   console.log('Connecting to database:', DATABASE_URL);
-  const importer = new StreamImporter(DATABASE_URL);
+  const importer = new StreamImporter();
 
   try {
     for (const target of TARGETS) {

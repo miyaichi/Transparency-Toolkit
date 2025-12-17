@@ -201,7 +201,7 @@ app.openapi(fetchRoute, async (c) => {
 
   try {
     if (save === 'true') {
-      const importer = new StreamImporter(process.env.DATABASE_URL!);
+      const importer = new StreamImporter();
       try {
         await importer.importSellersJson({ domain, url });
       } finally {

@@ -10,6 +10,19 @@ import sellersApp from './api/sellers';
 
 dotenv.config();
 
+// Critical Environment Variable Check
+const requiredEnvVars = ['DATABASE_URL'];
+if (process.env.NODE_ENV === 'production') {
+  requiredEnvVars.push('OPENSINCERA_API_KEY');
+}
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`ERROR: Required environment variable ${envVar} is not set`);
+    process.exit(1);
+  }
+}
+
 import { cors } from 'hono/cors';
 
 const app = new OpenAPIHono();
@@ -18,7 +31,7 @@ const app = new OpenAPIHono();
 app.use(
   '/*',
   cors({
-    origin: '*', // Allow any origin for development
+    origin: process.env.NODE_ENV === 'production' ? (process.env.FRONTEND_URL as string) : '*',
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposeHeaders: ['Content-Length'],

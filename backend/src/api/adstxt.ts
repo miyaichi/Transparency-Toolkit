@@ -75,6 +75,19 @@ app.openapi(validateRoute, async (c) => {
 
   if (!domain) return c.json({ error: 'Domain is required' }, 400);
 
+  // Strict Domain Validation (Prevent SSRF & Invalid Formats)
+  const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+  if (!domainRegex.test(domain) && domain !== 'localhost') { // Allow localhost only in dev? No, block in production. 
+    // Actually, better to block localhost essentially unless explicitly allowed.
+    // Given this is a public validator, we should block localhost and private IPs.
+    return c.json({ error: 'Invalid domain format.' }, 400);
+  }
+
+  // Block internal/private domains
+  if (domain.toLowerCase() === 'localhost' || domain.includes('127.0.0.1') || domain.includes('::1')) {
+    return c.json({ error: 'Invalid domain allowed.' }, 400);
+  }
+
   let content = '';
   let finalUrl = '';
   let scanId: string | undefined;
