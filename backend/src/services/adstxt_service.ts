@@ -20,7 +20,10 @@ export interface ValidationRecord {
   warning?: string;
   warning_message?: string;
   severity?: string;
-  warning_params?: any;
+  seller_name?: string;
+  seller_domain?: string;
+  seller_type?: string;
+  is_confidential?: number;
 }
 
 export interface ValidationStats {
@@ -56,7 +59,7 @@ export class AdsTxtService {
     let scanId: string | undefined;
 
     // Validate/Normalize type
-    const fileType = (type === 'app-ads.txt' ? 'app-ads.txt' : 'ads.txt');
+    const fileType = type === 'app-ads.txt' ? 'app-ads.txt' : 'ads.txt';
 
     // 1. Fetch
     if (save) {
@@ -101,6 +104,41 @@ export class AdsTxtService {
     const parsedEntries = parseAdsTxtContent(content, domain);
     const validatedEntries = await crossCheckAdsTxtRecords(domain, parsedEntries, null, this.sellersProvider);
 
+    // 3.5. Optimize: Batch fetch seller info for all records
+    // Group account IDs by system domain (ads.txt lines refer to system domains)
+    const accountsByDomain = new Map<string, Set<string>>();
+
+    validatedEntries.forEach((entry: any) => {
+      // entry.domain is the system domain (e.g. google.com)
+      // entry.account_id is the seller ID
+      if (entry.domain && entry.account_id) {
+        const sysDomain = entry.domain.toLowerCase();
+        if (!accountsByDomain.has(sysDomain)) {
+          accountsByDomain.set(sysDomain, new Set());
+        }
+        accountsByDomain.get(sysDomain)?.add(entry.account_id);
+      }
+    });
+
+    // Fetch sellers info in parallel batches
+    const sellerLookup = new Map<string, any>(); // Key: "sysDomain:accountId" -> Seller Object
+
+    await Promise.all(
+      Array.from(accountsByDomain.entries()).map(async ([sysDomain, accountIds]) => {
+        try {
+          const result = await this.sellersProvider.batchGetSellers(sysDomain, Array.from(accountIds));
+          result.results.forEach((r) => {
+            if (r.found && r.seller) {
+              sellerLookup.set(`${sysDomain}:${r.sellerId}`, r.seller);
+            }
+          });
+        } catch (e) {
+          console.warn(`Failed to batch fetch sellers for ${sysDomain}:`, e);
+          // Continue without seller info for this domain
+        }
+      }),
+    );
+
     // 4. Format Records
     const formattedRecords: ValidationRecord[] = validatedEntries.map((entry) => {
       let warning_message = undefined;
@@ -111,6 +149,12 @@ export class AdsTxtService {
       if (record.validation_key) {
         const msg = createValidationMessage(record.validation_key, [], 'en');
         if (msg) warning_message = msg.message;
+      }
+
+      // Populate seller info if available
+      let sellerInfo: any = undefined;
+      if (record.domain && record.account_id) {
+        sellerInfo = sellerLookup.get(`${record.domain.toLowerCase()}:${record.account_id}`);
       }
 
       return {
@@ -130,14 +174,17 @@ export class AdsTxtService {
         severity: record.severity,
         warning_params: record.warning_params,
         warning_message,
+        // Seller Info
+        seller_name: sellerInfo?.name,
+        seller_domain: sellerInfo?.domain,
+        seller_type: sellerInfo?.seller_type,
+        is_confidential: sellerInfo?.is_confidential,
       };
     });
 
     // 5. Calculate Stats
     const validRecords = formattedRecords.filter((r) => r.is_valid);
-    const direct_count = validRecords.filter(
-      (r) => r.relationship && r.relationship.toUpperCase() === 'DIRECT',
-    ).length;
+    const direct_count = validRecords.filter((r) => r.relationship && r.relationship.toUpperCase() === 'DIRECT').length;
     const reseller_count = validRecords.filter(
       (r) => r.relationship && r.relationship.toUpperCase() === 'RESELLER',
     ).length;
@@ -161,7 +208,7 @@ export class AdsTxtService {
   }
 
   async getHistory(domain: string | undefined, limit: number, type: string | undefined) {
-    const fileType = type === 'app-ads.txt' ? 'app-ads.txt' : (type === 'ads.txt' ? 'ads.txt' : undefined);
+    const fileType = type === 'app-ads.txt' ? 'app-ads.txt' : type === 'ads.txt' ? 'ads.txt' : undefined;
     return this.scanner.getHistory(domain, limit, fileType);
   }
 }

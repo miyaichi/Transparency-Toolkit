@@ -453,19 +453,19 @@ export const translations = {
         }
       },
       step3: {
-        title: { en: "3. Relationship Correction", ja: "3. 関係性の修正" },
-        description: {
-          en: "Correct DIRECT/RESELLER relationship based on sellers.json data.",
-          ja: "sellers.jsonデータに基づいてDIRECT/RESELLERの関係性を修正します。"
-        }
-      },
-      step4: {
-        title: { en: "4. Manager Domain Optimization", ja: "4. Manager Domain 最適化" },
+        title: { en: "3. Manager Domain Optimization", ja: "3. Manager Domain 最適化" },
         description: {
           en: "Resolve old or unnecessary MANAGERDOMAIN entries.",
           ja: "古くなった、または不要なMANAGERDOMAINエントリを解決します。"
         },
         action: { en: "Action", ja: "アクション" }
+      },
+      step4: {
+        title: { en: "4. Relationship Correction", ja: "4. 関係性の修正" },
+        description: {
+          en: "Correct DIRECT/RESELLER relationship based on sellers.json data.",
+          ja: "sellers.jsonデータに基づいてDIRECT/RESELLERの関係性を修正します。"
+        }
       },
       step5: {
         title: { en: "5. Sellers.json Verification", ja: "5. Sellers.json 検証" },

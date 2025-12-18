@@ -116,7 +116,23 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@keyframes highlight {
+  0% {
+    background-color: var(--muted);
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}
+
+:target {
+  animation: highlight 2s ease-out;
+  scroll-margin-top: 100px;
 }

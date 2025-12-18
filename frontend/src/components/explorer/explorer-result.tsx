@@ -64,6 +64,10 @@ export function ExplorerResult({ domain, type }: Props) {
       t("common.line"),
       t("common.advertisingSystem"),
       t("common.publisherAccountId"),
+      "Seller Name", // TODO: Add translation
+      "Seller Type",
+      "Is Confidential",
+      "Seller Domain",
       t("common.relationship"),
       t("common.certId"),
       t("common.commentRaw")
@@ -75,6 +79,10 @@ export function ExplorerResult({ domain, type }: Props) {
           r.line_number === -1 ? t("common.auto") : r.line_number,
           r.domain || "",
           r.account_id || "",
+          r.seller_name || "",
+          r.seller_type || "",
+          r.is_confidential !== undefined ? (r.is_confidential === 1 ? "Yes" : "No") : "",
+          r.seller_domain || "",
           r.relationship || "",
           r.certification_authority_id || "",
           r.raw_line.split("#")[1]?.trim() || "" // Extract comment if possible, or just ignore
@@ -84,7 +92,7 @@ export function ExplorerResult({ domain, type }: Props) {
       )
     ].join("\n")
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
     link.download = `${domain}_${type}_explorer.csv`
@@ -149,6 +157,7 @@ export function ExplorerResult({ domain, type }: Props) {
                 <TableHead className="w-16">{t("common.line")}</TableHead>
                 <TableHead>{t("common.advertisingSystem")}</TableHead>
                 <TableHead>{t("common.publisherAccountId")}</TableHead>
+                <TableHead>Seller Name</TableHead>
                 <TableHead>{t("common.relationship")}</TableHead>
                 <TableHead>{t("common.certId")}</TableHead>
                 <TableHead>{t("common.commentRaw")}</TableHead>
@@ -167,6 +176,13 @@ export function ExplorerResult({ domain, type }: Props) {
                     <TableCell className="font-mono text-xs">
                       {record.account_id || <span className="text-muted-foreground italic">-</span>}
                     </TableCell>
+                    <TableCell className="text-xs">
+                      {record.seller_name ? (
+                        <span className="font-medium text-emerald-600">{record.seller_name}</span>
+                      ) : (
+                        <span className="text-muted-foreground italic text-xs">-</span>
+                      )}
+                    </TableCell>
                     <TableCell className="uppercase text-xs font-semibold text-muted-foreground">
                       {record.relationship || "-"}
                     </TableCell>
@@ -183,7 +199,7 @@ export function ExplorerResult({ domain, type }: Props) {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={7} className="h-24 text-center">
                     {t("common.noRecords")}
                   </TableCell>
                 </TableRow>

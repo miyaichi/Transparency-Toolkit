@@ -27,6 +27,10 @@ const ValidationRecordSchema = z.object({
   warning: z.string().optional(), // Key
   warning_message: z.string().optional(), // Localized message
   severity: z.string().optional(),
+  seller_name: z.string().optional(),
+  seller_domain: z.string().optional(),
+  seller_type: z.string().optional(),
+  is_confidential: z.number().optional(),
 });
 
 const ValidationResponseSchema = z.object({

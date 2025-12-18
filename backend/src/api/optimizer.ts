@@ -30,6 +30,8 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
   const originalLines = content.split('\n').length;
   let optimizedContent = content;
   let removedCount = 0;
+  let commentedCount = 0;
+  let modifiedCount = 0;
   let errorsFound = 0;
 
   // Step 1: Clean Up (Remove Errors & Duplicates)
@@ -38,17 +40,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
     const validLines: string[] = [];
     errorsFound = parsedEntries.filter((e) => !e.is_valid && !e.is_variable).length;
 
-    // Filter valid entries
     const seen = new Set<string>();
-
-    // Sort logic to keep comments or structure?
-    // Current parseAdsTxtContent splits by line. We can reconstruct.
-    // However, parseAdsTxtContent returns 'entries'. Comments that are separate lines might be lost if we only use entries.
-    // But parseAdsTxtContent logic: "if (!trimmedLine || trimmedLine.startsWith('#')) return null;" -> Comments are lost in entries!
-
-    // To preserve comments, we might need a different approach or modify parseAdsTxtContent to return comments.
-    // For now, let's stick to a simpler line-based approach for comments, and use parser for validation.
-
     const lines = content.split('\n');
     const newLines: string[] = [];
 
@@ -62,16 +54,15 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
         continue;
       }
 
-      // Check if valid using parser (parse single line)
-      // We can use the already parsed entries if we map them back, or re-parse line by line.
-      // parseAdsTxtContent already did the work, but mapping back to original line index is key.
       const entry = parsedEntries.find((e) => e.line_number === i + 1);
 
       if (entry) {
         // Invalid Record Handling
         if (!entry.is_valid) {
           if (steps.invalidAction === 'comment') {
-            newLines.push(`# INVALID: ${line} (${entry.error || 'Unknown Error'})`);
+            const newLine = `# INVALID: ${line} (${entry.error || 'Unknown Error'})`;
+            if (newLine !== line) commentedCount++;
+            newLines.push(newLine);
           } else {
             removedCount++; // Removed
           }
@@ -79,8 +70,6 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
         }
 
         // Duplicate Check
-        // Construct a key for uniqueness: domain, account_id, relationship, account_type
-        // Variables are also entries
         let key = '';
         if (entry.is_variable) {
           key = `${entry.variable_type}=${entry.value}`;
@@ -91,7 +80,9 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
         if (seen.has(key)) {
           // Duplicate Handling
           if (steps.duplicateAction === 'comment') {
-            newLines.push(`# DUPLICATE: ${line} `);
+            const newLine = `# DUPLICATE: ${line} `;
+            if (newLine !== line) commentedCount++;
+            newLines.push(newLine);
           } else {
             removedCount++; // Removed
           }
@@ -101,12 +92,11 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
         seen.add(key);
         newLines.push(line);
       } else {
-        // Should ideally not be reached if parser matches lines
-        // If parser failed to return entry, assume invalid?
-        // For safety, keep it? or treat as invalid?
-        // Treat as invalid for now if we strictly trust parser
+        // Fallback for lines parser didn't map (should be rare/errors)
         if (steps.invalidAction === 'comment') {
-          newLines.push(`# INVALID_PARSE: ${line} `);
+          const newLine = `# INVALID_PARSE: ${line} `;
+          if (newLine !== line) commentedCount++;
+          newLines.push(newLine);
         } else {
           removedCount++;
         }
@@ -117,8 +107,6 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
   }
 
   // Step 2: Owner Domain Verification
-  // Logic: If OWNERDOMAIN is missing, add it to the top.
-  // Use provided ownerDomain or fallback to publisher domain
   const targetOwnerDomain = ownerDomain || domain;
 
   if (steps.fixOwnerDomain && targetOwnerDomain) {
@@ -130,6 +118,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
     if (!hasOwnerDomain) {
       optimizedContent =
         `# OWNERDOMAIN = ${targetOwnerDomain} \nOWNERDOMAIN = ${targetOwnerDomain} \n` + optimizedContent;
+      modifiedCount++;
     }
   }
 
@@ -143,12 +132,12 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
       const trimmed = line.trim();
       if (trimmed.toUpperCase().startsWith('MANAGERDOMAIN=')) {
         if (steps.managerAction === 'comment') {
-          newLines.push(`# DISABLED_MANAGERDOMAIN: ${line} `);
+          const newLine = `# DISABLED_MANAGERDOMAIN: ${line} `;
+          if (newLine !== line) commentedCount++;
+          newLines.push(newLine);
         } else {
-          // Only count as removed if we remove it completely
           removedManagerDomains++;
         }
-        // If remove, don't push anything
       } else {
         newLines.push(line);
       }
@@ -164,7 +153,6 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
     const pairsToCheck: { domain: string; id: string; lineIndex: number }[] = [];
     const distinctDomains = new Set<string>();
 
-    // First pass: Collect valid lines to check
     for (let i = 0; i < dbLines.length; i++) {
       const line = dbLines[i].trim();
       if (
@@ -176,13 +164,10 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
         continue;
       }
 
-      // Parse CSV line loosely: domain, id, type, certId
       const parts = line.split(',').map((s) => s.trim());
       if (parts.length >= 2) {
         let d = parts[0].toLowerCase();
-        // Remove comments from domain or id if inline # exists (though rare in field 1/2)
         if (d.includes('#')) d = d.split('#')[0].trim();
-
         let id = parts[1];
         if (id.includes('#')) id = id.split('#')[0].trim();
 
@@ -196,15 +181,12 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
     if (pairsToCheck.length > 0) {
       const domainList = Array.from(distinctDomains);
 
-      // 1. Check which domains exist in sellers_catalog
       const domainRes = await query(`SELECT DISTINCT domain FROM sellers_catalog WHERE domain = ANY($1::text[])`, [
         domainList,
       ]);
       const knownDomains = new Set(domainRes.rows.map((r: any) => r.domain));
 
-      // 2. For known domains, check valid IDs and get seller_type
       if (knownDomains.size > 0) {
-        // Filter pairs that are in knownDomains
         const candidates = pairsToCheck.filter((p) => knownDomains.has(p.domain));
 
         if (candidates.length > 0) {
@@ -218,12 +200,11 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
             [cDomains, cIds],
           );
 
-          const sellerInfoMap = new Map<string, string>(); // Key -> seller_type
+          const sellerInfoMap = new Map<string, string>();
           validRes.rows.forEach((r: any) => {
             sellerInfoMap.set(`${r.domain}|${r.seller_id}`, r.seller_type);
           });
 
-          // Process candidates
           const newLines = [...dbLines];
           let removedSellers = 0;
 
@@ -232,39 +213,26 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
             const sellerType = sellerInfoMap.get(key);
 
             if (!sellerType) {
-              // Not found (Invalid seller)
               if (steps.verifySellers) {
                 const originalLine = newLines[cand.lineIndex];
                 if (steps.sellersAction === 'comment') {
-                  newLines[cand.lineIndex] = `# INVALID_SELLER_ID: ${originalLine}`;
+                  const newLine = `# INVALID_SELLER_ID: ${originalLine}`;
+                  if (newLine !== originalLine) commentedCount++;
+                  newLines[cand.lineIndex] = newLine;
                 } else {
                   newLines[cand.lineIndex] = ''; // Mark for removal
                   removedSellers++;
                 }
               }
             } else {
-              // Found (Valid seller) - Check Relationship Correction
               if (steps.fixRelationship) {
                 const line = newLines[cand.lineIndex];
-                // basic CSV parse
-                // Careful with parts containing comments (handled partly above but full line needs reconstruction)
-                // We just need to replace the 3rd field if it exists, or append it if missing (defaults to DIRECT)
-
-                // Let's rely on string splitting again
-                // Regex might be safer to preserve spacing
                 const parts = line.split(',');
-                // If comment is inline, we should preserve it. split(',') blindly might split comment.
-                // Assuming standard ads.txt: domain, id, type [, certId] [# comment]
 
                 if (parts.length >= 2) {
-                  // Clean parts for logic but keep format?
-                  // Just replace parts[2]
-
-                  let currentRel = 'DIRECT'; // Default
+                  let currentRel = 'DIRECT';
                   let hasRelField = false;
-                  let commentPart = '';
 
-                  // Check strictly for field 3
                   if (parts.length >= 3) {
                     const p3 = parts[2].trim();
                     if (!p3.startsWith('#')) {
@@ -273,55 +241,31 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
                     }
                   }
 
-                  // Determine expected
                   const expectedRel = sellerType === 'PUBLISHER' || sellerType === 'BOTH' ? 'DIRECT' : 'RESELLER';
 
                   if (currentRel !== expectedRel) {
-                    // Replace!
                     if (hasRelField) {
-                      // Replace the text in parts[2]
-                      // We need to be careful with preserving whitespace.
-                      // Simple approach: reconstruct line.
-                      const pre = parts.slice(0, 2).join(',');
-                      const post = parts.slice(3).join(','); // rest
-                      // But wait, parts[2] is the relationship.
-
-                      // Get the actual string segment for parts[2] to replace?
-                      // Hard to do with just split.
-
-                      // Let's use map trim approach for reconstruction if we accept formatting changes
-                      // Or just replace the value if we find it.
-
-                      // More robust:
                       const newParts = [...parts];
-                      // Preserve whitespace?
-                      // newParts[2] = newParts[2].replace(/direct|reseller/i, expectedRel);
-                      // But it might be just " RESELLER "
                       newParts[2] = newParts[2].replace(/^\s*(\w+)\s*$/, (match) => {
                         return match.replace(/\w+/, expectedRel);
                       });
-
-                      // If replace failed (e.g. strict regex didn't match), force set
                       if (!newParts[2].toUpperCase().includes(expectedRel)) {
-                        // Just overwrite trimmed
                         newParts[2] = ` ${expectedRel} `;
                       }
-
-                      newLines[cand.lineIndex] = newParts.join(',');
+                      const newLine = newParts.join(',');
+                      if (newLine !== line) modifiedCount++;
+                      newLines[cand.lineIndex] = newLine;
                     } else {
-                      // Missing field 3, but default was DIRECT.
-                      // If expected is RESELLER, we MUST add it.
-                      // If expected is DIRECT, and it's missing, we are fine (implicit DIRECT).
-
                       if (expectedRel === 'RESELLER') {
-                        // Append RESELLER
-                        // Check if we have comments
+                        let newLine = '';
                         if (line.includes('#')) {
                           const [content, comment] = line.split('#', 2);
-                          newLines[cand.lineIndex] = `${content.trim()}, ${expectedRel} # ${comment}`;
+                          newLine = `${content.trim()}, ${expectedRel} # ${comment}`;
                         } else {
-                          newLines[cand.lineIndex] = `${line.trim()}, ${expectedRel}`;
+                          newLine = `${line.trim()}, ${expectedRel}`;
                         }
+                        if (newLine !== line) modifiedCount++;
+                        newLines[cand.lineIndex] = newLine;
                       }
                     }
                   }
@@ -348,6 +292,8 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
       originalLines,
       finalLines: optimizedContent.split('\n').length,
       removedCount,
+      commentedCount,
+      modifiedCount,
       errorsFound,
     },
   });

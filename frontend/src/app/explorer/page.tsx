@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search } from "lucide-react"
 import { useState } from "react"
 
+import { triggerBackgroundScan } from "@/lib/api-utils"
+import { extractRootDomain } from "@/lib/domain-utils"
 import { useTranslation } from "@/lib/i18n/language-context"
 
 export default function ExplorerPage() {
@@ -20,13 +22,12 @@ export default function ExplorerPage() {
   const isValidDomain = (domain: string) => /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(domain)
 
   const handleSearch = () => {
-    const domain = searchInput
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .replace(/\/.*$/, "")
+    const domain = extractRootDomain(searchInput)
     if (domain && isValidDomain(domain)) {
       setActiveDomain(domain)
+
+      // Trigger background scan for the domain
+      triggerBackgroundScan(domain, searchType as "ads.txt" | "app-ads.txt" | "sellers.json")
     }
   }
 

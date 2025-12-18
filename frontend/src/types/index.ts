@@ -12,6 +12,10 @@ export type ValidationRecord = {
   warning_message?: string
   validation_key?: string
   certification_authority_id?: string
+  seller_name?: string
+  seller_domain?: string
+  seller_type?: string
+  is_confidential?: number
 }
 
 export type ValidationStats = {

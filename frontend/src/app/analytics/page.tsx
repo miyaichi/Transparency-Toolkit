@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { triggerBackgroundScan } from "@/lib/api-utils"
+import { extractRootDomain } from "@/lib/domain-utils"
 import { useTranslation } from "@/lib/i18n/language-context"
 import { Calendar, Globe, Search } from "lucide-react"
 import { useState } from "react"
@@ -74,11 +76,15 @@ export default function AnalyticsPage() {
   // Basic domain validation regex
   const isValidDomain = (domain: string) => /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(domain)
 
-  const isSearchDisabled = !searchInput || !isValidDomain(searchInput.trim().toLowerCase())
+  const isSearchDisabled = !searchInput || !isValidDomain(extractRootDomain(searchInput))
 
   const handleSearch = () => {
-    if (!isSearchDisabled) {
-      setTargetDomain(searchInput.trim().toLowerCase())
+    const domain = extractRootDomain(searchInput)
+    if (domain && isValidDomain(domain)) {
+      setTargetDomain(domain)
+
+      // Trigger background scan
+      triggerBackgroundScan(domain, "ads.txt")
     }
   }
 

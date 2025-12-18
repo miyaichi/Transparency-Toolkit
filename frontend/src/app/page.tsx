@@ -7,6 +7,7 @@ import { ValidatorResult } from "@/components/validator/validator-result"
 import { Search } from "lucide-react"
 import { useState } from "react"
 
+import { extractRootDomain } from "@/lib/domain-utils"
 import { useTranslation } from "@/lib/i18n/language-context"
 
 export default function DomainSearchPage() {
@@ -17,36 +18,23 @@ export default function DomainSearchPage() {
 
   // Robust domain normalization & validation
   const normalizeDomain = (input: string): string => {
-    try {
-      let urlStr = input.trim().toLowerCase();
-      // Ensure protocol for URL parsing
-      if (!/^https?:\/\//i.test(urlStr)) {
-        urlStr = "http://" + urlStr;
-      }
-      const url = new URL(urlStr);
-      // Return hostname (strips port, path, query, protocol)
-      return url.hostname;
-    } catch {
-      return "";
-    }
-  };
+    return extractRootDomain(input)
+  }
 
   const isValidDomain = (domain: string) =>
     /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$/.test(domain) &&
     !domain.includes("localhost") &&
-    !domain.includes("127.0.0.1");
+    !domain.includes("127.0.0.1")
 
   const handleSearch = () => {
-    const normalized = normalizeDomain(searchInput);
+    const normalized = normalizeDomain(searchInput)
     if (normalized && isValidDomain(normalized)) {
-      setActiveDomain(normalized);
-      // Optional: update input to reflect normalized domain
-      // setSearchInput(normalized) 
+      setActiveDomain(normalized)
     }
   }
 
-  const normalizedInput = normalizeDomain(searchInput);
-  const isSearchDisabled = !searchInput || !normalizedInput || !isValidDomain(normalizedInput);
+  const normalizedInput = normalizeDomain(searchInput)
+  const isSearchDisabled = !searchInput || !normalizedInput || !isValidDomain(normalizedInput)
 
   return (
     <div className="container mx-auto py-10 space-y-8 max-w-6xl">

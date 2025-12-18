@@ -72,3 +72,38 @@
 -   **Integrate adstxt-validator package**
     -   Unified validation logic using external package.
     -   Published and versioned on GitHub Packages.
+
+## 📣 Private Beta Feedback (Prioritized)
+
+### 1. UX & Usability (High Priority)
+-   **Domain Input Normalization**:
+    -   [x] Automatically extract root domain from inputs like `https://example.com` or `https://example.com/ads.txt` using PSL (Public Suffix List).
+    -   *Why*: Reduces user errors (e.g., pasting full URLs).
+-   **Optimizer Result Clarity**:
+    -   [x] Fix "No issues found" message when lines are commented out but count hasn't changed.
+    -   [x] Explicitly mention if lines were commented out or modified, even if line count is static.
+    -   *Why*: Current message is misleading (false negative).
+-   **Validator Scroll UI**:
+    -   [x] Fix background color truncation on horizontal scroll in the Validator results.
+    -   *Why*: Visual bug makes reading long lines difficult.
+
+### 2. Workflow & Data Logic (Medium Priority)
+-   **Optimizer Step Reordering**:
+    -   [x] Change order to: 1. CleanUp -> 2. Owner Domain -> **3. Manager Domain Optimization** -> **4. Relationship Correction** -> 5. Sellers Verification.
+    -   *Why*: Matches practical workflow better (fix manager domains before fixing relationships acting as manager).
+-   **Unified Scan Targeting**:
+    -   [x] Ensure domains entered in *any* tool (Data Explorer, Insite Analytics, Optimizer) are added to the background scan queue, not just the Validator.
+    -   *Why*: Users expect the dashboard to track domains they have interest in.
+-   **Validation Help Integration**:
+    -   [x] Link Validator error messages (`helpUrl`) to the specific section in the "Validation Codes" page.
+    -   [x] Highlight the target section upon navigation.
+    -   *Why*: Makes the error codes explanation actually accessible and useful.
+-   **Data Explorer Combined Export**:
+    -   [x] Add CSV export option to combine `ads.txt` supply chain rows with `sellers.json` seller details.
+    -   [x] Added "Seller Name", "Seller Type", "Seller Domain" columns to default view and CSV export (with BOM for Excel support).
+    -   *Why*: Simplifies supply chain auditing.
+
+### 3. Content & Documentation (Low Priority)
+-   **Optimizer Step Explanations**:
+    -   Add links to detailed explanation pages for each optimization step (Risk/Benefit analysis).
+    -   *Why*: builds trust in the optimization logic.
