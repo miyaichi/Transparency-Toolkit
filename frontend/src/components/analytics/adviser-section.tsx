@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { Loader2, Sparkles } from "lucide-react"
 import { useState } from "react"
 import ReactMarkdown from "react-markdown"
@@ -21,6 +22,7 @@ interface PublisherBenchmarkMetrics {
 }
 
 export function AdviserSection({ analyticsData }: AdviserSectionProps) {
+  const { t, language } = useTranslation()
   const [report, setReport] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +35,7 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
 
     try {
       // 1. Fetch Benchmark Data (Similar Publishers)
-      setStatusMessage("Fetching benchmark data from similar publishers...")
+      setStatusMessage(t("adviser.status.fetchingBenchmarks"))
 
       let benchmarkData: PublisherBenchmarkMetrics | null = null
       const similarIds: number[] = analyticsData.similar_publishers || []
@@ -77,7 +79,7 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
       }
 
       // 2. Call Adviser API
-      setStatusMessage("Generating AI advisory report...")
+      setStatusMessage(t("adviser.status.generatingReport"))
 
       const payload = {
         target: {
@@ -95,7 +97,8 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
           name: "Industry Benchmark (Top 10%)",
           domain: "benchmark",
           ...benchmarkData
-        }
+        },
+        language: language // Send current language to backend
       }
 
       // Uses production URL if env is set, or relative path for local proxy
@@ -109,14 +112,14 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
       })
 
       if (!res.ok) {
-        throw new Error("Failed to generate report")
+        throw new Error(t("adviser.error.failed"))
       }
 
       const data = await res.json()
       setReport(data.report)
     } catch (err: any) {
       console.error(err)
-      setError(err.message || "Something went wrong")
+      setError(err.message || t("adviser.error.generic"))
     } finally {
       setLoading(false)
       setStatusMessage("")
@@ -132,8 +135,8 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-xl text-purple-900">Insite AI Adviser</CardTitle>
-              <p className="text-sm text-purple-700/80">Diagnostics & improvement proposals based on data analysis</p>
+              <CardTitle className="text-xl text-purple-900">{t("adviser.title")}</CardTitle>
+              <p className="text-sm text-purple-700/80">{t("adviser.description")}</p>
             </div>
           </div>
           {!report && (
@@ -145,10 +148,10 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
+                  {t("adviser.button.analyzing")}
                 </>
               ) : (
-                <>Run Diagnostic</>
+                <>{t("adviser.button.analyze")}</>
               )}
             </Button>
           )}
@@ -171,7 +174,7 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
               onClick={handleAnalyze}
               className="mt-4 border-red-200 hover:bg-red-100 text-red-700"
             >
-              Try Again
+              {t("adviser.button.tryAgain")}
             </Button>
           </div>
         )}
@@ -196,7 +199,7 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
 
             <div className="mt-8 pt-6 border-t flex justify-end">
               <Button variant="outline" onClick={() => setReport(null)}>
-                Close Report
+                {t("adviser.button.close")}
               </Button>
             </div>
           </div>

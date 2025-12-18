@@ -29,16 +29,17 @@ const adviserRequestSchema = z.object({
     avg_cpu: z.number(),
     avg_ads_in_view: z.number(),
   }),
+  language: z.string().optional(),
 });
 
 app.post(
   "/analyze",
   zValidator("json", adviserRequestSchema),
   async (c) => {
-    const { target, benchmark } = c.req.valid("json");
+    const { target, benchmark, language } = c.req.valid("json");
 
     try {
-      const report = await AdviserService.generateReport(target, benchmark);
+      const report = await AdviserService.generateReport(target, benchmark, language);
       return c.json({ report });
     } catch (error) {
       console.error("Adviser API Error:", error);

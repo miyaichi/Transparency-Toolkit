@@ -23,11 +23,14 @@ export class AdviserService {
    */
   static async generateReport(
     target: PublisherMetrics,
-    benchmark: PublisherMetrics
+    benchmark: PublisherMetrics,
+    language?: string // Optional, defaults to "ja" internally if undefined/null or handled below
   ): Promise<string> {
     const model = getGeminiModel();
 
-    const prompt = this.buildPrompt(target, benchmark);
+    // Ensure language is either 'en' or 'ja'
+    const lang = (language === "en") ? "en" : "ja";
+    const prompt = this.buildPrompt(target, benchmark, lang);
 
     try {
       const result = await model.generateContent(prompt);
@@ -41,10 +44,69 @@ export class AdviserService {
 
   private static buildPrompt(
     target: PublisherMetrics,
-    benchmark: PublisherMetrics
+    benchmark: PublisherMetrics,
+    language: string
   ): string {
-    const definitions = this.getIndicatorDefinitions();
+    const definitions = this.getIndicatorDefinitions(language);
 
+    if (language === "en") {
+      return `
+## Role Definition
+You are an expert in programmatic advertising monetization and web performance optimization, acting as a supportive partner for publisher success.
+Provide objective, data-driven advice while acknowledging the publisher's efforts and maintaining a warm, motivational tone.
+Use professional insights to emphasize the positive potential of improvements.
+
+## Input Context
+The provided data includes the target site's metrics and **benchmark values from similar category sites**. Focus on relative evaluation.
+
+### Target Publisher
+- Name: ${target.name} (${target.domain})
+- Stats:
+  - Avg Ads to Content Ratio: ${(target.avg_ads_to_content_ratio * 100).toFixed(1)}%
+  - Avg Page Weight: ${target.avg_page_weight.toFixed(2)} MB
+  - Avg Ad Refresh: ${target.avg_ad_refresh.toFixed(1)} sec
+  - Reseller Count: ${target.reseller_count}
+  - ID Absorption Rate: ${(target.id_absorption_rate * 100).toFixed(1)}%
+  - Avg CPU: ${target.avg_cpu.toFixed(1)}
+  - Avg Ads in View: ${(target.avg_ads_in_view * 100).toFixed(1)}%
+
+### Benchmark (Similar Publishers Average)
+- Stats:
+  - Avg Ads to Content Ratio: ${(benchmark.avg_ads_to_content_ratio * 100).toFixed(1)}%
+  - Avg Page Weight: ${benchmark.avg_page_weight.toFixed(2)} MB
+  - Avg Ad Refresh: ${benchmark.avg_ad_refresh.toFixed(1)} sec
+  - Reseller Count: ${benchmark.reseller_count}
+  - ID Absorption Rate: ${(benchmark.id_absorption_rate * 100).toFixed(1)}%
+  - Avg CPU: ${benchmark.avg_cpu.toFixed(1)}
+  - Avg Ads in View: ${(benchmark.avg_ads_in_view * 100).toFixed(1)}%
+
+## Indicator Definitions
+Analyze based on the following indicator definitions:
+${definitions}
+
+## Output Requirements
+Output in English Markdown format with the following structure.
+
+### 1. Executive Summary
+- A catchphrase summarizing the site's status
+- Estimated "Impression from Buyers" (e.g., Safe but low inventory quality, Technical debt present, Premium inventory, etc.)
+- **Comparison with Similar Sites**: Briefly describe points of superiority/inferiority compared to the category average.
+
+### 2. Priority Actions (Top 3)
+- Three actions with the highest improvement effect read from the data.
+- Cite specific numbers (e.g., "Current A2CR 40% is significantly higher than the similar site average of 25%").
+
+### 3. Detailed Analysis
+- **UX and Performance**: Impact on user experience (bounce rate, wall-clock time) based on page weight and CPU load.
+- **Advertising Settings**: Consideration of how refresh settings and density might be affecting CPM and Fill Rate.
+- **Supply Chain**: Proposals for profitability improvement by organizing intermediaries (SPO) and optimizing supply paths.
+
+### 4. Summary
+- A vision of the future expected if these improvements are executed.
+`;
+    }
+
+    // Japanese Prompt
     return `
 ## Role Definition
 あなたはプログラマティック広告の収益化とWebパフォーマンス最適化のエキスパートであり、パブリッシャーの成功を親身にサポートするパートナーです。
@@ -101,7 +163,7 @@ ${definitions}
 `;
   }
 
-  private static getIndicatorDefinitions(): string {
+  private static getIndicatorDefinitions(language: string): string {
     const keyMapping: Record<string, string> = {
       avg_ads_to_content_ratio: "avgAdsToContentRatio",
       avg_page_weight: "avgPageWeight",
@@ -114,9 +176,11 @@ ${definitions}
       total_supply_paths: "totalSupplyPaths",
     };
 
+    const validLang = language === "en" ? "en" : "ja";
+
     return Object.entries(keyMapping)
       .map(([snakeKey, camelKey]) => {
-        const description = getFieldDescription(camelKey, "ja");
+        const description = getFieldDescription(camelKey, validLang);
         return `- ${snakeKey}: ${description}`;
       })
       .join("\n");

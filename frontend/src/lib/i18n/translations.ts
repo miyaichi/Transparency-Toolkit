@@ -486,6 +486,33 @@ export const translations = {
       download: { en: "Download {{fileType}}", ja: "{{fileType}} をダウンロード" }
     }
   },
+  adviser: {
+    title: { en: "Insite AI Adviser", ja: "Insite AI アドバイザー" },
+    description: {
+      en: "Diagnostics & improvement proposals based on data analysis",
+      ja: "データ分析に基づく診断と改善提案"
+    },
+    button: {
+      analyze: { en: "Run Diagnostic", ja: "診断を実行" },
+      analyzing: { en: "Analyzing...", ja: "分析中..." },
+      tryAgain: { en: "Try Again", ja: "再試行" },
+      close: { en: "Close Report", ja: "レポートを閉じる" }
+    },
+    status: {
+      fetchingBenchmarks: {
+        en: "Fetching benchmark data from similar publishers...",
+        ja: "類似パブリッシャーのベンチマークデータを取得中..."
+      },
+      generatingReport: {
+        en: "Generating AI advisory report...",
+        ja: "AIアドバイザリーレポートを生成中..."
+      }
+    },
+    error: {
+      failed: { en: "Failed to generate report", ja: "レポートの生成に失敗しました" },
+      generic: { en: "Something went wrong", ja: "エラーが発生しました" }
+    }
+  },
   footer: {
     validationCodes: { en: "Validation Codes", ja: "検証コード一覧" }
   }
