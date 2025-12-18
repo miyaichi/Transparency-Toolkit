@@ -12,15 +12,17 @@ dotenv.config();
 
 // Critical Environment Variable Check
 const requiredEnvVars = ['DATABASE_URL'];
-if (process.env.NODE_ENV === 'production') {
-  requiredEnvVars.push('OPENSINCERA_API_KEY');
-}
 
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     console.error(`ERROR: Required environment variable ${envVar} is not set`);
     process.exit(1);
   }
+}
+
+// Warning for OPENSINCERA_API_KEY (Non-critical but recommended for analytics)
+if (process.env.NODE_ENV === 'production' && !process.env.OPENSINCERA_API_KEY) {
+  console.warn('WARNING: OPENSINCERA_API_KEY is not set. Analytics features may not work.');
 }
 
 import { cors } from 'hono/cors';

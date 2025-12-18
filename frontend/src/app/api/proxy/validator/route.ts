@@ -12,12 +12,16 @@ export async function GET(request: Request) {
     })
 
     // Pass through status code
+    // Pass through status code
     if (!res.ok) {
-      try {
-        const errorData = await res.json()
-        return NextResponse.json(errorData, { status: res.status })
-      } catch {
-        return NextResponse.json({ error: "Upstream error" }, { status: res.status })
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await res.json();
+        return NextResponse.json(errorData, { status: res.status });
+      } else {
+        const errorText = await res.text();
+        console.error(`[Proxy] Backend error: ${res.status} - ${errorText}`);
+        return NextResponse.json({ error: `Upstream error: ${res.status}`, details: errorText }, { status: res.status });
       }
     }
 
