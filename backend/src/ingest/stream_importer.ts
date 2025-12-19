@@ -22,12 +22,22 @@ export class StreamImporter {
 
     try {
       // 2. HTTP Stream取得
-      const response = await httpClient({
-        method: 'get',
-        url: options.url,
-        responseType: 'stream',
-        validateStatus: () => true, // Allow all status codes to handle 404/500 manually
-      });
+      // 2. HTTP Stream取得
+      let response;
+      try {
+        response = await httpClient({
+          method: 'get',
+          url: options.url,
+          responseType: 'stream',
+          validateStatus: () => true, // Allow all status codes to handle 404/500 manually
+        });
+      } catch (netErr: any) {
+        console.warn(`Network error fetching sellers.json for ${options.domain}:`, netErr.message);
+        // Create a record with status 0 (Network Error) to indicate attempt failed
+        // This helps diagnostics (vs just appearing as 'not found')
+        await this.createRawFileRecord(client, options.domain, 0, null);
+        return;
+      }
 
       const httpStatus = response.status;
       const etag = response.headers['etag'] || null;

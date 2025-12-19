@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
+import dns from 'dns';
 import dotenv from 'dotenv';
 import adstxtApp from './api/adstxt';
 import adviserApp from './api/adviser';
@@ -8,6 +9,11 @@ import analyticsApp from './api/analytics';
 import monitorApp from './api/monitor';
 import optimizerApp from './api/optimizer';
 import sellersApp from './api/sellers';
+
+// Prefer IPv4 to avoid connectivity issues in environments with partial IPv6 support (e.g. Cloud Run)
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 dotenv.config();
 
