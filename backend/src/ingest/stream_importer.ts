@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-import JSONStream = require('JSONStream');
+import JSONStream = require('jsonstream');
 import { PoolClient } from 'pg';
 import { from as copyFrom } from 'pg-copy-streams';
 import { Transform } from 'stream';
