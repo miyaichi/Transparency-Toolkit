@@ -138,3 +138,6 @@
     -   [x] **Numerical Sorting for Line Numbers**:
         -   Updated Validator and Data Explorer to sort results numerically by Line number (1, 2, 10) instead of lexicographically (1, 10, 2).
         -   *Why*: Required for easier auditing of large files.
+    -   [x] **Optimizer CRLF Handling**:
+        -   Fixed `Optimizer` to handle `CRLF` (Windows-style) line endings correctly.
+        -   *Why*: `\r` characters were causing comment prefixes (e.g., `# INVALID: `) to be overwritten when displaying results, appearing as corrupted text (e.g., starting with `(invalidDomain)`).

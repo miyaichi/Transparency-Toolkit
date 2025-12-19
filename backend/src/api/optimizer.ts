@@ -28,7 +28,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
   const { content, domain, ownerDomain, steps } = c.req.valid('json');
 
   // Initial stats
-  const originalLines = content.split('\n').length;
+  const originalLines = content.split(/\r?\n/).length;
   let optimizedContent = content;
   let removedCount = 0;
   let commentedCount = 0;
@@ -42,7 +42,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
     errorsFound = parsedEntries.filter((e) => !e.is_valid && !e.is_variable).length;
 
     const seen = new Set<string>();
-    const lines = content.split('\n');
+    const lines = content.split(/\r?\n/);
     const newLines: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
@@ -111,7 +111,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
   const targetOwnerDomain = ownerDomain || domain;
 
   if (steps.fixOwnerDomain && targetOwnerDomain) {
-    const hasOwnerDomain = optimizedContent.split('\n').some((line) => {
+    const hasOwnerDomain = optimizedContent.split(/\r?\n/).some((line) => {
       const trimmed = line.trim();
       return trimmed.toUpperCase().startsWith('OWNERDOMAIN=');
     });
@@ -125,7 +125,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
 
   // Step 3: Manager Domain Optimization
   if (steps.fixManagerDomain) {
-    const lines = optimizedContent.split('\n');
+    const lines = optimizedContent.split(/\r?\n/);
     const newLines: string[] = [];
     let removedManagerDomains = 0;
 
@@ -150,7 +150,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
 
   // Step 4 & 5: Sellers.json Verification and Relationship Correction
   if (steps.verifySellers || steps.fixRelationship) {
-    const dbLines = optimizedContent.split('\n');
+    const dbLines = optimizedContent.split(/\r?\n/);
     const pairsToCheck: { domain: string; id: string; lineIndex: number }[] = [];
     const distinctDomains = new Set<string>();
 
@@ -291,7 +291,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
     optimizedContent,
     stats: {
       originalLines,
-      finalLines: optimizedContent.split('\n').length,
+      finalLines: optimizedContent.split(/\r?\n/).length,
       removedCount,
       commentedCount,
       modifiedCount,
