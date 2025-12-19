@@ -40,16 +40,6 @@ export interface FetchResult {
   error?: string;
 }
 
-const SPECIAL_DOMAINS: Record<string, string> = {
-  // Google
-  'google.com': 'https://storage.googleapis.com/adx-rtb-dictionaries/sellers.json',
-  'doubleclick.net': 'https://storage.googleapis.com/adx-rtb-dictionaries/sellers.json',
-  'googlesyndication.com': 'https://storage.googleapis.com/adx-rtb-dictionaries/sellers.json',
-
-  // AOL / Verizon Group
-  'advertising.com': 'https://dragon-advertising.com/sellers.json',
-};
-
 export class SellersService {
   async searchSellers(filters: SellerSearchFilters): Promise<PaginatedResult<Seller>> {
     const pageNum = filters.page || 1;
@@ -110,10 +100,7 @@ export class SellersService {
   }
 
   async fetchAndProcessSellers(domain: string, save: boolean): Promise<FetchResult> {
-    let url = `https://${domain}/sellers.json`;
-    if (domain in SPECIAL_DOMAINS) {
-      url = SPECIAL_DOMAINS[domain];
-    }
+    const url = `https://${domain}/sellers.json`;
 
     if (save) {
       const importer = new StreamImporter();

@@ -1,9 +1,6 @@
 import { PoolClient } from 'pg';
 import { from as copyFrom } from 'pg-copy-streams';
 import { Transform } from 'stream';
-import { parser } from 'stream-json';
-import { pick } from 'stream-json/filters/Pick';
-import { streamArray } from 'stream-json/streamers/StreamArray';
 import { pipeline } from 'stream/promises';
 import { pool } from '../db/client';
 import httpClient from '../lib/http';
@@ -24,46 +21,19 @@ export class StreamImporter {
       // 2. HTTP Stream取得
       // 2. HTTP Stream取得
       let response;
-      let usedUrl = options.url;
-      const maxRetries = 1;
-
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          response = await httpClient({
-            method: 'get',
-            url: usedUrl,
-            responseType: 'stream',
-            validateStatus: () => true, // Allow all status codes
-            'axios-retry': { retries: 0 },
-          } as any);
-
-          if (response.status === 404 && !options.domain.startsWith('www.') && attempt === 0) {
-            console.warn(`404 for ${usedUrl}, retrying with www.${options.domain}`);
-            usedUrl = `https://www.${options.domain}/sellers.json`;
-            continue;
-          }
-
-          if (response.status === 429 && attempt === 0) {
-            // Simple wait for 429
-            console.warn(`429 for ${usedUrl}, waiting 2s and retrying...`);
-            await new Promise(r => setTimeout(r, 2000));
-            continue;
-          }
-
-          break; // Exit loop if successful or terminal status
-        } catch (netErr: any) {
-          if (attempt === maxRetries) {
-            console.warn(`Network error fetching sellers.json for ${options.domain}:`, netErr.message);
-            await this.createRawFileRecord(client, options.domain, 0, null);
-            return;
-          }
-          // Retry network error once if needed
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-
-      if (!response) {
-        // Should have been caught by netErr block, but safety net
+      try {
+        response = await httpClient({
+          method: 'get',
+          url: options.url,
+          responseType: 'stream',
+          validateStatus: () => true, // Allow all status codes to handle 404/500 manually
+          'axios-retry': { retries: 0 }, // Disable retry for streams to avoid compatibility issues
+        } as any);
+      } catch (netErr: any) {
+        console.warn(`Network error fetching sellers.json for ${options.domain}:`, netErr.message);
+        // Create a record with status 0 (Network Error) to indicate attempt failed
+        // This helps diagnostics (vs just appearing as 'not found')
+        await this.createRawFileRecord(client, options.domain, 0, null);
         return;
       }
 
@@ -111,14 +81,11 @@ export class StreamImporter {
 
         await pipeline(
           response.data,
-          parser(),
-          pick({ filter: 'sellers' }),
-          streamArray(),
+          JSONStream.parse('sellers.*'),
           new Transform({
             objectMode: true,
-            transform(chunk, encoding, callback) {
+            transform(seller: any, encoding, callback) {
               try {
-                const seller = chunk.value;
                 if (!seller) {
                   callback();
                   return;
@@ -140,14 +107,12 @@ export class StreamImporter {
                 }
                 seenSellerIds.add(sellerId);
 
-                const sellerType = (seller.seller_type || 'PUBLISHER').toString().toUpperCase().trim(); // Default to PUBLISHER if missing? Or keep empty.
-                // Spec says seller_type is required (PUBLISHER, INTERMEDIARY, BOTH). Let's keep raw but trim.
+                const sellerType = (seller.seller_type || 'PUBLISHER').toString().toUpperCase().trim();
 
-                // Name sanitization: Remove tabs, newlines, null chars to prevent COPY corruption
+                // Name sanitization: Remove tabs, newlines, null chars
                 let name = (seller.name || '').toString();
                 // Replace invalid characters for TSV
                 name = name.replace(/[\t\n\r\0]/g, ' ').trim();
-                // Truncate if too long (DB limit?) - usually text or varchar(255). Let's start with safe mapping.
 
                 // Confidential handling
                 let isConfidential = false;
