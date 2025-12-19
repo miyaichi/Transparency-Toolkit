@@ -126,3 +126,9 @@
     -   [x] Implemented transactional tracking (`processed_at`) for `sellers.json` imports.
     -   [x] Fixed `DbSellersProvider` to ignore failed (zombie) imports and fall back to the last successful snapshot.
     -   *Why*: `google.com` validation was failing because a recent large import failed mid-stream, leaving an empty record that shadowed older valid data.
+    -   [x] **Fixed GCP Deployment Issues (Sellers.json not found)**:
+        -   Fixed specialized URL fetching for Google (`storage.googleapis.com`).
+        -   Replaced `stream-json` with `JSONStream` to resolve parsing issues with large streams in Cloud Run.
+        -   Made auto-fetch asynchronous to prevent 504 Gateway Timeouts during validation.
+        -   **Action Required**: Configure Cloud Run with `--no-cpu-throttling` and `2GiB` memory to ensure background fetch completion.
+    -   *Why*: Users encountered timeout errors and missing data for Google on the production environment.
