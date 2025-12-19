@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS raw_sellers_files (
     file_content_gzip BYTEA, -- Store compressed content if needed
     etag TEXT,
     http_status INT,
+    processed_at TIMESTAMPTZ,
     
     CONSTRAINT unq_raw_files_domain_fetched UNIQUE(domain, fetched_at)
 );
