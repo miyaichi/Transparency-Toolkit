@@ -1,5 +1,7 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Case mismatch between package (JSONStream) and types (jsonstream)
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-import JSONStream = require('jsonstream');
+import JSONStream = require('JSONStream');
 import { PoolClient } from 'pg';
 import { from as copyFrom } from 'pg-copy-streams';
 import { Transform } from 'stream';
