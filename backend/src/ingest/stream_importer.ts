@@ -163,17 +163,15 @@ export class StreamImporter {
         console.log(`Import completed for ${options.domain}`);
       } catch (err: any) {
         await client.query('ROLLBACK');
+        console.error(`Error importing ${options.domain}:`, err);
+        // Update raw record to indicate processing failure
+        await client.query('UPDATE raw_sellers_files SET http_status = $1, etag = $2 WHERE id = $3', [
+          999, // Custom status for processing failure
+          `Error: ${err.message}`.substring(0, 255),
+          rawFileId,
+        ]);
         throw err;
       }
-    } catch (err: any) {
-      console.error(`Error importing ${options.domain}:`, err.message);
-      // In case of network error (axios throws), try to record failure
-      // We might need a new client connection if the previous one is in error state or stream failed?
-      // Actually creating record deals with DB. If axios fails before response (e.g. DNS error), we want to log it.
-      // For simplicity, we are not recording "Network Error" in DB currently unless we reorganize code to create record first with 'pending' then update.
-      // But user asked to consider "sellers.json itself does not exist" which is 404. Above httpStatus handling covers it.
-      // If domain resolution fails, axios throws. We could try to insert a record with status 0 or similar if critical.
-      // Let's keep it simple for now, standard 404/403/500 are handled.
     } finally {
       client.release();
     }
