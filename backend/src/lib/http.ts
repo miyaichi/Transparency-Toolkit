@@ -12,11 +12,11 @@ import https from 'https';
 const agent = new https.Agent({
   secureOptions:
     crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT | crypto.constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION,
-  rejectUnauthorized: true, // Enable strict TLS verification
+  rejectUnauthorized: false, // Relax TLS verification for wider compatibility
 });
 
 const client = axios.create({
-  timeout: 20000, // 20s
+  timeout: 60000, // 60s
   headers: {
     // Mimic Chrome User-Agent to bypass some WAF/Bot protections
     'User-Agent':

@@ -30,7 +30,8 @@ export class StreamImporter {
           url: options.url,
           responseType: 'stream',
           validateStatus: () => true, // Allow all status codes to handle 404/500 manually
-        });
+          'axios-retry': { retries: 0 }, // Disable retry for streams to avoid compatibility issues
+        } as any);
       } catch (netErr: any) {
         console.warn(`Network error fetching sellers.json for ${options.domain}:`, netErr.message);
         // Create a record with status 0 (Network Error) to indicate attempt failed
