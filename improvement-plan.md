@@ -28,12 +28,9 @@
 ## 🚀 Feature Roadmap
 
 ### Next Priorities (User Facing)
-1.  **Publish the Validation Codes / Warning Page**
-    -   Publish a page to display detailed messages (errors/warnings) from `adstxt-validator`.
-    -   Content should be derived from the validation keys and messages package.
-    -   Purpose: Help users understand how to fix their ads.txt errors.
 
-2.  **Enhance Insite Analytics**
+
+1.  **Enhance Insite Analytics**
     -   Expand integration with OpenSincera's API.
     -   Display more detailed publisher insights and reputation metrics.
     -   Add graphical visualizations for trends.
@@ -76,6 +73,9 @@
     -   [x] Support multilingual prompts (English/Japanese) for AI Adviser.
     -   [x] Dynamic Benchmark fetching from OpenSincera API.
     -   [x] Integrated AI Advisor into Analytics page.
+-   **Publish the Validation Codes / Warning Page**
+    -   Migrated `adstxt-manager` v1 help files (`/doc` contents) to `frontend/public/help`.
+    -   Implemented Markdown rendering for `/warnings` page with deep linking support.
 
 ## 📣 Private Beta Feedback (Prioritized)
 
@@ -109,7 +109,7 @@
 
 ### 3. Content & Documentation (Low Priority)
 -   **Optimizer Step Explanations**:
-    -   Add links to detailed explanation pages for each optimization step (Risk/Benefit analysis).
+    -   [x] Add links to detailed explanation pages for each optimization step (Risk/Benefit analysis).
     -   *Why*: builds trust in the optimization logic.
 
 ### 4. Bug Fixes (Critical)

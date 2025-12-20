@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useTranslation } from "@/lib/i18n/language-context"
-import { AlertCircle, ArrowRight, Check, Download, FileText, Sparkles, Wand2 } from "lucide-react"
+import { AlertCircle, ArrowRight, Check, Download, FileText, HelpCircle, Sparkles, Wand2 } from "lucide-react"
+import Link from "next/link"
 import { useEffect, useState } from "react"
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -305,6 +306,13 @@ export default function OptimizerPage() {
                     <Label htmlFor="s1" className="text-base font-medium cursor-pointer">
                       {t("optimizerPage.steps.step1.title")}
                     </Label>
+                    <Link
+                      href="/optimizer/guide#step1"
+                      target="_blank"
+                      className="text-muted-foreground hover:text-blue-600 transition-colors"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Link>
                   </div>
                   <p className="text-sm text-muted-foreground">{t("optimizerPage.steps.step1.description")}</p>
 
@@ -389,6 +397,13 @@ export default function OptimizerPage() {
                     <Label htmlFor="s2" className="text-base font-medium cursor-pointer">
                       {t("optimizerPage.steps.step2.title")}
                     </Label>
+                    <Link
+                      href="/optimizer/guide#step2"
+                      target="_blank"
+                      className="text-muted-foreground hover:text-blue-600 transition-colors"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Link>
                   </div>
                   <p className="text-sm text-muted-foreground">{t("optimizerPage.steps.step2.description")}</p>
 
@@ -428,6 +443,13 @@ export default function OptimizerPage() {
                     <Label htmlFor="s3" className="text-base font-medium cursor-pointer">
                       {t("optimizerPage.steps.step3.title")}
                     </Label>
+                    <Link
+                      href="/optimizer/guide#step3"
+                      target="_blank"
+                      className="text-muted-foreground hover:text-blue-600 transition-colors"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Link>
                   </div>
                   <p className="text-sm text-muted-foreground">{t("optimizerPage.steps.step3.description")}</p>
 
@@ -478,6 +500,13 @@ export default function OptimizerPage() {
                     <Label htmlFor="s4" className="text-base font-medium cursor-pointer">
                       {t("optimizerPage.steps.step4.title")}
                     </Label>
+                    <Link
+                      href="/optimizer/guide#step4"
+                      target="_blank"
+                      className="text-muted-foreground hover:text-blue-600 transition-colors"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Link>
                   </div>
                   <p className="text-sm text-muted-foreground">{t("optimizerPage.steps.step4.description")}</p>
                 </div>
@@ -496,6 +525,13 @@ export default function OptimizerPage() {
                     <Label htmlFor="s5" className="text-base font-medium cursor-pointer">
                       {t("optimizerPage.steps.step5.title")}
                     </Label>
+                    <Link
+                      href="/optimizer/guide#step5"
+                      target="_blank"
+                      className="text-muted-foreground hover:text-blue-600 transition-colors"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Link>
                   </div>
                   <p className="text-sm text-muted-foreground">{t("optimizerPage.steps.step5.description")}</p>
 
