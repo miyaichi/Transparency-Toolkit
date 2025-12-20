@@ -242,7 +242,16 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
                     }
                   }
 
-                  const expectedRel = sellerType === 'PUBLISHER' || sellerType === 'BOTH' ? 'DIRECT' : 'RESELLER';
+                  let expectedRel = currentRel;
+                  if (sellerType === 'PUBLISHER') {
+                    expectedRel = 'DIRECT';
+                  } else if (sellerType === 'INTERMEDIARY') {
+                    expectedRel = 'RESELLER';
+                  } else if (sellerType === 'BOTH') {
+                    if (currentRel !== 'DIRECT' && currentRel !== 'RESELLER') {
+                      expectedRel = 'DIRECT';
+                    }
+                  }
 
                   if (currentRel !== expectedRel) {
                     if (hasRelField) {
