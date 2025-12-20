@@ -435,10 +435,14 @@ export const translations = {
           en: "Handle format errors, duplicate lines, and invalid comments.",
           ja: "フォーマットエラー、重複行、無効なコメントを処理します。"
         },
-        invalidRecords: { en: "Invalid Records", ja: "無効なレコード" },
         duplicates: { en: "Duplicates", ja: "重複" },
         remove: { en: "Remove", ja: "削除" },
-        commentOut: { en: "Comment out", ja: "コメントアウト" }
+        commentOut: { en: "Comment out", ja: "コメントアウト" },
+        normalizeFormat: { en: "Normalize Format", ja: "フォーマットの正規化" },
+        normalizeFormatDescription: {
+          en: "Standardize capitalization, line endings, and remove extra blank lines.",
+          ja: "大文字小文字の統一、改行コードの統一、余分な空行の削除を行います。"
+        }
       },
       step2: {
         title: { en: "2. Owner Domain Verification", ja: "2. Owner Domain 検証" },
@@ -473,6 +477,13 @@ export const translations = {
           en: "Remove entries that do not validate against upstream sellers.json files.",
           ja: "アップストリームのsellers.jsonファイルで検証できないエントリを削除します。"
         }
+      },
+      step6: {
+        title: { en: "6. Cert. Authority ID Verification", ja: "6. 認証局IDの検証" },
+        description: {
+          en: "Validate and correct certification authority IDs (4th field) based on sellers.json data",
+          ja: "sellers.jsonデータに基づいて、認証局ID（4番目のフィールド）を検証・修正します"
+        }
       }
     },
     results: {
@@ -483,7 +494,8 @@ export const translations = {
       linesRemoved: { en: "{{count}} lines removed", ja: "{{count}} 行削除されました" },
       formatErrors: { en: "{{count}} format errors", ja: "{{count}} フォーマットエラー" },
       noIssues: { en: "No issues found", ja: "問題は見つかりませんでした" },
-      download: { en: "Download {{fileType}}", ja: "{{fileType}} をダウンロード" }
+      download: { en: "Download {{fileType}}", ja: "{{fileType}} をダウンロード" },
+      certAuthFixed: { en: "{{count}} cert IDs corrected", ja: "{{count}}件の認証局IDを修正" }
     }
   },
   adviser: {

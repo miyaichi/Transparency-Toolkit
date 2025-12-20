@@ -57,6 +57,12 @@
     -   **Unit Tests**: Increase coverage for complex logic (e.g., `optimizer.ts`), enabled by the Service Layer refactoring.
     -   **E2E Testing**: Set up Playwright for critical user flows (Validation -> Optimization).
 
+3.  **Advanced Validation Logic**
+    -   **Enhance Validator Diagnostics using Normalizer**:
+        -   Utilize the `normalizer.ts` library created in Phase 1 to analyze invalid rows in the Validator.
+        -   If an invalid row becomes valid after normalization, provide specific actionable feedback (e.g., "Contains full-width characters" or "Fixable format error") instead of a generic "Invalid Format" error.
+        -   *Why*: Improves user experience by distinguishing between fatal data errors and simple formatting issues.
+
 ## ✅ Completed Features
 
 -   **Implement Internationalization (i18n) Support**

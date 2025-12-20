@@ -24,6 +24,13 @@ Detects duplicate lines with identical content:
 - Exact match lines (same domain, account ID, relationship, and certification authority ID)
 - Duplicate variable directives (OWNERDOMAIN, MANAGERDOMAIN, etc.)
 
+#### **Format Normalization**
+Standardizes format inconsistencies to improve readability and parsing accuracy:
+- **Capitalization Uniformity**: Unify DIRECT/RESELLER to uppercase, domain names to lowercase
+- **Line Ending Uniformity**: Unify CRLF/CR to LF
+- **Remove Extra Blank Lines**: Collapse consecutive blank lines to one, remove trailing blank lines
+- **Space Normalization**: Unify spaces after commas (`, ` format)
+
 ### Checkpoints:
 - ✅ Each line has the correct number of fields in the proper order
 - ✅ Comma separators and spelling are correct
@@ -39,6 +46,9 @@ Detects duplicate lines with identical content:
 #### **Handling Duplicate Lines**
 - **Remove**: Delete duplicates, keeping only one instance
 - **Comment Out**: Add `# DUPLICATE:` prefix to clearly mark duplicates
+
+#### **Applying Format Normalization**
+- **Enable**: Turning on the "Normalize Format" option will tidy up the format while preserving existing comments and line order
 
 ### Common Error Examples:
 ```
@@ -211,3 +221,42 @@ appnexus.com, 12345, DIRECT
 - We recommend confirming with partners before deleting when seller IDs are not found
 
 ---
+
+<a id="step6"></a>
+
+## 6. Verify Certification Authority ID
+
+Validates the 4th field (Certification Authority ID) of ads.txt entries based on the advertising system's domain and automatically corrects it if incorrect.
+
+### What it does:
+Certification Authority IDs (such as TAG IDs) are fixed values determined for each advertising system, but typos or copy-paste errors often occur.
+This step checks against a list of known correct Certification Authority IDs (for major SSPs like Google, OpenX, PubMatic, etc.) and corrects them.
+
+### Verification Process:
+1. Read the domain (1st field) from each line of ads.txt
+2. Retrieve the correct Certification Authority ID corresponding to that domain from the database
+3. Compare with the 4th field of ads.txt
+4. Overwrite or append with the correct ID if it does not match or is missing
+
+### Correction Example:
+```
+# Before correction (incorrect or missing)
+google.com, pub-1234567890, DIRECT, incorrect-id
+google.com, pub-1234567890, DIRECT
+
+# DB Check
+# Correct ID for google.com = f08c47fec0942fa0
+
+# After correction (correct)
+google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
+google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
+```
+
+### Why it's important:
+- **Improved Credibility**: Having a correct Certification Authority ID proves credibility based on industry standards such as the Trustworthy Accountability Group (TAG).
+- **Error Reduction**: Automatically resolves ID mismatches due to human error.
+
+### Important Notes:
+- Only IDs of major advertising systems held in the Ads.txt Manager database are covered.
+- Minor SSPs or proprietary systems may be excluded from verification.
+

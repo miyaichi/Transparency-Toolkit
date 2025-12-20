@@ -31,12 +31,14 @@ export default function OptimizerPage() {
     removeErrors: true,
     invalidAction: "remove" as "remove" | "comment",
     duplicateAction: "remove" as "remove" | "comment",
+    normalizeFormat: true, // NEW
     fixOwnerDomain: false,
     fixRelationship: false,
     fixManagerDomain: false,
     managerAction: "remove" as "remove" | "comment",
     verifySellers: false,
-    sellersAction: "remove" as "remove" | "comment"
+    sellersAction: "remove" as "remove" | "comment",
+    verifyCertAuthority: false // NEW
   })
 
   // State for results
@@ -47,7 +49,8 @@ export default function OptimizerPage() {
     removedCount: 0,
     commentedCount: 0,
     modifiedCount: 0,
-    errorsFound: 0
+    errorsFound: 0,
+    certAuthorityFixed: 0
   })
 
   // Reset owner input when domain changes if user hasn't typed anything custom?
@@ -103,7 +106,8 @@ export default function OptimizerPage() {
         removedCount: 0,
         commentedCount: 0,
         modifiedCount: 0,
-        errorsFound: 0
+        errorsFound: 0,
+        certAuthorityFixed: 0
       })
       return
     }
@@ -134,7 +138,8 @@ export default function OptimizerPage() {
                 fixManagerDomain: steps.fixManagerDomain,
                 managerAction: steps.managerAction,
                 verifySellers: steps.verifySellers,
-                sellersAction: steps.sellersAction
+                sellersAction: steps.sellersAction,
+                verifyCertAuthority: steps.verifyCertAuthority
               }
             })
           }
@@ -379,6 +384,22 @@ export default function OptimizerPage() {
                           </label>
                         </div>
                       </div>
+
+                      {/* NEW: Format Normalization */}
+                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={steps.normalizeFormat}
+                            onChange={(e) => setSteps((s) => ({ ...s, normalizeFormat: e.target.checked }))}
+                            className="accent-blue-600"
+                          />
+                          <span className="font-semibold">{t("optimizerPage.steps.step1.normalizeFormat")}</span>
+                        </label>
+                        <p className="text-xs text-muted-foreground ml-6">
+                          {t("optimizerPage.steps.step1.normalizeFormatDescription")}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -568,6 +589,31 @@ export default function OptimizerPage() {
                   )}
                 </div>
               </div>
+              {/* Step 6: Certification Authority ID Verification */}
+              <div className="border-t border-slate-100 dark:border-slate-800 my-4"></div>
+              <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white transition-colors dark:hover:bg-slate-800">
+                <Switch
+                  id="s6"
+                  checked={steps.verifyCertAuthority}
+                  onCheckedChange={(c) => setSteps((prev) => ({ ...prev, verifyCertAuthority: c }))}
+                  className="mt-1"
+                />
+                <div className="space-y-4 w-full">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="s6" className="text-base font-medium cursor-pointer">
+                      {t("optimizerPage.steps.step6.title")}
+                    </Label>
+                    <Link
+                      href="/optimizer/guide#step6"
+                      target="_blank"
+                      className="text-muted-foreground hover:text-blue-600 transition-colors"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Link>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{t("optimizerPage.steps.step6.description")}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -629,6 +675,12 @@ export default function OptimizerPage() {
                     <span className="flex items-center text-purple-600 font-medium">
                       <Sparkles className="mr-1.5 h-4 w-4" />
                       {stats.modifiedCount} lines modified
+                    </span>
+                  )}
+                  {stats.certAuthorityFixed !== undefined && stats.certAuthorityFixed > 0 && (
+                    <span className="flex items-center text-green-600 font-medium">
+                      <Check className="mr-1.5 h-4 w-4" />
+                      {t("optimizerPage.results.certAuthFixed", { count: stats.certAuthorityFixed.toString() })}
                     </span>
                   )}
                   {stats.errorsFound > 0 && (

@@ -10,7 +10,8 @@
     "ingest": "ts-node src/ingest/runner.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
-    "test": "jest"
+    "test": "jest",
+    "migrate:cert-id": "ts-node src/scripts/add_cert_id_column.ts"
   },
   "keywords": [],
   "author": "",

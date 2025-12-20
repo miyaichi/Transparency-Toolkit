@@ -4,6 +4,8 @@ import { query } from '../db/client';
 import { parseAdsTxtContent } from '../lib/adstxt/validator';
 import client from '../lib/http';
 
+import { normalizeAdsTxt } from '../lib/adstxt/normalizer';
+
 const optimizerApp = new OpenAPIHono();
 
 const optimizerSchema = z.object({
@@ -15,17 +17,21 @@ const optimizerSchema = z.object({
     removeErrors: z.boolean().default(false),
     invalidAction: z.enum(['remove', 'comment']).default('remove'),
     duplicateAction: z.enum(['remove', 'comment']).default('remove'),
+    normalizeFormat: z.boolean().default(false), // New
     fixOwnerDomain: z.boolean().default(false),
     fixRelationship: z.boolean().default(false), // New
     fixManagerDomain: z.boolean().default(false),
     managerAction: z.enum(['remove', 'comment']).default('remove'),
     verifySellers: z.boolean().default(false),
     sellersAction: z.enum(['remove', 'comment']).default('remove'),
+    verifyCertAuthority: z.boolean().default(false), // New Step 6
   }),
 });
 
 optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => {
   const { content, domain, ownerDomain, steps } = c.req.valid('json');
+
+  console.log('Optimizer Process Request:', { domain, steps }); // Debug log
 
   // Initial stats
   const originalLines = content.split(/\r?\n/).length;
@@ -34,15 +40,27 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
   let commentedCount = 0;
   let modifiedCount = 0;
   let errorsFound = 0;
+  let certAuthorityFixed = 0;
 
-  // Step 1: Clean Up (Remove Errors & Duplicates)
+  // Step 1: Clean Up (Remove Errors & Duplicates & Normalize)
   if (steps.removeErrors) {
-    const parsedEntries = parseAdsTxtContent(content, domain);
+    // 1. Normalize first if requested (to catch duplicates easier)
+    if (steps.normalizeFormat) {
+      console.log('Applying normalization...'); // Debug log
+      const beforeNorm = optimizedContent;
+      optimizedContent = normalizeAdsTxt(optimizedContent);
+      if (beforeNorm !== optimizedContent) {
+        // Count modifications if needed, but for now just logging
+        console.log('Normalization applied changes.');
+      }
+    }
+
+    const parsedEntries = parseAdsTxtContent(optimizedContent, domain);
     const validLines: string[] = [];
     errorsFound = parsedEntries.filter((e) => !e.is_valid && !e.is_variable).length;
 
     const seen = new Set<string>();
-    const lines = content.split(/\r?\n/);
+    const lines = optimizedContent.split(/\r?\n/);
     const newLines: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
@@ -295,6 +313,109 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
     }
   }
 
+  // Step 6: Certification Authority ID Verification
+  if (steps.verifyCertAuthority) {
+    const lines = optimizedContent.split(/\r?\n/);
+    const newLines: string[] = [];
+    const entriesToCheck: { domain: string; lineIndex: number }[] = [];
+    const distinctDomains = new Set<string>();
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      // Skip comments, empty lines, and variables
+      if (!line || line.startsWith('#') || line.includes('=')) {
+        newLines.push(lines[i]); // Keep original line
+        continue;
+      }
+
+      const parts = line.split(',').map((s) => s.trim());
+      if (parts.length >= 2) {
+        let domain = parts[0].toLowerCase();
+        // strip comment if parsed crudely above
+        if (domain.includes('#')) domain = domain.split('#')[0].trim();
+
+        if (domain) {
+          entriesToCheck.push({ domain, lineIndex: i });
+          distinctDomains.add(domain);
+        }
+      }
+      newLines.push(lines[i]); // Push original first, will update by index later
+    }
+
+    if (entriesToCheck.length > 0) {
+      const domainList = Array.from(distinctDomains);
+
+      // Fetch Cert IDs from DB
+      const certRes = await query(
+        `SELECT DISTINCT domain, certification_authority_id 
+             FROM sellers_catalog 
+             WHERE domain = ANY($1::text[]) 
+             AND certification_authority_id IS NOT NULL`,
+        [domainList],
+      );
+
+      const certMap = new Map<string, string>();
+      certRes.rows.forEach((row: any) => {
+        if (row.certification_authority_id) {
+          certMap.set(row.domain, row.certification_authority_id);
+        }
+      });
+
+      for (const entry of entriesToCheck) {
+        const correctCertId = certMap.get(entry.domain);
+        if (!correctCertId) continue;
+
+        const line = newLines[entry.lineIndex];
+        // Split again to reconstruct
+        // Be careful to preserve comments if possible, but standard reconstruction is safer for data integrity
+        // Use simple comma split for detection
+        let parts = line.split(',');
+
+        // Handle potential comment in last part
+        let commentSuffix = '';
+        const lastPartIndex = parts.length - 1;
+        if (parts[lastPartIndex].includes('#')) {
+          const [val, ...com] = parts[lastPartIndex].split('#');
+          parts[lastPartIndex] = val; // remove comment from value
+          commentSuffix = ' #' + com.join('#');
+        }
+
+        parts = parts.map((s) => s.trim());
+
+        // Ensure line is valid data line
+        if (parts.length < 3) continue; // Skip malformed lines
+
+        // Check 4th field (Cert ID)
+        let currentCertId = '';
+        let hasCertField = parts.length >= 4 && parts[3].length > 0;
+
+        if (hasCertField) {
+          currentCertId = parts[3];
+        }
+
+        if (currentCertId !== correctCertId) {
+          // Fix it
+          if (parts.length < 4) {
+            parts.push(correctCertId);
+          } else {
+            parts[3] = correctCertId;
+          }
+
+          // Reconstruct
+          let newLine = parts.join(', ');
+          if (commentSuffix) newLine += commentSuffix;
+
+          if (newLine !== line) {
+            newLines[entry.lineIndex] = newLine;
+            certAuthorityFixed++;
+          }
+        }
+      }
+      optimizedContent = newLines.join('\n');
+      modifiedCount += certAuthorityFixed;
+    }
+  }
+
   // Return result
   return c.json({
     optimizedContent,
@@ -305,6 +426,7 @@ optimizerApp.post('/process', zValidator('json', optimizerSchema), async (c) => 
       commentedCount,
       modifiedCount,
       errorsFound,
+      certAuthorityFixed, // New Stat
     },
   });
 });

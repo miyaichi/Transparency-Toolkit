@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS sellers_catalog (
     
     -- Additional attributes stored as JSONB for flexibility
     attributes JSONB, 
+
+    -- New column for Optimizer Step 6
+    certification_authority_id TEXT,
     
     -- Link to raw file source
     raw_file_id UUID REFERENCES raw_sellers_files(id) ON DELETE CASCADE,
@@ -38,7 +41,9 @@ CREATE TABLE IF NOT EXISTS sellers_catalog (
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_domain ON sellers_catalog(domain);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_seller_id ON sellers_catalog(seller_id);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_name_trgm ON sellers_catalog USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_sellers_catalog_name_trgm ON sellers_catalog USING GIN (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_seller_domain_trgm ON sellers_catalog USING GIN (seller_domain gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_sellers_catalog_cert_auth ON sellers_catalog(domain, certification_authority_id);
 
 -- 3. Ads.txt Scans Table
 CREATE TABLE IF NOT EXISTS ads_txt_scans (
