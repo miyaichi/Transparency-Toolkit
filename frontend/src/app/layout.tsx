@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Ads.txt Manager v2",
-  description: "Manage, Validate, and Optimize your ads.txt and sellers.json files."
+  title: "Transparency Toolkit",
+  description: "Transparency Toolkit: Manage, Validate, and Optimize your ads.txt and sellers.json files."
 }
 
 export default function RootLayout({
@@ -32,7 +32,7 @@ export default function RootLayout({
         <LanguageProvider>
           <header className="border-b">
             <div className="container mx-auto flex h-16 items-center px-4">
-              <div className="mr-8 font-bold text-lg">Ads.txt Manager V2</div>
+              <div className="mr-8 font-bold text-lg">Transparency Toolkit</div>
               <Navigation />
               <div className="ml-auto">
                 <LanguageSwitcher />

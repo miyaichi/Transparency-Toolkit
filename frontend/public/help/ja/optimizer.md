@@ -1,6 +1,6 @@
 # オプティマイザー ステップガイド
 
-Ads.txt Manager オプティマイザーで利用可能な各最適化ステップについて解説します。
+Transparency Toolkit オプティマイザーで利用可能な各最適化ステップについて解説します。
 
 <a id="step1"></a>
 
@@ -129,7 +129,7 @@ google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
 広告システムの `sellers.json` データに基づいて、ads.txtエントリの関係性フィールド（`DIRECT` / `RESELLER`）を自動的に修正します。
 
 ### 機能:
-このステップでは、Ads.txt Managerに保存されている各広告システムのsellers.jsonデータを使用して、関係性の妥当性を検証し、必要に応じて自動修正します。
+このステップでは、Transparency Toolkitに保存されている各広告システムのsellers.jsonデータを使用して、関係性の妥当性を検証し、必要に応じて自動修正します。
 
 #### **検証プロセス**:
 1. ads.txt内の各エントリ（ドメイン + アカウントID）を抽出
@@ -162,7 +162,7 @@ google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
 - **プラットフォームからの警告回避**: Google AdSenseなどの広告プラットフォームから警告を受けるリスクを軽減します
 
 ### 注意事項:
-- このステップは、Ads.txt Managerのデータベースに保存されているsellers.jsonデータを使用します
+- このステップは、Transparency Toolkitのデータベースに保存されているsellers.jsonデータを使用します
 - データベースに該当するsellers.jsonが存在しない場合、検証はスキップされます
 - 修正は、sellers.jsonに明確に記載されている情報に基づいてのみ行われます
 
@@ -175,11 +175,11 @@ google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
 ads.txtに記載されているセラーID（アカウントID）が、実際に広告システムの `sellers.json` ファイルに存在するかを検証し、無効なエントリを特定します。
 
 ### 機能:
-このステップでは、Ads.txt Managerのデータベースに保存されているsellers.jsonデータを使用して、ads.txtエントリの妥当性を検証します。
+このステップでは、Transparency Toolkitのデータベースに保存されているsellers.jsonデータを使用して、ads.txtエントリの妥当性を検証します。
 
 #### **検証プロセス**:
 1. ads.txt内の各エントリ（広告システムのドメイン + アカウントID）を抽出
-2. Ads.txt Managerのsellers_catalogテーブルで該当エントリを検索
+2. Transparency Toolkitのsellers_catalogテーブルで該当エントリを検索
 3. **存在しない場合**: そのセラーIDは無効または非アクティブである可能性が高い
 4. **存在する場合**: セラーIDは有効（このステップではアクションなし）
 
@@ -216,7 +216,7 @@ appnexus.com, 12345, DIRECT
 - **警告の回避**: 無効なセラーIDは、一部の広告プラットフォームで警告の原因となる場合があります
 
 ### 注意事項:
-- このステップは、Ads.txt Managerのデータベースに保存されているsellers.jsonデータに基づきます
+- このステップは、Transparency Toolkitのデータベースに保存されているsellers.jsonデータに基づきます
 - データベースに該当するsellers.jsonが存在しない場合、検証はスキップされます
 - セラーIDが見つからない場合は、削除前にパートナーに確認することを推奨します
 
@@ -257,6 +257,6 @@ google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
 - **エラー削減**: 人為的なミスによるIDの不一致を自動的に解消します。
 
 ### 注意事項:
-- Ads.txt Managerがデータベースに保有している主要な広告システムのIDのみが対象です。
+- Transparency Toolkitがデータベースに保有している主要な広告システムのIDのみが対象です。
 - マイナーなSSPや独自のシステムの場合、検証対象外となることがあります。
 

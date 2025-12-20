@@ -1,7 +1,7 @@
 {
-  "name": "adstxt-manager-v2-backend",
+  "name": "transparency-toolkit-backend",
   "version": "1.0.0",
-  "description": "Backend for Ads.txt Manager V2",
+  "description": "Backend for Transparency Toolkit",
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/index.js",

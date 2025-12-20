@@ -1,6 +1,6 @@
 # Optimizer Steps Guide
 
-This guide explains the optimization steps available in the Ads.txt Manager optimizer tool.
+This guide explains the optimization steps available in the Transparency Toolkit optimizer tool.
 
 <a id="step1"></a>
 
@@ -129,7 +129,7 @@ google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
 Automatically corrects the relationship field (`DIRECT` / `RESELLER`) in ads.txt entries based on advertising system `sellers.json` data.
 
 ### What it does:
-This step uses sellers.json data stored in the Ads.txt Manager database to verify relationship validity and automatically correct as needed.
+This step uses sellers.json data stored in the Transparency Toolkit database to verify relationship validity and automatically correct as needed.
 
 #### **Verification Process**:
 1. Extract each entry (domain + account ID) from ads.txt
@@ -162,7 +162,7 @@ google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
 - **Avoid Platform Warnings**: Reduces risk of warnings from advertising platforms like Google AdSense
 
 ### Important Notes:
-- This step uses sellers.json data stored in the Ads.txt Manager database
+- This step uses sellers.json data stored in the Transparency Toolkit database
 - If no corresponding sellers.json exists in the database, verification is skipped
 - Corrections are only made based on information clearly stated in sellers.json
 
@@ -175,11 +175,11 @@ google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
 Validates that Seller IDs (account IDs) listed in your ads.txt actually exist in the advertising system's `sellers.json` file, and identifies invalid entries.
 
 ### What it does:
-This step uses sellers.json data stored in the Ads.txt Manager database to verify the validity of ads.txt entries.
+This step uses sellers.json data stored in the Transparency Toolkit database to verify the validity of ads.txt entries.
 
 #### **Verification Process**:
 1. Extract each entry (advertising system domain + account ID) from ads.txt
-2. Search for the entry in the Ads.txt Manager sellers_catalog table
+2. Search for the entry in the Transparency Toolkit sellers_catalog table
 3. **If not found**: The seller ID is likely invalid or inactive
 4. **If found**: The seller ID is valid (no action taken in this step)
 
@@ -216,7 +216,7 @@ appnexus.com, 12345, DIRECT
 - **Avoid Warnings**: Invalid seller IDs can trigger warnings on some advertising platforms
 
 ### Important Notes:
-- This step is based on sellers.json data stored in the Ads.txt Manager database
+- This step is based on sellers.json data stored in the Transparency Toolkit database
 - If no corresponding sellers.json exists in the database, verification is skipped
 - We recommend confirming with partners before deleting when seller IDs are not found
 
@@ -257,6 +257,6 @@ google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
 - **Error Reduction**: Automatically resolves ID mismatches due to human error.
 
 ### Important Notes:
-- Only IDs of major advertising systems held in the Ads.txt Manager database are covered.
+- Only IDs of major advertising systems held in the Transparency Toolkit database are covered.
 - Minor SSPs or proprietary systems may be excluded from verification.
 

@@ -1,8 +1,8 @@
-# Ads.txt Manager V2 🚀
+# Transparency Toolkit 🚀
 
-**The Next-Gen Ads.txt & Sellers.json Management Platform**
+**The Comprehensive Transparency Toolkit for AdTech**
 
-Ads.txt Manager V2 is a performance-optimized toolkit for Publisher Operations and AdTech developers. It provides a unified interface to validate, optimize, and monitor supply chain standards (ads.txt, app-ads.txt, sellers.json).
+Transparency Toolkit is a performance-optimized toolkit for Publisher Operations and AdTech developers. It provides a unified interface to validate, optimize, and monitor supply chain standards (ads.txt, app-ads.txt, sellers.json).
 
 ## Key Features
 
@@ -28,7 +28,7 @@ A step-by-step wizard to clean and fix ads.txt files:
 
 ## Architecture
 
-Performance is at the core of V2. It utilizes streaming ingestion for large datasets and efficient indexing.
+Performance is at the core of the toolkit. It utilizes streaming ingestion for large datasets and efficient indexing.
 
 ```mermaid
 graph TD
