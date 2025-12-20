@@ -76,7 +76,7 @@ Adds the OWNERDOMAIN directive to your ads.txt file to explicitly declare the ac
 - **Important**: If OWNERDOMAIN is not explicitly specified, the domain where the ads.txt file is hosted (root domain) is treated as the OWNERDOMAIN by default.
 
 ### Role of OWNERDOMAIN:
-- **Sellers.json Matching**: OWNERDOMAIN is used to match entries in sellers.json files where the seller is listed as PUBLISHER or BOTH.
+- **Sellers.json Matching**: OWNERDOMAIN is matched against the seller's domain registered in the Sellers.json file.
 - **Multi-Domain Consolidation**: If you own multiple domains under the same business entity, you can specify the same OWNERDOMAIN across all domains.
 - **Improved Transparency**: Even if the OWNERDOMAIN matches the domain hosting the ads.txt, explicitly declaring it improves supply chain transparency.
 

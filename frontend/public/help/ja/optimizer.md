@@ -76,7 +76,7 @@ ads.txtファイルにOWNERDOMAINディレクティブを追加し、サイト�
 - **重要**: OWNERDOMAINを明示的に指定しない場合、ads.txtを配置したドメイン（ルートドメイン）がデフォルトでOWNERDOMAINとして扱われます。
 
 ### OWNERDOMAINの役割:
-- **Sellers.jsonとの照合**: OWNERDOMAINは、Sellers.jsonファイル内のPUBLISHERまたはBOTHとして登録されているセラーのドメインと照合されます。
+- **Sellers.jsonとの照合**: OWNERDOMAINは、Sellers.jsonファイルに登録されているセラーのドメインと照合されます。
 - **複数ドメインの統合**: 複数のドメインを所有している場合でも、同じ事業者に属していればすべてのドメインで同じOWNERDOMAINを指定できます。
 - **透明性の向上**: たとえads.txtを配置したドメインと同じ場合でも、明示的に指定することでサプライチェーンの透明性が向上します。
 
