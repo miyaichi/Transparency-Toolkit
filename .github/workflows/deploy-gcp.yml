@@ -64,6 +64,7 @@ jobs:
 
       # Frontend Deploy
       - name: Deploy Frontend
+        run: |
           gcloud run deploy ${{ env.FRONTEND_SERVICE }} \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} \
             --region ${{ env.REGION }} \
