@@ -11,6 +11,7 @@ import jobsApp from './api/jobs';
 import monitorApp from './api/monitor';
 import optimizerApp from './api/optimizer';
 import sellersApp from './api/sellers';
+import { logger } from './lib/logger';
 
 // Prefer IPv4 to avoid connectivity issues in environments with partial IPv6 support (e.g. Cloud Run)
 if (dns.setDefaultResultOrder) {
@@ -59,12 +60,15 @@ app.use(
 
 // Global Error Handler
 app.onError((err, c) => {
-  console.error('[Uncaught Error]', err);
+  logger.error('Uncaught Error', {
+    error: err,
+    path: c.req.path,
+    method: c.req.method,
+  });
   return c.json(
     {
       error: 'Internal Server Error',
       message: err.message,
-      stack: err.stack,
     },
     500,
   );
@@ -75,8 +79,36 @@ app.use('*', async (c, next) => {
   const start = Date.now();
   await next();
   const end = Date.now();
-  console.log(`[${c.req.method}] ${c.req.path} - ${c.res.status} - ${end - start} ms`);
+  const durationMs = end - start;
+
+  // Structured log for request
+  logger.info(`Request handled`, {
+    httpRequest: {
+      requestMethod: c.req.method,
+      requestUrl: c.req.path,
+      status: c.res.status,
+      userAgent: c.req.header('user-agent'),
+      remoteIp: c.req.header('x-forwarded-for') || 'unknown',
+      latency: `${durationMs / 1000}s`,
+    },
+    path: c.req.path,
+    method: c.req.method,
+    statusCode: c.res.status,
+    durationMs,
+  });
 });
+
+import { rateLimiter } from './lib/rate-limiter';
+
+// Rate Limiter (120 req/min/IP)
+app.use(
+  '*',
+  rateLimiter({
+    windowMs: 60 * 1000, // 1 minute
+    limit: 120, // 120 requests per minute (2 req/sec sustained)
+    message: 'Too many requests. Please try again in a minute.',
+  }),
+);
 
 // Root
 app.get('/', (c) => {

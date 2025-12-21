@@ -49,15 +49,15 @@
 ### ⏭ Next Priorities
 
 1.  **API Enhancements**
-    -   **Rate Limiting**: Implement Global and Per-IP rate limiting to prevent abuse.
-    -   **Sellers API**: Optimized fetching (paging support, correct metadata handling).
+    -   [x] **Rate Limiting**: Implement Global and Per-IP rate limiting to prevent abuse.
+    -   [x] **Sellers API**: Optimized fetching (paging support, correct metadata handling).
 
 2.  **Observability**
-    -   **Structured Logging**: Implement JSON structured logging for Cloud Logging integration.
+    -   [x] **Structured Logging**: Implement JSON structured logging for Cloud Logging integration.
     -   **Error Tracking**: Setup Sentry or similar for production error monitoring.
 
 3.  **Testing**
-    -   **Unit Tests**: Increase coverage for complex logic (e.g., `optimizer.ts`).
+    -   [x] **Unit Tests**: Increase coverage for complex logic (e.g., `optimizer.ts`).
     -   **E2E Testing**: Set up Playwright for critical user flows.
 
 ## ✅ Completed Features
