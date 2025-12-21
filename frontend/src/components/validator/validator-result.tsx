@@ -5,26 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useTranslation } from "@/lib/i18n/language-context"
-import { ValidationResponse } from "@/types"
 import { CheckCircle, Download, HelpCircle, Loader2, XCircle } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
-import useSWR from "swr"
 
-// Fetcher
-const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) {
-    const text = await res.text()
-    try {
-      const errorData = JSON.parse(text)
-      throw new Error(errorData.error || errorData.message || `Error ${res.status}: ${res.statusText}`)
-    } catch (e) {
-      throw new Error(`Error ${res.status}: ${res.statusText} - ${text.substring(0, 100)}`)
-    }
-  }
-  return res.json()
-}
+import { useAdsTxtData } from "@/hooks/use-ads-txt-data"
 
 type Props = {
   domain: string
@@ -33,31 +17,9 @@ type Props = {
 
 export function ValidatorResult({ domain, type }: Props) {
   const { t, language } = useTranslation() // added language
-  // Client-side filtering
-  const [filter, setFilter] = useState("")
 
-  // Fetch data
-  const { data, error, isLoading } = useSWR<ValidationResponse>(
-    domain ? `/api/proxy/validator?domain=${domain}&type=${type}&save=true` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false, // Don't revalidate aggressively
-      shouldRetryOnError: false
-    }
-  )
+  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(domain, type)
 
-  // Filter records
-  const filteredRecords = data?.records
-    .filter((r) => {
-      if (!filter) return true
-      const term = filter.toLowerCase()
-      return (
-        (r.domain?.toLowerCase().includes(term) ?? false) ||
-        (r.account_id?.toLowerCase().includes(term) ?? false) ||
-        (r.relationship?.toLowerCase().includes(term) ?? false)
-      )
-    })
-    .sort((a, b) => a.line_number - b.line_number)
 
   // Download functionality
   const handleDownload = () => {
@@ -169,8 +131,8 @@ export function ValidatorResult({ domain, type }: Props) {
               <div className="text-2xl font-bold text-blue-600">
                 {data.stats.direct_count + (data.stats.reseller_count || 0) > 0
                   ? Math.round(
-                      (data.stats.direct_count / (data.stats.direct_count + (data.stats.reseller_count || 0))) * 100
-                    )
+                    (data.stats.direct_count / (data.stats.direct_count + (data.stats.reseller_count || 0))) * 100
+                  )
                   : 0}
                 %
               </div>
@@ -189,8 +151,8 @@ export function ValidatorResult({ domain, type }: Props) {
               <div className="text-2xl font-bold text-purple-600">
                 {data.stats.direct_count !== undefined && data.stats.direct_count + data.stats.reseller_count > 0
                   ? Math.round(
-                      (data.stats.reseller_count / (data.stats.direct_count + data.stats.reseller_count)) * 100
-                    )
+                    (data.stats.reseller_count / (data.stats.direct_count + data.stats.reseller_count)) * 100
+                  )
                   : 0}
                 %
               </div>

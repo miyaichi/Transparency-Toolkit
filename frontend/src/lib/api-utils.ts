@@ -39,3 +39,17 @@ export const triggerBackgroundScan = (domain: string, type: "ads.txt" | "app-ads
 
   fire()
 }
+
+export const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    const text = await res.text()
+    try {
+      const errorData = JSON.parse(text)
+      throw new Error(errorData.error || errorData.message || `Error ${res.status}: ${res.statusText}`)
+    } catch (e) {
+      throw new Error(`Error ${res.status}: ${res.statusText} - ${text.substring(0, 100)}`)
+    }
+  }
+  return res.json()
+}

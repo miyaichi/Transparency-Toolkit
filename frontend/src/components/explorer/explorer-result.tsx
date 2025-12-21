@@ -4,25 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ValidationResponse } from "@/types"
 import { Download, Loader2 } from "lucide-react"
-import { useState } from "react"
-import useSWR from "swr"
 
-// Fetcher
-const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) {
-    const text = await res.text()
-    try {
-      const errorData = JSON.parse(text)
-      throw new Error(errorData.error || errorData.message || `Error ${res.status}: ${res.statusText}`)
-    } catch (e) {
-      throw new Error(`Error ${res.status}: ${res.statusText} - ${text.substring(0, 100)}`)
-    }
-  }
-  return res.json()
-}
+import { useAdsTxtData } from "@/hooks/use-ads-txt-data"
 
 type Props = {
   domain: string
@@ -33,31 +17,9 @@ import { useTranslation } from "@/lib/i18n/language-context"
 
 export function ExplorerResult({ domain, type }: Props) {
   const { t } = useTranslation()
-  // Client-side filtering
-  const [filter, setFilter] = useState("")
 
-  // Fetch data
-  const { data, error, isLoading } = useSWR<ValidationResponse>(
-    domain ? `/api/proxy/validator?domain=${domain}&type=${type}&save=true` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false, // Don't revalidate aggressively
-      shouldRetryOnError: false
-    }
-  )
+  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(domain, type)
 
-  // Filter records
-  const filteredRecords = data?.records
-    .filter((r) => {
-      if (!filter) return true
-      const term = filter.toLowerCase()
-      return (
-        (r.domain?.toLowerCase().includes(term) ?? false) ||
-        (r.account_id?.toLowerCase().includes(term) ?? false) ||
-        (r.relationship?.toLowerCase().includes(term) ?? false)
-      )
-    })
-    .sort((a, b) => a.line_number - b.line_number)
 
   // Download functionality
   const handleDownload = () => {
