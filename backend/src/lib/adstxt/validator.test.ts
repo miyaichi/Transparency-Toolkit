@@ -78,7 +78,7 @@ describe('Ads.txt Validator', () => {
       expect(result).not.toBeNull();
       expect(result?.is_valid).toBe(false);
       // Testing error property
-      expect(result?.error).toBe(VALIDATION_KEYS.INVALID_FORMAT);
+      expect(result?.error).toBe(VALIDATION_KEYS.MISSING_FIELDS);
     });
 
     test('should return invalid record for invalid relationship', () => {

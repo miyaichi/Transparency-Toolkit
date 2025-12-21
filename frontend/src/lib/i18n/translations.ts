@@ -273,6 +273,13 @@ export const translations = {
         ja: "無効なドメイン（コード: 11030）"
       }
     },
+    INVALID_DOMAIN: {
+      title: { en: "Invalid Domain (Code: 11030)", ja: "無効なドメイン（コード: 11030）" },
+      description: {
+        en: "Invalid Domain (Code: 11030)",
+        ja: "無効なドメイン（コード: 11030）"
+      }
+    },
     emptyAccountId: {
       title: { en: "Empty Account ID", ja: "空のアカウントID" },
       description: { en: "Empty Account ID", ja: "空のアカウントID" }

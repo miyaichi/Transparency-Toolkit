@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react"
 import useSWR from "swr"
+import { LanguageProvider } from "../../../lib/i18n/language-context"
 import { ValidatorResult } from "../validator-result"
 
 // Mock useSWR
@@ -49,8 +50,12 @@ describe("ValidatorResult", () => {
       isLoading: true
     })
 
-    render(<ValidatorResult domain="example.com" type="ads.txt" />)
-    expect(screen.getByText("Fetching and analyzing ads.txt...")).toBeInTheDocument()
+    render(
+      <LanguageProvider>
+        <ValidatorResult domain="example.com" type="ads.txt" />
+      </LanguageProvider>
+    )
+    expect(screen.getByText("Fetching and analyzing...")).toBeInTheDocument()
   })
 
   it("renders stats correctly", () => {
@@ -59,7 +64,11 @@ describe("ValidatorResult", () => {
       isLoading: false
     })
 
-    render(<ValidatorResult domain="example.com" type="ads.txt" />)
+    render(
+      <LanguageProvider>
+        <ValidatorResult domain="example.com" type="ads.txt" />
+      </LanguageProvider>
+    )
 
     expect(screen.getByText("Valid Records")).toBeInTheDocument()
 
@@ -77,7 +86,11 @@ describe("ValidatorResult", () => {
       isLoading: false
     })
 
-    render(<ValidatorResult domain="example.com" type="ads.txt" />)
+    render(
+      <LanguageProvider>
+        <ValidatorResult domain="example.com" type="ads.txt" />
+      </LanguageProvider>
+    )
 
     // Check valid record
     const validRow = screen.getByText("google.com").closest("tr")
@@ -86,6 +99,6 @@ describe("ValidatorResult", () => {
     // Check invalid record
     const invalidRow = screen.getByText("badprovider.com").closest("tr")
     expect(invalidRow).toHaveClass("bg-red-50")
-    expect(screen.getByText("INVALID_DOMAIN")).toBeInTheDocument()
+    expect(screen.getByText("Invalid Domain (Code: 11030)")).toBeInTheDocument()
   })
 })

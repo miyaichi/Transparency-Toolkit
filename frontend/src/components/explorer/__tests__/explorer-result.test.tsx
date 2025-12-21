@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react"
 import useSWR from "swr"
+import { LanguageProvider } from "../../../lib/i18n/language-context"
 import { ExplorerResult } from "../explorer-result"
 
 // Mock useSWR
@@ -49,7 +50,11 @@ describe("ExplorerResult", () => {
       isLoading: true
     })
 
-    render(<ExplorerResult domain="example.com" type="ads.txt" />)
+    render(
+      <LanguageProvider>
+        <ExplorerResult domain="example.com" type="ads.txt" />
+      </LanguageProvider>
+    )
     expect(screen.getByText("Fetching ads.txt...")).toBeInTheDocument()
   })
 
@@ -60,8 +65,12 @@ describe("ExplorerResult", () => {
       isLoading: false
     })
 
-    render(<ExplorerResult domain="example.com" type="ads.txt" />)
-    expect(screen.getByText("Failed to load data")).toBeInTheDocument()
+    render(
+      <LanguageProvider>
+        <ExplorerResult domain="example.com" type="ads.txt" />
+      </LanguageProvider>
+    )
+    expect(screen.getByText("Failed to load report")).toBeInTheDocument()
     expect(screen.getByText("Failed to fetch")).toBeInTheDocument()
   })
 
@@ -72,7 +81,11 @@ describe("ExplorerResult", () => {
       isLoading: false
     })
 
-    render(<ExplorerResult domain="example.com" type="ads.txt" />)
+    render(
+      <LanguageProvider>
+        <ExplorerResult domain="example.com" type="ads.txt" />
+      </LanguageProvider>
+    )
 
     // Check stats
     expect(screen.getByText("Total Records")).toBeInTheDocument()
@@ -98,7 +111,11 @@ describe("ExplorerResult", () => {
       isLoading: false
     })
 
-    render(<ExplorerResult domain="example.com" type="ads.txt" />)
+    render(
+      <LanguageProvider>
+        <ExplorerResult domain="example.com" type="ads.txt" />
+      </LanguageProvider>
+    )
 
     const input = screen.getByPlaceholderText("Filter by domain, ID...")
     fireEvent.change(input, { target: { value: "google" } })
