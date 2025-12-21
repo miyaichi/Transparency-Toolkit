@@ -71,14 +71,11 @@ export default function OptimizerPage() {
 
     setIsFetching(true)
     try {
-      const response = await fetch(
-        "/api/proxy/optimizer/fetch",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ domain: normalizedDomain, fileType })
-        }
-      )
+      const response = await fetch("/api/proxy/optimizer/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain: normalizedDomain, fileType })
+      })
 
       if (!response.ok) {
         const err = await response.json()
@@ -119,32 +116,29 @@ export default function OptimizerPage() {
 
     const timer = setTimeout(async () => {
       try {
-        const response = await fetch(
-          "/api/proxy/optimizer/process",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              content: inputContent,
-              domain: domain,
-              ownerDomain: ownerDomainInput || domain, // Send explicit owner domain or fallback to publisher domain
-              fileType: fileType,
-              steps: {
-                removeErrors: steps.removeErrors,
-                invalidAction: steps.invalidAction,
-                duplicateAction: steps.duplicateAction,
-                normalizeFormat: steps.normalizeFormat,
-                fixOwnerDomain: steps.fixOwnerDomain,
-                fixRelationship: steps.fixRelationship,
-                fixManagerDomain: steps.fixManagerDomain,
-                managerAction: steps.managerAction,
-                verifySellers: steps.verifySellers,
-                sellersAction: steps.sellersAction,
-                verifyCertAuthority: steps.verifyCertAuthority
-              }
-            })
-          }
-        )
+        const response = await fetch("/api/proxy/optimizer/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: inputContent,
+            domain: domain,
+            ownerDomain: ownerDomainInput || domain, // Send explicit owner domain or fallback to publisher domain
+            fileType: fileType,
+            steps: {
+              removeErrors: steps.removeErrors,
+              invalidAction: steps.invalidAction,
+              duplicateAction: steps.duplicateAction,
+              normalizeFormat: steps.normalizeFormat,
+              fixOwnerDomain: steps.fixOwnerDomain,
+              fixRelationship: steps.fixRelationship,
+              fixManagerDomain: steps.fixManagerDomain,
+              managerAction: steps.managerAction,
+              verifySellers: steps.verifySellers,
+              sellersAction: steps.sellersAction,
+              verifyCertAuthority: steps.verifyCertAuthority
+            }
+          })
+        })
 
         if (!response.ok) {
           throw new Error("API Error")

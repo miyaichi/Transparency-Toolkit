@@ -1,4 +1,5 @@
 import { createValidationMessage } from '../lib/adstxt/messages';
+import { diagnoseLine } from '../lib/adstxt/normalizer';
 import { crossCheckAdsTxtRecords, parseAdsTxtContent } from '../lib/adstxt/validator';
 import client from '../lib/http';
 import { AdsTxtScanner } from './adstxt_scanner';
@@ -178,6 +179,14 @@ export class AdsTxtService {
       if (record.validation_key) {
         const msg = createValidationMessage(record.validation_key, [], 'en');
         if (msg) warning_message = msg.message;
+      } else if (!record.is_valid && record.raw_line) {
+        // Try to diagnose invalid records that don't have a specific validation key yet
+        const diagnosis = diagnoseLine(record.raw_line);
+        if (diagnosis) {
+          record.validation_key = diagnosis;
+          // We can set a fallback warning message here or let the frontend translate it
+          warning_message = diagnosis;
+        }
       }
 
       // Populate seller info if available

@@ -21,9 +21,9 @@ async function proxyRequest(request: NextRequest) {
     const fetchOptions: RequestInit = {
       method: request.method,
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      cache: "no-store",
+      cache: "no-store"
     }
 
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -48,7 +48,6 @@ async function proxyRequest(request: NextRequest) {
       const text = await res.text()
       return new NextResponse(text)
     }
-
   } catch (error: any) {
     console.error(`[Proxy Insite] Error: ${error.message}`)
     return NextResponse.json({ error: error.message }, { status: 500 })

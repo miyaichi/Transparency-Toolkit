@@ -12,6 +12,11 @@
 2.  **Infrastructure & Reliability**
     -   [x] **Cron Job Optimization**: Reduce scheduler frequency in production (currently runs every 1 minute). Suggest changing to 15+ minutes to save resources and DB connections (`backend/src/jobs/scheduler.ts`).
     -   [x] **Database Access**: Prevent creating new DB pools per request. Refactor to use a singleton or injected database client (`backend/src/api/sellers.ts`).
+    -   [x] **GCP Routing & CORS Fixes**:
+        -   Implemented explicit API Proxy routes in Next.js (`/api/proxy/insite`, `/api/proxy/optimizer`) to resolve `404` errors in Cloud Run.
+        -   Removed unstable `rewrites()` from `next.config.ts`.
+        -   Configured correct `BACKEND_URL` in Cloud Run environment variables.
+        -   *Why*: Fixed 'Unexpected token' and '404' errors for Analytics and Optimizer pages in production.
 
 ## 🛠 High Priority (Architecture & Stability)
 > Improvements necessary for maintainability, testing, and preventing future regressions.
@@ -43,21 +48,7 @@
 
 ### ⏭ Next Priorities
 
-1.  **Verification & Polish**
-    -   Manual verification of the new "Certification Authority ID Verification" feature.
-    -   Ensure all translation keys are correctly resolving.
-
-2.  **Enhance Insite Analytics**
-    -   Expand integration with OpenSincera's API.
-    -   Display more detailed publisher insights and reputation metrics.
-    -   Add graphical visualizations for trends.
-
-3.  **Advanced Validation Logic**
-    -   **Enhance Validator Diagnostics using Normalizer**:
-        -   Utilize the `normalizer.ts` library to analyze invalid rows in the Validator.
-        -   Provide specific actionable feedback (e.g., "Contains full-width characters" or "Fixable format error") instead of a generic "Invalid Format" error.
-
-## ⚙️ Medium Priority (Operations & Efficiency)
+### ⏭ Next Priorities
 
 1.  **API Enhancements**
     -   **Rate Limiting**: Implement Global and Per-IP rate limiting to prevent abuse.
@@ -89,7 +80,20 @@
     -   [x] Integrated AI Advisor into Analytics page.
 -   **Publish the Validation Codes / Warning Page**
     -   Migrated `adstxt-manager` v1 help files (`/doc` contents) to `frontend/public/help`.
-    -   Implemented Markdown rendering for `/warnings` page with deep linking support.
+    -   [x] Implemented Markdown rendering for `/warnings` page with deep linking support.
+-   **Verification & Polish**
+    -   [x] Manual verification of "Certification Authority ID Verification" feature.
+    -   [x] Verified translation keys resolution.
+-   **Enhance Insite Analytics**
+    -   [x] Expanded integration with OpenSincera's API (Publisher & Benchmark data).
+    -   [x] Displayed detailed publisher insights and reputation metrics.
+    -   [x] Added visualizations (Metrics Cards & Detailed Data View).
+-   **Advanced Validation Logic**
+    -   [x] **Enhance Validator Diagnostics**: Implemented `diagnoseLine` in `normalizer.ts` to detect full-width characters, invalid separators, and case errors.
+    -   [x] **Specific Feedback**: Added translation keys for specific error messages (Code 11010, etc).
+-   **UX Improvements (Requests)**
+    -   [x] **Support ads.txt Variables**: Visualized `CONTACT`, `OWNERDOMAIN`, etc. in Validator results and CSV export.
+    -   [x] **Delayed Sellers.json Message**: Added warning/hint when `sellers.json` is being fetched in the background.
 
 ## 📣 Private Beta Feedback (Prioritized)
 

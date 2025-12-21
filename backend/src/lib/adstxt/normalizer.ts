@@ -122,3 +122,39 @@ export function normalizeAdsTxt(content: string): string {
       .trim() + '\n'
   ); // Ensure single trailing newline
 }
+
+/**
+ * Diagnostics for invalid lines
+ * Returns a specific error key if a known fixable issue is detected
+ */
+export function diagnoseLine(line: string): string | null {
+  const content = line.split('#')[0].trim();
+  if (!content) return null;
+
+  // 1. Check for Full-width characters (e.g., １２３, ａｂｃ, ，)
+  // Range includes Fullwidth forms (FF00-FFEF) and CJK symbols that might be mistaken for punctuation
+  // Specifically: Fullwidth Comma (FF0C), Ideographic Comma (3001), Fullwidth Spaces (3000)
+  if (/[\uFF01-\uFF5E\u3000\u3001-\u3002\uFF0C]/.test(content)) {
+    return 'containsFullWidthChar';
+  }
+
+  // 2. Check for alternative separators (semicolon, tabs, pipe) instead of comma
+  // But only if comma is missing
+  if (!content.includes(',')) {
+    if (content.includes(';') || content.includes('\t') || content.includes('|')) {
+      return 'invalidSeparator';
+    }
+  }
+
+  // 3. Check for invalid case in Relationship field (when otherwise structure looks okay)
+  const parts = content.split(',').map((s) => s.trim());
+  if (parts.length >= 3) {
+    const type = parts[2];
+    const upper = type.toUpperCase();
+    if ((upper === 'DIRECT' || upper === 'RESELLER') && type !== upper) {
+      return 'invalidCase'; // Relationship case error
+    }
+  }
+
+  return null;
+}

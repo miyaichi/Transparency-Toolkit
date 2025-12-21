@@ -73,11 +73,15 @@ export function ValidatorResult({ domain, type }: Props) {
     ]
     const csvContent = [
       headers.join(","),
-      ...data.records.map((r) =>
-        [
+      ...data.records.map((r) => {
+        // Handle variable records where variable_type/value replaces domain/account_id
+        const col1 = r.variable_type || r.domain || ""
+        const col2 = r.value || r.account_id || ""
+
+        return [
           r.line_number,
-          r.domain || "",
-          r.account_id || "",
+          col1,
+          col2,
           r.relationship || "",
           r.account_type || "", // Assuming account_type maps to Cert ID in parser
           r.is_valid ? "OK" : "ERROR",
@@ -85,7 +89,7 @@ export function ValidatorResult({ domain, type }: Props) {
         ]
           .map((f) => `"${String(f).replace(/"/g, '""')}"`)
           .join(",")
-      )
+      })
     ].join("\n")
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
@@ -127,8 +131,21 @@ export function ValidatorResult({ domain, type }: Props) {
 
   if (!data) return null
 
+  // Check if we have missing sellers.json warnings
+  const hasMissingSellers = data.records.some((r) => r.validation_key === "noSellersJson")
+
   return (
     <div className="space-y-6">
+      {hasMissingSellers && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-start space-x-3 text-blue-900 animate-in fade-in slide-in-from-top-2">
+          <Loader2 className="h-5 w-5 text-blue-600 animate-spin mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <p className="font-medium">{t("common.note") || "Note"}</p>
+            <p>{t("common.backgroundFetchHint")}</p>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <Card>
@@ -259,16 +276,28 @@ export function ValidatorResult({ domain, type }: Props) {
                       ? "bg-yellow-50 hover:bg-yellow-100/80"
                       : "hover:bg-muted/50"
 
+                  const isVariable = !!record.variable_type
+
                   return (
                     <tr key={i} className={`border-b border-gray-100 last:border-0 transition-colors ${rowClass}`}>
                       <td className="p-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                         {record.line_number}
                       </td>
                       <td className="p-3 font-medium whitespace-nowrap">
-                        {record.domain || <span className="text-muted-foreground italic">-</span>}
+                        {isVariable ? (
+                          <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200 font-normal">
+                            {record.variable_type}
+                          </Badge>
+                        ) : (
+                          record.domain || <span className="text-muted-foreground italic">-</span>
+                        )}
                       </td>
                       <td className="p-3 font-mono text-xs whitespace-nowrap">
-                        {record.account_id || <span className="text-muted-foreground italic">-</span>}
+                        {isVariable ? (
+                          <span className="text-slate-700">{record.value}</span>
+                        ) : (
+                          record.account_id || <span className="text-muted-foreground italic">-</span>
+                        )}
                       </td>
                       <td className="p-3 whitespace-nowrap">
                         {record.relationship ? (

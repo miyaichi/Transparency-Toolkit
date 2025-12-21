@@ -184,6 +184,14 @@ export const translations = {
     records: {
       en: "records",
       ja: "レコード"
+    },
+    note: {
+      en: "Note",
+      ja: "注意"
+    },
+    backgroundFetchHint: {
+      en: "Some sellers.json files indicate they are missing. We are fetching them in the background. Please wait a moment and try searching again for updated results.",
+      ja: "一部のsellers.jsonファイルの取得が完了していない可能性があります。バックグラウンドで取得中ですので、数分待ってから再度検索すると結果が更新される場合があります。"
     }
   },
   validation: {
@@ -268,6 +276,28 @@ export const translations = {
     emptyAccountId: {
       title: { en: "Empty Account ID", ja: "空のアカウントID" },
       description: { en: "Empty Account ID", ja: "空のアカウントID" }
+    },
+
+    containsFullWidthChar: {
+      title: { en: "Contains Full-width Characters", ja: "全角文字が含まれています" },
+      description: {
+        en: "The record contains full-width characters (e.g. １２３ usually used in CJK). Please replace with ASCII.",
+        ja: "レコードに全角文字（例：１２３）が含まれています。半角英数字に修正してください。"
+      }
+    },
+    invalidSeparator: {
+      title: { en: "Invalid Separator", ja: "無効な区切り文字" },
+      description: {
+        en: "The record uses an invalid separator (e.g. tab, semicolon) instead of comma.",
+        ja: "カンマの代わりに無効な区切り文字（タブ、セミコロンなど）が使用されています。"
+      }
+    },
+    invalidCase: {
+      title: { en: "Invalid Case in Relationship", ja: "関係性のタイプが大文字ではありません" },
+      description: {
+        en: "DIRECT or RESELLER should be uppercase.",
+        ja: "DIRECT または RESELLER は大文字である必要があります。"
+      }
     },
     // ... Additional keys can be added here as needed
     noSellersJson: {
