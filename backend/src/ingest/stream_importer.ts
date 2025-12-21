@@ -83,7 +83,7 @@ export class StreamImporter {
       try {
         await client.query('BEGIN');
 
-        // Delete existing entries for this domain to avoid constraints errors
+        // DELETE existing entries
         await client.query('DELETE FROM sellers_catalog WHERE domain = $1', [options.domain]);
 
         // COPY Stream
@@ -97,17 +97,34 @@ export class StreamImporter {
               seller_domain,
               identifiers,
               is_confidential, 
-              raw_file_id
+              raw_file_id,
+              certification_authority_id
             ) FROM STDIN
           `),
         );
 
         // 4. Build pipeline
         const seenSellerIds = new Set<string>();
+        let certAuthorityId: string | null = null;
+
+        // Create parser and attach listeners to capture 'identifiers' from header or footer
+        const parser = JSONStream.parse('sellers.*');
+
+        const extractCertId = (data: any) => {
+          if (data && data.identifiers && Array.isArray(data.identifiers)) {
+            const tag = data.identifiers.find((i: any) => i.name === 'TAG-ID');
+            if (tag && tag.value) {
+              certAuthorityId = tag.value;
+            }
+          }
+        };
+
+        parser.on('header', extractCertId);
+        parser.on('footer', extractCertId);
 
         await pipeline(
           response.data,
-          JSONStream.parse('sellers.*'),
+          parser,
           new Transform({
             objectMode: true,
             transform(seller: any, encoding, callback) {
@@ -163,7 +180,10 @@ export class StreamImporter {
                 }
                 const identifiersStr = identifiers ? identifiers : '\\N'; // \N for NULL in COPY
 
-                const row = `${sellerId}\t${options.domain}\t${sellerType}\t${name}\t${sellerDomain}\t${identifiersStr}\t${isConfidential}\t${rawFileId}\n`;
+                // Certification Authority ID (if found in header)
+                const certIdStr = certAuthorityId ? certAuthorityId : '\\N';
+
+                const row = `${sellerId}\t${options.domain}\t${sellerType}\t${name}\t${sellerDomain}\t${identifiersStr}\t${isConfidential}\t${rawFileId}\t${certIdStr}\n`;
                 callback(null, row);
               } catch (e) {
                 // Skip malformed record but continue stream
@@ -173,6 +193,14 @@ export class StreamImporter {
           }),
           ingestStream,
         );
+
+        // Post-processing: If certAuthorityId was found (e.g. in footer) and not applied to some rows
+        if (certAuthorityId) {
+          await client.query(
+            'UPDATE sellers_catalog SET certification_authority_id = $1 WHERE domain = $2 AND certification_authority_id IS NULL',
+            [certAuthorityId, options.domain],
+          );
+        }
 
         // Mark as processed
         await client.query('UPDATE raw_sellers_files SET processed_at = NOW() WHERE id = $1', [rawFileId]);
