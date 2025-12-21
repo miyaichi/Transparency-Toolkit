@@ -27,21 +27,35 @@
 
 ## 🚀 Feature Roadmap
 
-### Next Priorities (User Facing)
+### 🏁 Completed Phases
 
+1.  **Optimizer Phase 1: Format Normalization**
+    -   [x] Implemented `normalizer.ts` library.
+    -   [x] Integrated into Optimizer Step 1.
+    -   [x] Added UI toggle and i18n support.
 
-1.  **Enhance Insite Analytics**
+2.  **Optimizer Phase 2: Certification Authority ID Verification**
+    -   [x] **Database Schema**: Added `certification_authority_id` column to `sellers_catalog`.
+    -   [x] **Self-Healing Data**: Updated `stream_importer.ts` to capture TAG-ID from `sellers.json` identifiers automatically.
+    -   [x] **Backend Logic**: Implemented Step 6 (`verifyCertAuthority`) in `optimizer.ts`.
+    -   [x] **Frontend UI**: Added Step 6 switch and results display in `optimizer/page.tsx`.
+    -   [x] **Documentation**: Updated help files with Step 6 details.
+
+### ⏭ Next Priorities
+
+1.  **Verification & Polish**
+    -   Manual verification of the new "Certification Authority ID Verification" feature.
+    -   Ensure all translation keys are correctly resolving.
+
+2.  **Enhance Insite Analytics**
     -   Expand integration with OpenSincera's API.
     -   Display more detailed publisher insights and reputation metrics.
     -   Add graphical visualizations for trends.
 
-### 🔄 In Progress / Continuous Improvement
--   **UI/UX Polishing**:
-    -   Improve mobile responsiveness for data tables.
-    -   Add more helpful tooltips and onboarding guides for new users.
-    -   Refine error handling and loading states.
--   **Feedback Integration**:
-    -   Embed a feedback form (likely Google Forms or Typeform) for beta testers.
+3.  **Advanced Validation Logic**
+    -   **Enhance Validator Diagnostics using Normalizer**:
+        -   Utilize the `normalizer.ts` library to analyze invalid rows in the Validator.
+        -   Provide specific actionable feedback (e.g., "Contains full-width characters" or "Fixable format error") instead of a generic "Invalid Format" error.
 
 ## ⚙️ Medium Priority (Operations & Efficiency)
 
@@ -54,14 +68,8 @@
     -   **Error Tracking**: Setup Sentry or similar for production error monitoring.
 
 3.  **Testing**
-    -   **Unit Tests**: Increase coverage for complex logic (e.g., `optimizer.ts`), enabled by the Service Layer refactoring.
-    -   **E2E Testing**: Set up Playwright for critical user flows (Validation -> Optimization).
-
-3.  **Advanced Validation Logic**
-    -   **Enhance Validator Diagnostics using Normalizer**:
-        -   Utilize the `normalizer.ts` library created in Phase 1 to analyze invalid rows in the Validator.
-        -   If an invalid row becomes valid after normalization, provide specific actionable feedback (e.g., "Contains full-width characters" or "Fixable format error") instead of a generic "Invalid Format" error.
-        -   *Why*: Improves user experience by distinguishing between fatal data errors and simple formatting issues.
+    -   **Unit Tests**: Increase coverage for complex logic (e.g., `optimizer.ts`).
+    -   **E2E Testing**: Set up Playwright for critical user flows.
 
 ## ✅ Completed Features
 
