@@ -56,7 +56,6 @@ export default function WarningsPage() {
     }
   }, [loading, content])
 
-
   if (loading) {
     return (
       <div className="flex h-[50vh] w-full items-center justify-center">

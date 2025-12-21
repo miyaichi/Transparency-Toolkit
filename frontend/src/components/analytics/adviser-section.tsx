@@ -58,9 +58,7 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
 
           const results = await Promise.all(fetchPromises)
           // Extract publisher data (API returns single object now)
-          const validResults = results
-            .filter((r) => r !== null && r.publisherId)
-            .map(r => r)
+          const validResults = results.filter((r) => r !== null && r.publisherId).map((r) => r)
 
           if (validResults.length > 0) {
             // Calculate averages

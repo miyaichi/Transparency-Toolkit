@@ -18,12 +18,14 @@ const getService = () => {
   });
 };
 
-const searchSchema = z.object({
-  domain: z.string().optional(),
-  publisherId: z.string().optional(),
-}).refine(data => data.domain || data.publisherId, {
-  message: "Either domain or publisherId must be provided"
-});
+const searchSchema = z
+  .object({
+    domain: z.string().optional(),
+    publisherId: z.string().optional(),
+  })
+  .refine((data) => data.domain || data.publisherId, {
+    message: 'Either domain or publisherId must be provided',
+  });
 
 app.get('/publisher', zValidator('query', searchSchema), async (c) => {
   const { domain, publisherId } = c.req.valid('query');

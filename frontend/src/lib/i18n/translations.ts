@@ -271,21 +271,30 @@ export const translations = {
     },
     // ... Additional keys can be added here as needed
     noSellersJson: {
-      title: { en: "No Sellers.json File (Code: 12010, 13010)", ja: "Sellers.jsonファイルがない（コード: 12010, 13010）" },
+      title: {
+        en: "No Sellers.json File (Code: 12010, 13010)",
+        ja: "Sellers.jsonファイルがない（コード: 12010, 13010）"
+      },
       description: {
         en: "No Sellers.json File (Code: 12010, 13010)",
         ja: "Sellers.jsonファイルがない（コード: 12010, 13010）"
       }
     },
     directAccountIdNotInSellersJson: {
-      title: { en: "DIRECT: Account ID Not in Sellers.json (Code: 12020)", ja: "DIRECT: アカウントIDがSellers.jsonにない（コード: 12020）" },
+      title: {
+        en: "DIRECT: Account ID Not in Sellers.json (Code: 12020)",
+        ja: "DIRECT: アカウントIDがSellers.jsonにない（コード: 12020）"
+      },
       description: {
         en: "DIRECT: Account ID Not in Sellers.json (Code: 12020)",
         ja: "DIRECT: アカウントIDがSellers.jsonにない（コード: 12020）"
       }
     },
     resellerAccountIdNotInSellersJson: {
-      title: { en: "RESELLER: Account ID Not in Sellers.json (Code: 13020)", ja: "RESELLER: アカウントIDがSellers.jsonにない（コード: 13020）" },
+      title: {
+        en: "RESELLER: Account ID Not in Sellers.json (Code: 13020)",
+        ja: "RESELLER: アカウントIDがSellers.jsonにない（コード: 13020）"
+      },
       description: {
         en: "RESELLER: Account ID Not in Sellers.json (Code: 13020)",
         ja: "RESELLER: アカウントIDがSellers.jsonにない（コード: 13020）"

@@ -96,7 +96,7 @@ export class OpenSinceraService {
       (error) => {
         console.error('OpenSincera API request error', { error: error.message });
         return Promise.reject(error);
-      }
+      },
     );
 
     this.client.interceptors.response.use(
@@ -115,13 +115,11 @@ export class OpenSinceraService {
           message: error.message,
         });
         return Promise.reject(error);
-      }
+      },
     );
   }
 
-  async getPublisherMetadata(
-    request: GetPublisherMetadataRequest = {}
-  ): Promise<GetPublisherMetadataResponse> {
+  async getPublisherMetadata(request: GetPublisherMetadataRequest = {}): Promise<GetPublisherMetadataResponse> {
     try {
       let endpoint: string;
 
@@ -214,10 +212,7 @@ export class OpenSinceraService {
         request,
       });
 
-      if (
-        axios.isAxiosError(error) &&
-        (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')
-      ) {
+      if (axios.isAxiosError(error) && (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
         console.error('OpenSincera API network error - check endpoint URL and connectivity', {
           domain: request.publisherDomain,
           publisherId: request.publisherId,
@@ -231,9 +226,7 @@ export class OpenSinceraService {
           const apiError = error.response.data.error as OpenSinceraApiError;
           throw new Error(`OpenSincera API Error: ${apiError.message} (${apiError.code})`);
         }
-        throw new Error(
-          `HTTP ${error.response?.status}: ${error.response?.statusText || errorMessage}`
-        );
+        throw new Error(`HTTP ${error.response?.status}: ${error.response?.statusText || errorMessage}`);
       }
 
       throw error;
@@ -284,10 +277,7 @@ export class OpenSinceraService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      if (
-        axios.isAxiosError(error) &&
-        (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')
-      ) {
+      if (axios.isAxiosError(error) && (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
         console.error('OpenSincera API not reachable', {
           error: errorMessage,
           baseUrl: this.config.baseUrl,
