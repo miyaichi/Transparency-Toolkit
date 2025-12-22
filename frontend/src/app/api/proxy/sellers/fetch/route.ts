@@ -4,7 +4,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.toString()
 
-  const backendUrl = process.env.BACKEND_URL || "http://localhost:3000"
+  // Use 127.0.0.1 instead of localhost to avoid Node 18+ IPv6 issues
+  const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080"
 
   try {
     const res = await fetch(`${backendUrl}/api/sellers/fetch?${query}`, {

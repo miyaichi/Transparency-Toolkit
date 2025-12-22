@@ -42,6 +42,8 @@ jobs:
           docker build --platform linux/amd64 -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }} ./backend
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
 
+
+
       # Backend Deploy
       - name: Deploy Backend
         run: |
@@ -56,6 +58,11 @@ jobs:
             --set-env-vars DATABASE_URL="postgres://postgres:${{ secrets.DB_PASSWORD }}@/${{ secrets.DB_NAME }}?host=/cloudsql/${DB_CONNECTION_NAME}",OPENSINCERA_API_KEY=${{ secrets.OPENSINCERA_API_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},SENTRY_DSN=${{ secrets.SENTRY_DSN }} \
             --allow-unauthenticated
 
+      # Get Backend URL
+      - name: Get Backend URL
+        run: |
+          echo "BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} --region ${{ env.REGION }} --format 'value(status.url)')" >> $GITHUB_ENV
+
       # Frontend Build & Push
       - name: Build and Push Frontend
         run: |
@@ -69,5 +76,5 @@ jobs:
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --project ${{ env.PROJECT_ID }} \
-            --set-env-vars NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }} \
+            --set-env-vars NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }},BACKEND_URL=${{ env.BACKEND_URL }} \
             --allow-unauthenticated

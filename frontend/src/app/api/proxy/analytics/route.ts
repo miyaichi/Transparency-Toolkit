@@ -4,7 +4,8 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const query = searchParams.toString()
 
-  const backendUrl = process.env.BACKEND_URL || "http://localhost:3001"
+  // Use 127.0.0.1 instead of localhost to avoid Node 18+ IPv6 issues
+  const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080"
   const url = `${backendUrl}/api/analytics?${query}`
   console.log(`[Proxy] Forwarding request to: ${url}`)
 
