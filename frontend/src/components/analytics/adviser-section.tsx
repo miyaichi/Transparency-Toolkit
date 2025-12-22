@@ -138,9 +138,8 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
         language: language // Send current language to backend
       }
 
-      // Uses production URL if env is set, or relative path for local proxy
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"
-      const res = await fetch(`${backendUrl}/api/adviser/analyze`, {
+      // Use local proxy to handle CORS and IPv4/IPv6 issues
+      const res = await fetch("/api/proxy/adviser/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
