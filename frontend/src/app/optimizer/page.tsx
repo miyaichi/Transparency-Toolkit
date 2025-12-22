@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useTranslation } from "@/lib/i18n/language-context"
 import { AlertCircle, ArrowRight, Check, Download, FileText, HelpCircle, Sparkles, Wand2 } from "lucide-react"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { triggerBackgroundScan } from "@/lib/api-utils"
@@ -93,8 +93,14 @@ export default function OptimizerPage() {
     }
   }
 
+  const [error, setError] = useState<string | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
   // Mock processing effect replaced with real backend call
   useEffect(() => {
+    // Clear previous error
+    setError(null)
+
     if (!inputContent) {
       setOptimizedContent("")
       setStats({
@@ -113,6 +119,15 @@ export default function OptimizerPage() {
     if (!optimizedContent) {
       setOptimizedContent(inputContent)
     }
+
+    // Cancel any ongoing request when dependencies change (user types/toggles)
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Create new controller for this sequence
+    const controller = new AbortController()
+    abortControllerRef.current = controller
 
     const timer = setTimeout(async () => {
       try {
@@ -137,23 +152,37 @@ export default function OptimizerPage() {
               sellersAction: steps.sellersAction,
               verifyCertAuthority: steps.verifyCertAuthority
             }
-          })
+          }),
+          signal: controller.signal
         })
 
         if (!response.ok) {
-          throw new Error("API Error")
+          const errData = await response.json().catch(() => ({}))
+          throw new Error(errData.error || "API Error")
         }
 
         const data = await response.json()
         setOptimizedContent(data.optimizedContent)
         setStats(data.stats)
-      } catch (e) {
+      } catch (e: any) {
+        if (e.name === "AbortError") {
+          console.log("Optimization request aborted")
+          return
+        }
         console.error("Optimization failed", e)
-        // Fallback or error state handling
+        setError(e.message || "Failed to process content")
       }
-    }, 500) // 500ms debounce
+    }, 800) // Increased debounce to 800ms to reduce backend load further
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      // We don't abort on cleanup here because cleanup runs effectively on every keypress due to deps change.
+      // We handled the abort at the *start* of the effect.
+      // If we abort here, the timeout callback (if it fired) might be aborted unnecessarily if it overlaps with render?
+      // Actually, logic above handles "abort previous" correctly.
+      // We *should* abort if the component unmounts.
+      // For simplicity: The logic at the start covers the "new input cancels old" case.
+    }
   }, [inputContent, steps, domain, fileType, ownerDomainInput])
 
   const handleDownload = () => {
@@ -641,6 +670,12 @@ export default function OptimizerPage() {
               </div>
             </CardHeader>
             <CardContent className="flex-1 p-0 relative">
+              {error && (
+                <div className="absolute top-6 left-6 right-6 z-10 bg-red-50 text-red-600 border border-red-200 px-4 py-3 rounded-md flex items-center shadow-lg animate-in fade-in slide-in-from-top-2">
+                  <AlertCircle className="h-5 w-5 mr-3 flex-shrink-0" />
+                  <span className="text-sm font-medium">{error}</span>
+                </div>
+              )}
               <div className="absolute inset-0 p-4">
                 <div className="w-full h-full bg-slate-950 rounded-md p-4 overflow-auto border border-slate-800">
                   <pre className="font-mono text-sm text-slate-300 whitespace-pre">

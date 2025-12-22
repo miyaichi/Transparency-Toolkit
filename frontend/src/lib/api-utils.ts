@@ -11,8 +11,23 @@
  * @param domain The domain to scan
  * @param type The type of file to scan ('ads.txt', 'app-ads.txt', 'sellers.json')
  */
+const pendingScans = new Set<string>()
+
 export const triggerBackgroundScan = (domain: string, type: "ads.txt" | "app-ads.txt" | "sellers.json") => {
   if (!domain) return
+
+  // Prevent duplicate triggers for the same domain/type within 60 seconds
+  const key = `${domain}:${type}`
+  if (pendingScans.has(key)) {
+    console.debug(`[Background Scan] Skipping duplicate trigger for ${key}`)
+    return
+  }
+
+  pendingScans.add(key)
+  // Remove from set after 60 seconds
+  setTimeout(() => {
+    pendingScans.delete(key)
+  }, 60000)
 
   // Fire and forget
   const fire = async () => {
@@ -24,6 +39,8 @@ export const triggerBackgroundScan = (domain: string, type: "ads.txt" | "app-ads
         url = `/api/proxy/validator?domain=${domain}&type=${type}&save=true`
       }
 
+      console.log(`[Background Scan] Triggering for ${key}`)
+
       await fetch(url, {
         method: "GET",
         headers: {
@@ -34,6 +51,7 @@ export const triggerBackgroundScan = (domain: string, type: "ads.txt" | "app-ads
     } catch (e) {
       // Ignore errors for background trigger
       console.warn("Background scan trigger failed:", e)
+      // Allow retry sooner if it failed? No, keep it throttled to avoid spamming errors too.
     }
   }
 

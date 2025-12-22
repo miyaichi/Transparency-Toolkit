@@ -64,9 +64,19 @@ graph TD
 ```bash
 docker compose up -d
 ```
-This starts PostgreSQL (port 5433) and the Backend API (port 8080).
+This starts PostgreSQL (port 5433) and the Backend API.
+*Note: Check `docker-compose.yml` for the exposed backend port (default maps 3000->3002).*
 
 ### 2. Frontend Setup
+Create a `.env.local` file in the `frontend` directory if your backend is not running on the default `http://127.0.0.1:8080`.
+
+```bash
+# frontend/.env.local
+# Example if running backend via Docker (port 3002)
+BACKEND_URL=http://localhost:3002
+```
+
+Run the frontend:
 ```bash
 cd frontend
 npm install
@@ -79,7 +89,7 @@ If you want to run the backend locally instead of via Docker:
 ```bash
 cd backend
 npm install
-# Set env vars and run
+# Set env vars and run (Default port 3000, or override with PORT)
 DATABASE_URL=postgres://postgres:password@localhost:5433/adstxt_v2 PORT=8080 OPENSINCERA_API_KEY=your_key npm run dev
 ```
 
