@@ -4,6 +4,7 @@ import { useTranslation } from "@/lib/i18n/language-context"
 import { Loader2, Sparkles } from "lucide-react"
 import { useState } from "react"
 import ReactMarkdown from "react-markdown"
+import rehypeRaw from "rehype-raw"
 import remarkGfm from "remark-gfm"
 
 interface AdviserSectionProps {
@@ -27,6 +28,12 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState("")
+
+  // Pre-process report to fix Japanese bold rendering
+  // Replace **text** with <strong>text</strong> to bypass markdown strict punctuation rules
+  const processedReport = report
+    ? report.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    : null
 
   const handleAnalyze = async () => {
     setLoading(true)
@@ -224,10 +231,11 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
           </div>
         )}
 
-        {report && (
+        {processedReport && (
           <div className="bg-white p-8 prose prose-purple max-w-none">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
               components={{
                 h1: ({ node, ...props }) => <h1 className="text-2xl font-bold text-purple-900 mb-4" {...props} />,
                 h2: ({ node, ...props }) => <h2 className="text-xl font-bold text-purple-800 mt-6 mb-3" {...props} />,
@@ -241,7 +249,7 @@ export function AdviserSection({ analyticsData }: AdviserSectionProps) {
                 )
               }}
             >
-              {report}
+              {processedReport}
             </ReactMarkdown>
 
             <div className="mt-8 pt-6 border-t flex justify-end">
