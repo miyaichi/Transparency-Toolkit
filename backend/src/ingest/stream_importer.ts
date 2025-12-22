@@ -64,7 +64,13 @@ export class StreamImporter {
       if (!response) return;
 
       const httpStatus = response.status;
+      const contentType = response.headers['content-type'] || '';
       const etag = response.headers['etag'] || null;
+
+      // Detect HTML responses (soft 404s or captive portals) to avoid JSON parse errors
+      if (httpStatus < 400 && contentType.toLowerCase().includes('text/html')) {
+        throw new Error(`Invalid Content-Type: ${contentType} (Expected JSON)`);
+      }
 
       // 1. Raw File Record作成 (Save metadata even if failed)
       const rawFileId = await this.createRawFileRecord(
