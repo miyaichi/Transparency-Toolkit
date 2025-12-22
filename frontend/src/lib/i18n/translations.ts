@@ -149,6 +149,22 @@ export const translations = {
       en: "Explorer Results for",
       ja: "探索結果: "
     },
+    sellerName: {
+      en: "Seller Name",
+      ja: "セラー名"
+    },
+    sellerType: {
+      en: "Seller Type",
+      ja: "セラータイプ"
+    },
+    isConfidential: {
+      en: "Is Confidential",
+      ja: "機密扱い"
+    },
+    sellerDomain: {
+      en: "Seller Domain",
+      ja: "セラードメイン"
+    },
     auto: {
       en: "Auto",
       ja: "自動"
@@ -417,7 +433,32 @@ export const translations = {
       resellers: { en: "Resellers", ja: "リセラー" }
     },
     updatedAt: { en: "Data updated:", ja: "データ更新日:" },
-    poweredBy: { en: "Powered by OpenSincera", ja: "Powered by OpenSincera" }
+    poweredBy: { en: "Powered by OpenSincera", ja: "Powered by OpenSincera" },
+    fields: {
+      publisherId: { en: "Publisher ID", ja: "パブリッシャーID" },
+      publisherName: { en: "Publisher Name", ja: "パブリッシャー名" },
+      ownerDomain: { en: "Owner Domain", ja: "オーナー・ドメイン" },
+      domain: { en: "Domain", ja: "ドメイン" },
+      status: { en: "Status", ja: "ステータス" },
+      verificationStatus: { en: "Verification Status", ja: "検証ステータス" },
+      lastUpdated: { en: "Last Updated", ja: "最終更新日" },
+      contactEmail: { en: "Contact Email", ja: "連絡先メールアドレス" },
+      categories: { en: "Categories", ja: "カテゴリ" },
+      parentEntityId: { en: "Parent Entity ID", ja: "親エンティティID" },
+      similarPublishers: { en: "Similar Publishers", ja: "類似パブリッシャー" },
+      description: { en: "Description", ja: "説明" },
+      primarySupplyType: { en: "Primary Supply Type", ja: "主なサプライタイプ" },
+      avgAdsToContentRatio: { en: "Avg Ads to Content Ratio", ja: "平均広告/コンテンツ比率" },
+      avgAdsInView: { en: "Avg Ads in View", ja: "平均インビュー率" },
+      avgAdRefresh: { en: "Avg Ad Refresh", ja: "平均広告リフレッシュ" },
+      totalUniqueGpids: { en: "Total Unique GPIDs", ja: "総ユニークGPID数" },
+      idAbsorptionRate: { en: "ID Absorption Rate", ja: "ID吸収率" },
+      avgPageWeight: { en: "Avg Page Weight", ja: "平均ページ容量" },
+      avgCpu: { en: "Avg CPU", ja: "平均CPU使用率" },
+      totalSupplyPaths: { en: "Total Supply Paths", ja: "総サプライパス数" },
+      resellerCount: { en: "Reseller Count", ja: "リセラー数" },
+      slug: { en: "Slug", ja: "スラッグ" }
+    }
   },
   scanStatusPage: {
     tabs: {

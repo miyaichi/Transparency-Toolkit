@@ -24,7 +24,7 @@
     even on non-200 responses, and missing translation imports are buried mid-
     file; add error handling/loading states and move imports to the top for
     clarity (src/app/status/page.tsx:30-135, src/app/status/page.tsx:203-230).
-  - [ ] Close i18n gaps before public users arrive: explorer CSV headers and
+  - [x] Close i18n gaps before public users arrive: explorer CSV headers and
     analytics detail labels are hard-coded English with TODO notes—fill
     translations and reuse t(...) so JP mode is consistent (src/components/
     explorer/explorer-result.tsx:26-37, src/components/analytics/detailed-data-

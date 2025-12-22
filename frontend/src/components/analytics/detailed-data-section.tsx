@@ -29,30 +29,30 @@ export function DetailedDataSection({ data }: DetailedDataSectionProps) {
 
   // Field configuration: key path, label i18n key (or raw), anchor id
   const fields = [
-    { key: "publisherId", label: "Publisher ID", anchor: "publisher-id" },
-    { key: "publisherName", label: "Publisher Name", anchor: "publisher-name" },
-    { key: "ownerDomain", label: "Owner Domain", anchor: "owner-domain" },
-    { key: "domain", label: "Domain", anchor: "domain" },
-    { key: "status", label: "Status", anchor: "status" },
-    { key: "verificationStatus", label: "Verification Status", anchor: "verification-status" },
-    { key: "lastUpdated", label: "Last Updated", anchor: "last-updated" },
-    { key: "contactEmail", label: "Contact Email", anchor: "contact-email" },
-    { key: "categories", label: "Categories", anchor: "categories" },
-    { key: "parentEntityId", label: "Parent Entity ID", anchor: "parent-entity-id" },
-    { key: "similarPublishers", label: "Similar Publishers", anchor: "similar-publishers" },
+    { key: "publisherId", label: t("analyticsPage.fields.publisherId"), anchor: "publisher-id" },
+    { key: "publisherName", label: t("analyticsPage.fields.publisherName"), anchor: "publisher-name" },
+    { key: "ownerDomain", label: t("analyticsPage.fields.ownerDomain"), anchor: "owner-domain" },
+    { key: "domain", label: t("analyticsPage.fields.domain"), anchor: "domain" },
+    { key: "status", label: t("analyticsPage.fields.status"), anchor: "status" },
+    { key: "verificationStatus", label: t("analyticsPage.fields.verificationStatus"), anchor: "verification-status" },
+    { key: "lastUpdated", label: t("analyticsPage.fields.lastUpdated"), anchor: "last-updated" },
+    { key: "contactEmail", label: t("analyticsPage.fields.contactEmail"), anchor: "contact-email" },
+    { key: "categories", label: t("analyticsPage.fields.categories"), anchor: "categories" },
+    { key: "parentEntityId", label: t("analyticsPage.fields.parentEntityId"), anchor: "parent-entity-id" },
+    { key: "similarPublishers", label: t("analyticsPage.fields.similarPublishers"), anchor: "similar-publishers" },
     // Metadata fields
-    { key: "metadata.description", label: "Description", anchor: "description" },
-    { key: "metadata.primarySupplyType", label: "Primary Supply Type", anchor: "primary-supply-type" },
-    { key: "metadata.avgAdsToContentRatio", label: "Avg Ads to Content Ratio", anchor: "avg-ads-to-content-ratio" },
-    { key: "metadata.avgAdsInView", label: "Avg Ads in View", anchor: "avg-ads-in-view" },
-    { key: "metadata.avgAdRefresh", label: "Avg Ad Refresh", anchor: "avg-ad-refresh" },
-    { key: "metadata.totalUniqueGpids", label: "Total Unique GPIDs", anchor: "total-unique-gpids" },
-    { key: "metadata.idAbsorptionRate", label: "ID Absorption Rate", anchor: "id-absorption-rate" },
-    { key: "metadata.avgPageWeight", label: "Avg Page Weight", anchor: "avg-page-weight" },
-    { key: "metadata.avgCpu", label: "Avg CPU", anchor: "avg-cpu" },
-    { key: "metadata.totalSupplyPaths", label: "Total Supply Paths", anchor: "total-supply-paths" },
-    { key: "metadata.resellerCount", label: "Reseller Count", anchor: "reseller-count" },
-    { key: "metadata.slug", label: "Slug", anchor: "slug" }
+    { key: "metadata.description", label: t("analyticsPage.fields.description"), anchor: "description" },
+    { key: "metadata.primarySupplyType", label: t("analyticsPage.fields.primarySupplyType"), anchor: "primary-supply-type" },
+    { key: "metadata.avgAdsToContentRatio", label: t("analyticsPage.fields.avgAdsToContentRatio"), anchor: "avg-ads-to-content-ratio" },
+    { key: "metadata.avgAdsInView", label: t("analyticsPage.fields.avgAdsInView"), anchor: "avg-ads-in-view" },
+    { key: "metadata.avgAdRefresh", label: t("analyticsPage.fields.avgAdRefresh"), anchor: "avg-ad-refresh" },
+    { key: "metadata.totalUniqueGpids", label: t("analyticsPage.fields.totalUniqueGpids"), anchor: "total-unique-gpids" },
+    { key: "metadata.idAbsorptionRate", label: t("analyticsPage.fields.idAbsorptionRate"), anchor: "id-absorption-rate" },
+    { key: "metadata.avgPageWeight", label: t("analyticsPage.fields.avgPageWeight"), anchor: "avg-page-weight" },
+    { key: "metadata.avgCpu", label: t("analyticsPage.fields.avgCpu"), anchor: "avg-cpu" },
+    { key: "metadata.totalSupplyPaths", label: t("analyticsPage.fields.totalSupplyPaths"), anchor: "total-supply-paths" },
+    { key: "metadata.resellerCount", label: t("analyticsPage.fields.resellerCount"), anchor: "reseller-count" },
+    { key: "metadata.slug", label: t("analyticsPage.fields.slug"), anchor: "slug" }
   ]
 
   return (

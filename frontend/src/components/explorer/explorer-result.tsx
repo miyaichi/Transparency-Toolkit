@@ -27,10 +27,10 @@ export function ExplorerResult({ domain, type }: Props) {
       t("common.line"),
       t("common.advertisingSystem"),
       t("common.publisherAccountId"),
-      "Seller Name", // TODO: Add translation
-      "Seller Type",
-      "Is Confidential",
-      "Seller Domain",
+      t("common.sellerName"),
+      t("common.sellerType"),
+      t("common.isConfidential"),
+      t("common.sellerDomain"),
       t("common.relationship"),
       t("common.certId"),
       t("common.commentRaw")
@@ -44,7 +44,7 @@ export function ExplorerResult({ domain, type }: Props) {
           r.account_id || "",
           r.seller_name || "",
           r.seller_type || "",
-          r.is_confidential !== undefined ? (r.is_confidential === 1 ? "Yes" : "No") : "",
+          r.is_confidential !== undefined ? (r.is_confidential === 1 ? t("common.yes") : t("common.no")) : "",
           r.seller_domain || "",
           r.relationship || "",
           r.certification_authority_id || "",
@@ -120,7 +120,7 @@ export function ExplorerResult({ domain, type }: Props) {
                 <TableHead className="w-16">{t("common.line")}</TableHead>
                 <TableHead>{t("common.advertisingSystem")}</TableHead>
                 <TableHead>{t("common.publisherAccountId")}</TableHead>
-                <TableHead>Seller Name</TableHead>
+                <TableHead>{t("common.sellerName")}</TableHead>
                 <TableHead>{t("common.relationship")}</TableHead>
                 <TableHead>{t("common.certId")}</TableHead>
                 <TableHead>{t("common.commentRaw")}</TableHead>
