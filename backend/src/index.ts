@@ -1,6 +1,8 @@
 import { serve } from '@hono/node-server';
 import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import dns from 'dns';
 import dotenv from 'dotenv';
 import adstxtApp from './api/adstxt';
@@ -19,6 +21,17 @@ if (dns.setDefaultResultOrder) {
 }
 
 dotenv.config();
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  integrations: [
+    nodeProfilingIntegration(),
+  ],
+  // Tracing
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Set sampling rate for profiling - this is relative to tracesSampleRate
+  profilesSampleRate: 1.0,
+});
 
 // Critical Environment Variable Check
 const requiredEnvVars = ['DATABASE_URL'];
@@ -60,6 +73,7 @@ app.use(
 
 // Global Error Handler
 app.onError((err, c) => {
+  Sentry.captureException(err);
   logger.error('Uncaught Error', {
     error: err,
     path: c.req.path,

@@ -101,6 +101,7 @@ export default function DomainSearchPage() {
           <div className="inline-block p-6 rounded-full bg-muted mb-4">
             <Search className="h-12 w-12 text-muted-foreground" />
           </div>
+
           <p className="text-lg font-medium text-muted-foreground">{t("common.enterDomain")}</p>
         </div>
       )}

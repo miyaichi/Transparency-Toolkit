@@ -54,7 +54,7 @@
 
 2.  **Observability**
     -   [x] **Structured Logging**: Implement JSON structured logging for Cloud Logging integration.
-    -   **Error Tracking**: Setup Sentry or similar for production error monitoring.
+    -   [x] **Error Tracking**: Setup Sentry for production error monitoring (Frontend & Backend).
 
 3.  **Testing**
     -   [x] **Unit Tests**: Increase coverage for complex logic (e.g., `optimizer.ts`).
