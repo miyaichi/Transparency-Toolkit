@@ -157,11 +157,20 @@ export class SellersService {
     }
 
     if (save) {
-      const importer = new StreamImporter();
-      try {
-        await importer.importSellersJson({ domain, url });
-      } finally {
-        await importer.close();
+      // Check if data already exists to avoid timeout on large files (e.g. google.com)
+      // We rely on background cron jobs to keep data up-to-date.
+      const checkRes = await query('SELECT 1 FROM sellers_catalog WHERE domain = $1 LIMIT 1', [domain]);
+      const exists = (checkRes.rowCount ?? 0) > 0;
+
+      if (!exists) {
+        const importer = new StreamImporter();
+        try {
+          await importer.importSellersJson({ domain, url });
+        } finally {
+          await importer.close();
+        }
+      } else {
+        console.log(`Skipping import for ${domain} as data already exists. Relying on background updates.`);
       }
 
       // After import, fetch summary from DB to return

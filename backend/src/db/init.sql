@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS sellers_catalog (
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_domain ON sellers_catalog(domain);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_seller_id ON sellers_catalog(seller_id);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_name_trgm ON sellers_catalog USING GIN (name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_sellers_catalog_name_trgm ON sellers_catalog USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_sellers_catalog_domain_trgm ON sellers_catalog USING GIN (domain gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_sellers_catalog_seller_id_trgm ON sellers_catalog USING GIN (seller_id gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_seller_domain_trgm ON sellers_catalog USING GIN (seller_domain gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_sellers_catalog_cert_auth ON sellers_catalog(domain, certification_authority_id);
 
