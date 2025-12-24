@@ -56,6 +56,7 @@ jobs:
             --project ${{ env.PROJECT_ID }} \
             --add-cloudsql-instances ${DB_CONNECTION_NAME} \
             --set-env-vars DATABASE_URL="postgres://postgres:${{ secrets.DB_PASSWORD }}@/${{ secrets.DB_NAME }}?host=/cloudsql/${DB_CONNECTION_NAME}",OPENSINCERA_API_KEY=${{ secrets.OPENSINCERA_API_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},SENTRY_DSN=${{ secrets.SENTRY_DSN }} \
+            --timeout 600 \
             --allow-unauthenticated
 
       # Get Backend URL
@@ -77,4 +78,5 @@ jobs:
             --region ${{ env.REGION }} \
             --project ${{ env.PROJECT_ID }} \
             --set-env-vars NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }},BACKEND_URL=${{ env.BACKEND_URL }} \
+            --timeout 600 \
             --allow-unauthenticated
