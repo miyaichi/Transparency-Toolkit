@@ -140,10 +140,13 @@ export class SellersService {
         await importer.close();
       }
 
-      // After import, fetch from DB to return
+      // After import, fetch summary from DB to return
+      const countRes = await query('SELECT count(*) as total FROM sellers_catalog WHERE domain = $1', [domain]);
+      const total = parseInt(countRes.rows[0]?.total || '0');
+
       const sellersRes = await query(
         `SELECT seller_id, domain as source_domain, COALESCE(seller_domain, domain) as domain, seller_type, name, identifiers, is_confidential 
-         FROM sellers_catalog WHERE domain = $1`,
+         FROM sellers_catalog WHERE domain = $1 LIMIT 50`,
         [domain],
       );
 
@@ -153,7 +156,8 @@ export class SellersService {
         version: '1.0', // Metadata not currently stored in catalog, using placeholder
         sellers: sellersRes.rows,
         fetched_at: new Date().toISOString(),
-      };
+        total_sellers: total, // Add total count to response
+      } as any;
     } else {
       // Ephemeral Fetch (No DB save)
       const res = await client.get(url, { responseType: 'json' });

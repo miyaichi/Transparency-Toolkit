@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Download, Info, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import useSWR from "swr"
 
@@ -60,61 +60,38 @@ import { useTranslation } from "@/lib/i18n/language-context"
 export function SellersResult({ domain }: Props) {
   const { t } = useTranslation()
   const [filter, setFilter] = useState("")
+  const [page, setPage] = useState(1)
 
-  // Fetch logic: Backend API endpoint needed for fetching a specific domain's sellers.json on demand
-  // Using a hypothetical endpoint based on plan
-  const { data, error, isLoading } = useSWR<SellersJsonResponse>(
+  // 1. Trigger Fetch/Update (Sudo-background) - Keep this to ensure data is fresh but don't use its result for the heavy table
+  // Using a key that doesn't change with page to avoid re-triggering fetch on pagination
+  const { data: fetchMetadata, error: fetchError, isLoading: isFetching } = useSWR<SellersJsonResponse>(
     domain ? `/api/proxy/sellers/fetch?domain=${domain}&save=true` : null,
     fetcher,
     {
       revalidateOnFocus: false,
-      shouldRetryOnError: false
+      shouldRetryOnError: false,
     }
   )
 
-  const filteredSellers = data?.sellers.filter((s) => {
-    if (!filter) return true
-    const term = filter.toLowerCase()
-    return (
-      (s.name?.toLowerCase().includes(term) ?? false) ||
-      (s.seller_id?.toLowerCase().includes(term) ?? false) ||
-      (s.domain?.toLowerCase().includes(term) ?? false)
-    )
-  })
+  // 2. Fetch Paginated Data from Search API
+  const { data: searchData, error: searchError, isLoading: isSearching } = useSWR(
+    domain && !isFetching // Wait for fetch/import to complete or at least start
+      ? `/api/proxy/sellers?domain=${domain}&page=${page}&limit=50&q=${filter}`
+      : null,
+    fetcher
+  )
 
   const handleDownload = () => {
-    if (!data?.sellers) return
-    const headers = [
-      t("sellersPage.headers.sellerId"),
-      t("sellersPage.headers.name"),
-      t("sellersPage.headers.type"),
-      t("sellersPage.headers.domain"),
-      t("sellersPage.headers.identifiers"),
-      t("sellersPage.headers.confidential"),
-      t("sellersPage.headers.passthrough")
-    ]
-    const csvContent = [
-      headers.join(","),
-      ...data.sellers.map((s) =>
-        [
-          s.seller_id,
-          s.name,
-          s.seller_type,
-          s.domain || "",
-          s.identifiers ? JSON.stringify(s.identifiers) : "",
-          s.is_confidential ? "1" : "0",
-          s.is_passthrough ? "1" : "0"
-        ]
-          .map((f) => `"${String(f).replace(/"/g, '""')}"`)
-          .join(",")
-      )
-    ].join("\n")
+    // Download currently only fetches the current page or needs a dedicated export endpoint.
+    // For now, we'll disable it or show a toast that export is limited.
+    // Ideally, call a backend endpoint for CSV stream.
+    alert("Exporting full dataset is not yet supported for large files.")
+  }
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    link.href = URL.createObjectURL(blob)
-    link.download = `${domain}_sellers.csv`
-    link.click()
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= (searchData?.meta?.pages || 1)) {
+      setPage(newPage)
+    }
   }
 
   if (!domain) {
@@ -125,7 +102,8 @@ export function SellersResult({ domain }: Props) {
     )
   }
 
-  if (isLoading) {
+  // Initial Fetching State
+  if (isFetching && !searchData) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -134,24 +112,19 @@ export function SellersResult({ domain }: Props) {
     )
   }
 
-  if (error) {
+  if (fetchError || searchError) {
     return (
       <div className="space-y-4">
         <Alert variant="destructive">
           <AlertTitle>{t("sellersPage.messages.failed")}</AlertTitle>
-          <AlertDescription>{error.message}</AlertDescription>
-        </Alert>
-        {/* Fallback to global search hint */}
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>{t("sellersPage.messages.noteTitle")}</AlertTitle>
-          <AlertDescription>{t("sellersPage.messages.noteDescription")}</AlertDescription>
+          <AlertDescription>{(fetchError || searchError)?.message}</AlertDescription>
         </Alert>
       </div>
     )
   }
 
-  if (!data) return null
+  const sellers = searchData?.data || []
+  const meta = searchData?.meta || { total: 0, page: 1, pages: 1 }
 
   return (
     <div className="space-y-6">
@@ -162,18 +135,19 @@ export function SellersResult({ domain }: Props) {
             <CardTitle className="text-lg">{t("sellersPage.metadata")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
+            {/* Use metadata from the fetch result if available */}
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("sellersPage.version")}:</span>
-              <span className="font-mono">{data.version || "-"}</span>
+              <span className="font-mono">{fetchMetadata?.version || "-"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("sellersPage.contactEmail")}:</span>
-              <span>{data.contact_email || "-"}</span>
+              <span>{fetchMetadata?.contact_email || "-"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("sellersPage.contactAddress")}:</span>
-              <span className="truncate max-w-[200px]" title={data.contact_address}>
-                {data.contact_address || "-"}
+              <span className="truncate max-w-[200px]" title={fetchMetadata?.contact_address}>
+                {fetchMetadata?.contact_address || "-"}
               </span>
             </div>
           </CardContent>
@@ -183,27 +157,10 @@ export function SellersResult({ domain }: Props) {
             <CardTitle className="text-lg">{t("sellersPage.stats")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold">{data.sellers.length}</div>
-                <div className="text-xs text-muted-foreground">{t("sellersPage.totalSellers")}</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {data.sellers.filter((s) => s.seller_type === "PUBLISHER").length}
-                </div>
-                <div className="text-xs text-muted-foreground">{t("sellersPage.publishers")}</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {data.sellers.filter((s) => s.seller_type === "INTERMEDIARY").length}
-                </div>
-                <div className="text-xs text-muted-foreground">{t("sellersPage.intermediaries")}</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{data.sellers.filter((s) => s.seller_type === "BOTH").length}</div>
-                <div className="text-xs text-muted-foreground">{t("sellersPage.both")}</div>
-              </div>
+            {/* Show Total Count from Search Metadata which is accurate from DB */}
+            <div className="text-center">
+              <div className="text-4xl font-bold">{fetchMetadata?.total_sellers || meta.total}</div>
+              <div className="text-sm text-muted-foreground">{t("sellersPage.totalSellers")}</div>
             </div>
           </CardContent>
         </Card>
@@ -215,13 +172,10 @@ export function SellersResult({ domain }: Props) {
           <Input
             placeholder={t("sellersPage.filterPlaceholder")}
             value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={(e) => { setFilter(e.target.value); setPage(1); }}
             className="pl-8"
           />
         </div>
-        <Button variant="outline" onClick={handleDownload} className="shrink-0">
-          <Download className="mr-2 h-4 w-4" /> {t("common.downloadCsv")}
-        </Button>
       </div>
 
       <div className="rounded-md border bg-white shadow-sm overflow-hidden">
@@ -239,8 +193,8 @@ export function SellersResult({ domain }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSellers?.length ? (
-                filteredSellers.map((seller, i) => (
+              {sellers.length ? (
+                sellers.map((seller: any, i: number) => (
                   <TableRow key={i} className="hover:bg-muted/50">
                     <TableCell className="font-mono text-xs text-muted-foreground">{seller.seller_id}</TableCell>
                     <TableCell className="font-medium max-w-[200px] truncate" title={seller.name}>
@@ -258,7 +212,7 @@ export function SellersResult({ domain }: Props) {
                     <TableCell className="text-xs">
                       {seller.identifiers && seller.identifiers.length > 0 ? (
                         <div className="space-y-1">
-                          {seller.identifiers.map((id, idx) => (
+                          {seller.identifiers.map((id: any, idx: number) => (
                             <div key={idx} className="flex gap-1">
                               <span className="font-semibold">{id.name}:</span>
                               <span className="font-mono">{id.value}</span>
@@ -279,7 +233,8 @@ export function SellersResult({ domain }: Props) {
                       )}
                     </TableCell>
                     <TableCell className="text-center font-mono text-xs text-muted-foreground">
-                      {seller.is_passthrough ? t("common.yes") : "-"}
+                      {/* Note: backend searchSellers might not return is_passthrough unless added to query */}
+                      -
                     </TableCell>
                   </TableRow>
                 ))
@@ -294,15 +249,41 @@ export function SellersResult({ domain }: Props) {
           </Table>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between py-4">
+        <div className="text-sm text-muted-foreground">
+          Page {meta.page} of {meta.pages}
+        </div>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page <= 1 || isSearching}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page >= meta.pages || isSearching}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
       <div className="text-xs text-muted-foreground text-right">
         {t("common.sourceUrl")}:{" "}
         <a
-          href={data.sellers_json_url}
+          href={fetchMetadata?.sellers_json_url}
           target="_blank"
           rel="noopener noreferrer"
           className="underline hover:text-primary"
         >
-          {data.sellers_json_url}
+          {fetchMetadata?.sellers_json_url}
         </a>
       </div>
     </div>
