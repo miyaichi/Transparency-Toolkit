@@ -1,6 +1,7 @@
 import { Footer } from "@/components/footer"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { Navigation } from "@/components/navigation"
+import { SentryInit } from "@/components/sentry-init"
 import { LanguageProvider } from "@/lib/i18n/language-context"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-screen flex-col`}>
+        <SentryInit />
         <LanguageProvider>
           <header className="border-b">
             <div className="container mx-auto flex h-16 items-center px-4">

@@ -1,29 +1,7 @@
 import { withSentryConfig } from "@sentry/nextjs"
 
 const nextConfig = {
-  output: "standalone",
-  sentry: {
-    // For all available options, see:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
-    // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
-
-    // Transpiles SDK to be compatible with IE11 (increases bundle size)
-    transpileClientSDK: true,
-
-    // Hides source maps from generated client bundles
-    hideSourceMaps: true,
-
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
-
-    // Enables automatic instrumentation of Vercel Cron Monitors.
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true
-  }
+  output: "standalone"
 }
 
 export default withSentryConfig(nextConfig, {
@@ -34,4 +12,7 @@ export default withSentryConfig(nextConfig, {
   silent: true
   // org: "transparency-toolkit",
   // project: "javascript-nextjs",
+
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 })

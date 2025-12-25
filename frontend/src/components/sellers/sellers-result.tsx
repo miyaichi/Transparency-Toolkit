@@ -65,22 +65,21 @@ export function SellersResult({ domain }: Props) {
 
   // 1. Trigger Fetch/Update (Sudo-background) - Keep this to ensure data is fresh but don't use its result for the heavy table
   // Using a key that doesn't change with page to avoid re-triggering fetch on pagination
-  const { data: fetchMetadata, error: fetchError, isLoading: isFetching } = useSWR<SellersJsonResponse>(
-    domain ? `/api/proxy/sellers/fetch?domain=${domain}&save=true` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      shouldRetryOnError: false,
-    }
-  )
+  const {
+    data: fetchMetadata,
+    error: fetchError,
+    isLoading: isFetching
+  } = useSWR<SellersJsonResponse>(domain ? `/api/proxy/sellers/fetch?domain=${domain}&save=true` : null, fetcher, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false
+  })
 
   // 2. Fetch Paginated Data from Search API
-  const { data: searchData, error: searchError, isLoading: isSearching } = useSWR(
-    domain
-      ? `/api/proxy/sellers?domain=${domain}&page=${page}&limit=50&q=${filter}`
-      : null,
-    fetcher
-  )
+  const {
+    data: searchData,
+    error: searchError,
+    isLoading: isSearching
+  } = useSWR(domain ? `/api/proxy/sellers?domain=${domain}&page=${page}&limit=50&q=${filter}` : null, fetcher)
 
   const handleDownload = () => {
     // Download currently only fetches the current page or needs a dedicated export endpoint.
@@ -173,7 +172,10 @@ export function SellersResult({ domain }: Props) {
           <Input
             placeholder={t("sellersPage.filterPlaceholder")}
             value={filter}
-            onChange={(e) => { setFilter(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setFilter(e.target.value)
+              setPage(1)
+            }}
             className="pl-8"
           />
         </div>
@@ -234,8 +236,7 @@ export function SellersResult({ domain }: Props) {
                       )}
                     </TableCell>
                     <TableCell className="text-center font-mono text-xs text-muted-foreground">
-                      {/* Note: backend searchSellers might not return is_passthrough unless added to query */}
-                      -
+                      {/* Note: backend searchSellers might not return is_passthrough unless added to query */}-
                     </TableCell>
                   </TableRow>
                 ))

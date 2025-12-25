@@ -21,12 +21,9 @@ export default function VerifySentryPage() {
       <div className="p-4 border rounded bg-gray-50">
         <h2 className="font-semibold">Environment Variables</h2>
         <p>
-          <strong>NEXT_PUBLIC_SENTRY_DSN:</strong>{" "}
-          {process.env.NEXT_PUBLIC_SENTRY_DSN ? "Present" : "Missing"}
+          <strong>NEXT_PUBLIC_SENTRY_DSN:</strong> {process.env.NEXT_PUBLIC_SENTRY_DSN ? "Present" : "Missing"}
         </p>
-        <p className="text-sm text-gray-500 break-all">
-          {process.env.NEXT_PUBLIC_SENTRY_DSN}
-        </p>
+        <p className="text-sm text-gray-500 break-all">{process.env.NEXT_PUBLIC_SENTRY_DSN}</p>
         <p>
           <strong>NODE_ENV:</strong> {process.env.NODE_ENV}
         </p>
@@ -76,17 +73,23 @@ export default function VerifySentryPage() {
       <div className="p-4 border rounded bg-gray-50 mt-4">
         <h2 className="font-semibold">SDK Status (Client)</h2>
         <pre className="text-xs overflow-auto mt-2 p-2 bg-gray-200 rounded">
-          {JSON.stringify({
-            isInitialized: !!Sentry.getClient(),
-            options: Sentry.getClient()?.getOptions() ? {
-              dsn: Sentry.getClient()?.getOptions().dsn,
-              enabled: Sentry.getClient()?.getOptions().enabled,
-              environment: Sentry.getClient()?.getOptions().environment,
-              release: Sentry.getClient()?.getOptions().release,
-              debug: Sentry.getClient()?.getOptions().debug,
-              sampleRate: Sentry.getClient()?.getOptions().sampleRate,
-            } : "Client not found"
-          }, null, 2)}
+          {JSON.stringify(
+            {
+              isInitialized: !!Sentry.getClient(),
+              options: Sentry.getClient()?.getOptions()
+                ? {
+                    dsn: Sentry.getClient()?.getOptions().dsn,
+                    enabled: Sentry.getClient()?.getOptions().enabled,
+                    environment: Sentry.getClient()?.getOptions().environment,
+                    release: Sentry.getClient()?.getOptions().release,
+                    debug: Sentry.getClient()?.getOptions().debug,
+                    sampleRate: Sentry.getClient()?.getOptions().sampleRate
+                  }
+                : "Client not found"
+            },
+            null,
+            2
+          )}
         </pre>
       </div>
     </div>

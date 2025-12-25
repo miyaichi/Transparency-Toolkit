@@ -7,7 +7,7 @@ Sentry.init({
   tracesSampleRate: 1,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: true,
+  debug: false,
 
   replaysOnErrorSampleRate: 1.0,
 
@@ -16,13 +16,7 @@ Sentry.init({
   replaysSessionSampleRate: 0.1,
 
   // You can remove this option if you're not planning to use the Sentry Session Replay feature:
-  integrations: [
-    Sentry.replayIntegration({
-      // Additional Replay configuration goes in here, for example:
-      maskAllText: true,
-      blockAllMedia: true
-    })
-  ],
+  integrations: [],
 
   // Important: Environment setting
   environment: process.env.NODE_ENV
