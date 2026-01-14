@@ -1,3 +1,4 @@
+import psl from 'psl';
 import { query } from '../db/client';
 import { parseAdsTxtContent } from '../lib/adstxt/validator';
 import client from '../lib/http';
@@ -18,6 +19,48 @@ export interface ScanResult {
 
 export class AdsTxtScanner {
   /**
+   * Helper to fetch content (HTTPS fallback to HTTP)
+   * Returns content, finalUrl, statusCode.
+   * Throws error if both fail, with the last error message.
+   */
+  private async fetchRawContent(
+    domain: string,
+    fileType: 'ads.txt' | 'app-ads.txt',
+  ): Promise<{ content: string; finalUrl: string; statusCode: number }> {
+    const filename = fileType;
+    let finalUrl = '';
+    let content = '';
+    let statusCode = 0;
+
+    try {
+      finalUrl = `https://${domain}/${filename}`;
+      const res = await client.get(finalUrl, { maxRedirects: 5 });
+      if (res.request?.res?.responseUrl) {
+        finalUrl = res.request.res.responseUrl;
+      }
+      content = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+      statusCode = res.status;
+      return { content, finalUrl, statusCode };
+    } catch (e: any) {
+      // Fallback to HTTP
+      try {
+        finalUrl = `http://${domain}/${filename}`;
+        const res = await client.get(finalUrl, { maxRedirects: 5 });
+        if (res.request?.res?.responseUrl) {
+          finalUrl = res.request.res.responseUrl;
+        }
+        content = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+        statusCode = res.status;
+        return { content, finalUrl, statusCode };
+      } catch (inner: any) {
+        // Return mostly for status code, but rethrow to let caller handle logging/saving
+        statusCode = inner.response?.status || 0;
+        throw inner;
+      }
+    }
+  }
+
+  /**
    * Fetch, parse (for stats), and save ads.txt or app-ads.txt
    */
   async scanAndSave(domain: string, fileType: 'ads.txt' | 'app-ads.txt' = 'ads.txt'): Promise<ScanResult> {
@@ -29,23 +72,49 @@ export class AdsTxtScanner {
     const filename = fileType;
 
     try {
-      // 1. Fetch
+      // 0. Fetch (Moved before validation to handle redirects)
       try {
-        finalUrl = `https://${domain}/${filename}`;
-        const res = await client.get(finalUrl, { maxRedirects: 5 });
-        content = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-        statusCode = res.status;
-      } catch (e: any) {
-        // Fallback to HTTP
-        try {
-          finalUrl = `http://${domain}/${filename}`;
-          const res = await client.get(finalUrl, { maxRedirects: 5 });
-          content = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-          statusCode = res.status;
-        } catch (inner: any) {
-          statusCode = inner.response?.status || 0;
-          errorMessage = inner.message;
-          throw inner;
+        const result = await this.fetchRawContent(domain, fileType);
+        content = result.content;
+        finalUrl = result.finalUrl;
+        statusCode = result.statusCode;
+      } catch (inner: any) {
+        statusCode = inner.response?.status || 0;
+        errorMessage = inner.message;
+        throw inner;
+      }
+
+      // 1. Subdomain Validation (IAB Tech Lab Spec)
+      // Moved here to validate the EFFECTIVE domain (after redirects)
+      if (fileType === 'ads.txt') {
+        const effectiveDomain = new URL(finalUrl).hostname;
+        const parsedDomain = psl.parse(effectiveDomain);
+
+        if (!('error' in parsedDomain) && parsedDomain.subdomain) {
+          const rootDomain = parsedDomain.domain;
+          if (rootDomain) {
+            try {
+              // Fetch root domain's ads.txt
+              const rootRes = await this.fetchRawContent(rootDomain, 'ads.txt');
+              const rootRecords = parseAdsTxtContent(rootRes.content, rootDomain);
+
+              const isAuthorized = rootRecords.some(
+                (r) =>
+                  r.is_variable &&
+                  r.variable_type === 'SUBDOMAIN' &&
+                  r.value &&
+                  r.value.toLowerCase() === effectiveDomain.toLowerCase(),
+              );
+
+              if (!isAuthorized) {
+                throw new Error(
+                  `Subdomain ${effectiveDomain} is not authorized by root domain ${rootDomain} (missing subdomain=${effectiveDomain} declaration in ${rootDomain}/ads.txt)`,
+                );
+              }
+            } catch (e: any) {
+              throw e;
+            }
+          }
         }
       }
 
