@@ -105,14 +105,14 @@ DATABASE_URL=postgres://postgres:password@localhost:5433/adstxt_v2 PORT=8080 npm
 ## Deployment
 
 The project is designed to be deployed on **Google Cloud Run** and **Cloud SQL**.
-See [DEPLOYMENT_GCP.md](./DEPLOYMENT_GCP.md) for detailed instructions.
+See [Deployment Guide](docs/deployment/gcp.md) for detailed instructions.
 
-- **CI/CD**: GitHub Actions workflows are set up for automated deployment. See [CICD_SETUP.md](./CICD_SETUP.md).
+- **CI/CD**: GitHub Actions workflows are set up for automated deployment. See [CI/CD Setup](docs/deployment/cicd.md).
 
 ## Project Status
 
-Current Phase: **🧪 Private Beta**
-See [PROJECT_STATUS.md](./PROJECT_STATUS.md) for detailed roadmap and changelog.
+Current Phase: **β Public Beta**
+The project is currently in Public Beta and approaching general availability.
 
 ## License
 
