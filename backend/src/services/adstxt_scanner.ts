@@ -93,26 +93,38 @@ export class AdsTxtScanner {
         if (!('error' in parsedDomain) && parsedDomain.subdomain) {
           const rootDomain = parsedDomain.domain;
           if (rootDomain) {
-            try {
-              // Fetch root domain's ads.txt
-              const rootRes = await this.fetchRawContent(rootDomain, 'ads.txt');
-              const rootRecords = parseAdsTxtContent(rootRes.content, rootDomain);
+            // IAB Ads.txt Spec 1.1 Section 3.1:
+            // "Multiple redirects are valid as long as each redirect location remains within the original root domain."
+            //
+            // If the scan started at the root domain (domain === rootDomain), and redirected to a subdomain (e.g. www),
+            // this is a valid flow where the subdomain is serving the authoritative content for the root.
+            // We do NOT need to check for a SUBDOMAIN declaration in this case, because we are not "validating a subdomain" per se,
+            // but following a valid redirect chain for the root domain.
+            if (domain.toLowerCase() === rootDomain) {
+              // Valid redirect from root to its own subdomain. Content is authoritative.
+              // Skip SUBDOMAIN validation.
+            } else {
+              try {
+                // Fetch root domain's ads.txt
+                const rootRes = await this.fetchRawContent(rootDomain, 'ads.txt');
+                const rootRecords = parseAdsTxtContent(rootRes.content, rootDomain);
 
-              const isAuthorized = rootRecords.some(
-                (r) =>
-                  r.is_variable &&
-                  r.variable_type === 'SUBDOMAIN' &&
-                  r.value &&
-                  r.value.toLowerCase() === effectiveDomain.toLowerCase(),
-              );
-
-              if (!isAuthorized) {
-                throw new Error(
-                  `Subdomain ${effectiveDomain} is not authorized by root domain ${rootDomain} (missing subdomain=${effectiveDomain} declaration in ${rootDomain}/ads.txt)`,
+                const isAuthorized = rootRecords.some(
+                  (r) =>
+                    r.is_variable &&
+                    r.variable_type === 'SUBDOMAIN' &&
+                    r.value &&
+                    r.value.toLowerCase() === effectiveDomain.toLowerCase(),
                 );
+
+                if (!isAuthorized) {
+                  throw new Error(
+                    `Subdomain ${effectiveDomain} is not authorized by root domain ${rootDomain} (missing subdomain=${effectiveDomain} declaration in ${rootDomain}/ads.txt)`,
+                  );
+                }
+              } catch (e: any) {
+                throw e;
               }
-            } catch (e: any) {
-              throw e;
             }
           }
         }

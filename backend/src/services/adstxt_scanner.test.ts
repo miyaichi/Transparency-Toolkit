@@ -117,4 +117,28 @@ describe('AdsTxtScanner', () => {
     expect(mockedClient.get).toHaveBeenCalledTimes(1);
     expect(mockedClient.get).toHaveBeenCalledWith('https://sub.example.com/app-ads.txt', expect.any(Object));
   });
+
+  it('should allow redirect from root to its own subdomain without SUBDOMAIN validation', async () => {
+    // User requests 'example.com'
+    // Redirects to 'www.example.com'
+    // This is valid authoritative source for root, should not trigger subdomain check.
+
+    mockedClient.get.mockResolvedValueOnce({
+      data: 'google.com, pub-111, DIRECT, f08c47fec0942fa0',
+      status: 200,
+      request: {
+        res: {
+          responseUrl: 'https://www.example.com/ads.txt'
+        }
+      }
+    });
+
+    mockedQuery.mockResolvedValueOnce({ rows: [{ id: '1' }] });
+
+    await scanner.scanAndSave('example.com'); // input is root
+
+    // Should NOT fetch root domain validation (e.g. example.com/ads.txt a second time)
+    expect(mockedClient.get).toHaveBeenCalledTimes(1);
+    expect(mockedClient.get).toHaveBeenCalledWith('https://example.com/ads.txt', expect.any(Object));
+  });
 });
