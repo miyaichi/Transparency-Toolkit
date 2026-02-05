@@ -19,5 +19,11 @@ Sentry.init({
   integrations: [],
 
   // Important: Environment setting
-  environment: process.env.NODE_ENV
+  environment: process.env.NODE_ENV,
+
+  ignoreErrors: [
+    "AbortError",
+    "signal is aborted without reason",
+    "Optimization request aborted" // Also ignore our custom log if Sentry picks it up
+  ]
 })

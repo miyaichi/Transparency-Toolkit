@@ -176,12 +176,9 @@ export default function OptimizerPage() {
 
     return () => {
       clearTimeout(timer)
-      // We don't abort on cleanup here because cleanup runs effectively on every keypress due to deps change.
-      // We handled the abort at the *start* of the effect.
-      // If we abort here, the timeout callback (if it fired) might be aborted unnecessarily if it overlaps with render?
-      // Actually, logic above handles "abort previous" correctly.
-      // We *should* abort if the component unmounts.
-      // For simplicity: The logic at the start covers the "new input cancels old" case.
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
     }
   }, [inputContent, steps, domain, fileType, ownerDomainInput])
 
