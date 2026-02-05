@@ -2,7 +2,6 @@
 // @ts-ignore: Case mismatch between package (JSONStream) and types (jsonstream)
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import JSONStream = require('JSONStream');
-import { PoolClient } from 'pg';
 import { from as copyFrom } from 'pg-copy-streams';
 import { Transform } from 'stream';
 import { pipeline } from 'stream/promises';
@@ -18,11 +17,11 @@ export class StreamImporter {
   // Removed internal pool management to use singleton
 
   async importSellersJson(options: ImportOptions) {
-    const client = await pool.connect();
+    // REFACTORED: Do not acquire client here.
+    // We fetch headers first to avoid holding a DB connection during network I/O.
     console.log(`Starting import for ${options.domain} from ${options.url}`);
 
     try {
-      // 2. HTTP Stream取得
       // 2. HTTP Stream取得
       let response;
       let usedUrl = options.url;
@@ -54,7 +53,8 @@ export class StreamImporter {
         } catch (netErr: any) {
           if (attempt === maxRetries) {
             console.warn(`Network error fetching sellers.json for ${options.domain}:`, netErr.message);
-            await this.createRawFileRecord(client, options.domain, 0, null);
+            // REFACTORED: No need for client here
+            await this.createRawFileRecord(options.domain, 0, null);
             return;
           }
           await new Promise((r) => setTimeout(r, 1000));
@@ -73,8 +73,8 @@ export class StreamImporter {
       }
 
       // 1. Raw File Record作成 (Save metadata even if failed)
+      // REFACTORED: No need for client here
       const rawFileId = await this.createRawFileRecord(
-        client,
         options.domain,
         httpStatus,
         typeof etag === 'string' ? etag : null,
@@ -85,8 +85,11 @@ export class StreamImporter {
         return; // Stop processing, but record is saved to indicate attempt
       }
 
-      // 3. Update Catalog safely
+      // REFACTORED: Acquire client NOW, only when ready to interact with DB
+      const client = await pool.connect();
+
       try {
+        // 3. Update Catalog safely
         await client.query('BEGIN');
         // Serialize imports for the same domain to prevent race conditions (Delete vs Insert)
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [options.domain]);
@@ -219,25 +222,30 @@ export class StreamImporter {
         await client.query('ROLLBACK');
         console.error(`Error importing ${options.domain}:`, err);
         // Update raw record to indicate processing failure
+        // Use client because we have it
         await client.query('UPDATE raw_sellers_files SET http_status = $1, etag = $2 WHERE id = $3', [
           999, // Custom status for processing failure
           `Error: ${err.message}`.substring(0, 255),
           rawFileId,
         ]);
         throw err;
+      } finally {
+        // REFACTORED: Release only once at the end of the block where client was acquired
+        client.release();
       }
-    } finally {
-      client.release();
+    } catch (err: any) {
+      // Outer catch (for createRawFileRecord failure, unlikely)
+      console.error('Error in importSellersJson outer scope:', err);
     }
   }
 
+  // REFACTORED: Removed client parameter, use pool directly
   private async createRawFileRecord(
-    client: PoolClient,
     domain: string,
     httpStatus: number | null,
     etag: string | null,
   ): Promise<string> {
-    const res = await client.query(
+    const res = await pool.query(
       `
       INSERT INTO raw_sellers_files (domain, fetched_at, http_status, etag)
       VALUES ($1, NOW(), $2, $3)
