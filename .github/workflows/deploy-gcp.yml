@@ -4,31 +4,33 @@ on:
   push:
     branches:
       - main
+  # Allow manual trigger
+  workflow_dispatch:
 
 env:
-  PROJECT_ID: adstxt-manager-v2
+  PROJECT_ID: apti-ttkit
   REGION: asia-northeast1
-  REPO_NAME: adstxt-repo
-  BACKEND_SERVICE: adstxt-backend
-  FRONTEND_SERVICE: adstxt-frontend
-  DB_INSTANCE: adstxt-db-instance
+  REPO_NAME: ttkit-repo
+  BACKEND_SERVICE: ttkit-backend
+  FRONTEND_SERVICE: ttkit-frontend
+  DB_INSTANCE: ttkit-db-instance
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Google Cloudへの認証
-      - id: 'auth'
-        uses: 'google-github-actions/auth@v2'
+      # Google Cloud Authentication
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -42,14 +44,12 @@ jobs:
           docker build --platform linux/amd64 -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }} ./backend
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
 
-
-
       # Backend Deploy
       - name: Deploy Backend
         run: |
-          # 接続名を取得
-          DB_CONNECTION_NAME=$(gcloud sql instances describe ${{ env.DB_INSTANCE }} --format="value(connectionName)")
-          
+          # Retrieve Connection Name
+          DB_CONNECTION_NAME=$(gcloud sql instances describe ${{ env.DB_INSTANCE }} --project ${{ env.PROJECT_ID }} --format="value(connectionName)")
+
           gcloud run deploy ${{ env.BACKEND_SERVICE }} \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }} \
             --region ${{ env.REGION }} \
@@ -62,7 +62,7 @@ jobs:
       # Get Backend URL
       - name: Get Backend URL
         run: |
-          echo "BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} --region ${{ env.REGION }} --format 'value(status.url)')" >> $GITHUB_ENV
+          echo "BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }} --format 'value(status.url)')" >> $GITHUB_ENV
 
       # Frontend Build & Push
       - name: Build and Push Frontend
