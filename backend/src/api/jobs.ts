@@ -34,4 +34,29 @@ app.openapi(triggerRoute, async (c) => {
   return c.json({ success: true, message: 'Jobs completed' });
 });
 
+// Backward compatible endpoint for Cloud Scheduler (/api/scan)
+const scanRoute = createRoute({
+  method: 'post',
+  path: '/scan',
+  responses: {
+    200: {
+      description: 'Triggered background jobs',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean(),
+            message: z.string(),
+          }),
+        },
+      },
+    },
+  },
+});
+
+app.openapi(scanRoute, async (c) => {
+  await runScheduledJobs();
+
+  return c.json({ success: true, message: 'Jobs completed' });
+});
+
 export default app;
