@@ -165,11 +165,11 @@ export async function processMissingSellers() {
       } else {
         const lastFetched = new Date(checkRes.rows[0].fetched_at).getTime();
         const diff = new Date().getTime() - lastFetched;
-        // 7 days
-        if (diff > 7 * 24 * 60 * 60 * 1000) {
+        // 6 hours
+        if (diff > 6 * 60 * 60 * 1000) {
           needsUpdate = true;
           console.log(
-            `Re-fetching outdated sellers.json for ${supplyDomain} (Age: ${Math.round(diff / (1000 * 60 * 60 * 24))} days)`,
+            `Re-fetching outdated sellers.json for ${supplyDomain} (Age: ${Math.round(diff / (1000 * 60 * 60))} hours)`,
           );
         }
       }
