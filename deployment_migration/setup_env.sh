@@ -87,6 +87,12 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$S
 gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/cloudsql.client" >/dev/null
 gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/iam.serviceAccountUser" >/dev/null
 
+# Grant Cloud Run Invoker role to default compute service account for Cloud Scheduler
+echo "Granting Cloud Run Invoker role for Cloud Scheduler..."
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$COMPUTE_SA" --role="roles/run.invoker" >/dev/null
+
 echo "Generating Key File..."
 KEY_FILE="gcp-key-$PROJECT_ID.json"
 if [ -f "$KEY_FILE" ]; then
@@ -104,11 +110,19 @@ if [ -n "$BACKEND_URL" ]; then
         gcloud scheduler jobs create http "$SCHEDULER_JOB" \
             --location="$REGION" \
             --schedule="0 */6 * * *" \
-            --uri="$BACKEND_URL/api/scan" \
+            --uri="$BACKEND_URL/api/jobs/scan" \
             --http-method=POST \
-            --attempt-deadline=600s
+            --attempt-deadline=600s \
+            --oidc-service-account-email="$COMPUTE_SA"
     else
-        echo "Scheduler job $SCHEDULER_JOB already exists."
+        echo "Scheduler job $SCHEDULER_JOB already exists. Updating configuration..."
+        gcloud scheduler jobs update http "$SCHEDULER_JOB" \
+            --location="$REGION" \
+            --schedule="0 */6 * * *" \
+            --uri="$BACKEND_URL/api/jobs/scan" \
+            --http-method=POST \
+            --attempt-deadline=600s \
+            --oidc-service-account-email="$COMPUTE_SA"
     fi
 else
     echo "WARNING: Backend service not yet deployed. Skipping Cloud Scheduler Job creation."
@@ -116,9 +130,10 @@ else
     echo "  gcloud scheduler jobs create http $SCHEDULER_JOB \\"
     echo "    --location=$REGION \\"
     echo "    --schedule='0 */6 * * *' \\"
-    echo "    --uri=<BACKEND_URL>/api/scan \\"
+    echo "    --uri=<BACKEND_URL>/api/jobs/scan \\"
     echo "    --http-method=POST \\"
-    echo "    --attempt-deadline=600s"
+    echo "    --attempt-deadline=600s \\"
+    echo "    --oidc-service-account-email=$COMPUTE_SA"
 fi
 
 # 7. Database Initialization Info

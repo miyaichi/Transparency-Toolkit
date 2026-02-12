@@ -1,0 +1,82 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  # Allow manual trigger
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ttkit-project
+  REGION: asia-northeast1
+  REPO_NAME: ttkit-repo
+  BACKEND_SERVICE: ttkit-backend
+  FRONTEND_SERVICE: ttkit-frontend
+  DB_INSTANCE: ttkit-db-instance
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Google Cloud Authentication
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      # Backend Build & Push
+      - name: Build and Push Backend
+        run: |
+          docker build --platform linux/amd64 -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }} ./backend
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
+
+      # Backend Deploy
+      - name: Deploy Backend
+        run: |
+          # Retrieve Connection Name
+          DB_CONNECTION_NAME=$(gcloud sql instances describe ${{ env.DB_INSTANCE }} --project ${{ env.PROJECT_ID }} --format="value(connectionName)")
+
+          gcloud run deploy ${{ env.BACKEND_SERVICE }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --add-cloudsql-instances ${DB_CONNECTION_NAME} \
+            --set-env-vars DATABASE_URL="postgres://postgres:${{ secrets.DB_PASSWORD }}@/${{ secrets.DB_NAME }}?host=/cloudsql/${DB_CONNECTION_NAME}",OPENSINCERA_API_KEY=${{ secrets.OPENSINCERA_API_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},SENTRY_DSN=${{ secrets.SENTRY_DSN }} \
+            --timeout 600 \
+            --allow-unauthenticated
+
+      # Get Backend URL
+      - name: Get Backend URL
+        run: |
+          echo "BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }} --format 'value(status.url)')" >> $GITHUB_ENV
+
+      # Frontend Build & Push
+      - name: Build and Push Frontend
+        run: |
+          docker build --platform linux/amd64 --build-arg NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }} -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} ./frontend
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }}
+
+      # Frontend Deploy
+      - name: Deploy Frontend
+        run: |
+          gcloud run deploy ${{ env.FRONTEND_SERVICE }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --set-env-vars NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }},BACKEND_URL=${{ env.BACKEND_URL }} \
+            --timeout 600 \
+            --allow-unauthenticated
