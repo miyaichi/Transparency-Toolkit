@@ -67,11 +67,6 @@ export class StreamImporter {
       const contentType = response.headers['content-type'] || '';
       const etag = response.headers['etag'] || null;
 
-      // Detect HTML responses (soft 404s or captive portals) to avoid JSON parse errors
-      if (httpStatus < 400 && contentType.toLowerCase().includes('text/html')) {
-        throw new Error(`Invalid Content-Type: ${contentType} (Expected JSON)`);
-      }
-
       // 1. Raw File Record作成 (Save metadata even if failed)
       // REFACTORED: No need for client here
       const rawFileId = await this.createRawFileRecord(
@@ -79,6 +74,17 @@ export class StreamImporter {
         httpStatus,
         typeof etag === 'string' ? etag : null,
       );
+
+      // Detect HTML responses (soft 404s or captive portals) to avoid JSON parse errors
+      if (httpStatus < 400 && contentType.toLowerCase().includes('text/html')) {
+        console.warn(`Invalid Content-Type for ${options.domain}: ${contentType}`);
+        await pool.query('UPDATE raw_sellers_files SET http_status = $1, etag = $2 WHERE id = $3', [
+          415,
+          `Invalid Content-Type: ${contentType}`.substring(0, 255),
+          rawFileId,
+        ]);
+        return;
+      }
 
       if (httpStatus >= 400) {
         console.warn(`Failed to fetch sellers.json for ${options.domain}. Status: ${httpStatus}`);
