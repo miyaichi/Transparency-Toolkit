@@ -1,28 +1,30 @@
 #!/bin/bash
 
 # Load configuration
-source ./config.sh
+# Load configuration
+SCRIPT_DIR=$(dirname "$0")
+source "${SCRIPT_DIR}/config.sh"
 
-if [[ "$NEW_PROJECT_ID" == "your-new-project-id" ]]; then
-  echo "ERROR: Please set NEW_PROJECT_ID in config.sh or export it before running this script."
+if [[ "$PROJECT_ID" == "your-project-id" ]]; then
+  echo "ERROR: Please set PROJECT_ID in config.sh or export it before running this script."
   exit 1
 fi
 
 echo "========================================================"
-echo "Starting Initial Setup for Project: $NEW_PROJECT_ID"
+echo "Starting Initial Setup for Project: $PROJECT_ID"
 echo "Region: $REGION"
 echo "========================================================"
 
 # Confirmation
-read -p "Are you sure you want to setup resources in $NEW_PROJECT_ID? (y/n) " -n 1 -r
+read -p "Are you sure you want to setup resources in $PROJECT_ID? (y/n) " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
     exit 1
 fi
 
-echo "Setting project to $NEW_PROJECT_ID..."
-gcloud config set project "$NEW_PROJECT_ID"
+echo "Setting project to $PROJECT_ID..."
+gcloud config set project "$PROJECT_ID"
 
 # 1. Enable APIs
 echo "1. Enabling required Google Cloud APIs..."
@@ -39,7 +41,7 @@ if ! gcloud artifacts repositories describe "$REPO_NAME" --location="$REGION" >/
     gcloud artifacts repositories create "$REPO_NAME" \
         --repository-format=docker \
         --location="$REGION" \
-        --description="Docker repository for Ads.txt Manager V2"
+        --description="Docker repository for Transparency Toolkit"
 else
     echo "Artifact Registry $REPO_NAME already exists."
 fi
@@ -53,7 +55,7 @@ echo
 if ! gcloud sql instances describe "$DB_INSTANCE" >/dev/null 2>&1; then
     gcloud sql instances create "$DB_INSTANCE" \
         --database-version=POSTGRES_16 \
-        --tier=db-f1-micro \
+        --tier=db-g1-small \
         --region="$REGION" \
         --root-password="$DB_PASSWORD"
 else
@@ -71,7 +73,7 @@ fi
 
 # 5. Service Account for GitHub Actions
 SA_NAME="github-action-deployer"
-SA_EMAIL="$SA_NAME@$NEW_PROJECT_ID.iam.gserviceaccount.com"
+SA_EMAIL="$SA_NAME@$PROJECT_ID.iam.gserviceaccount.com"
 echo "5. Creating Service Account for GitHub Actions: $SA_NAME..."
 
 if ! gcloud iam service-accounts describe "$SA_EMAIL" >/dev/null 2>&1; then
@@ -80,13 +82,13 @@ if ! gcloud iam service-accounts describe "$SA_EMAIL" >/dev/null 2>&1; then
 fi
 
 echo "Assigning roles..."
-gcloud projects add-iam-policy-binding "$NEW_PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/run.admin" >/dev/null
-gcloud projects add-iam-policy-binding "$NEW_PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/artifactregistry.writer" >/dev/null
-gcloud projects add-iam-policy-binding "$NEW_PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/cloudsql.client" >/dev/null
-gcloud projects add-iam-policy-binding "$NEW_PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/iam.serviceAccountUser" >/dev/null
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/run.admin" >/dev/null
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/artifactregistry.writer" >/dev/null
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/cloudsql.client" >/dev/null
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA_EMAIL" --role="roles/iam.serviceAccountUser" >/dev/null
 
 echo "Generating Key File..."
-KEY_FILE="gcp-key-$NEW_PROJECT_ID.json"
+KEY_FILE="gcp-key-$PROJECT_ID.json"
 if [ -f "$KEY_FILE" ]; then
     echo "Key file $KEY_FILE already exists. Skipping generation."
 else
@@ -94,20 +96,46 @@ else
     echo "Key file generated: $KEY_FILE"
 fi
 
-# 6. Database Initialization Info
+# 6. Create Cloud Scheduler Job
+echo "6. Creating Cloud Scheduler Job: $SCHEDULER_JOB..."
+BACKEND_URL=$(gcloud run services describe "$BACKEND_SERVICE" --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)' 2>/dev/null)
+if [ -n "$BACKEND_URL" ]; then
+    if ! gcloud scheduler jobs describe "$SCHEDULER_JOB" --location="$REGION" >/dev/null 2>&1; then
+        gcloud scheduler jobs create http "$SCHEDULER_JOB" \
+            --location="$REGION" \
+            --schedule="0 */6 * * *" \
+            --uri="$BACKEND_URL/api/scan" \
+            --http-method=POST \
+            --attempt-deadline=600s
+    else
+        echo "Scheduler job $SCHEDULER_JOB already exists."
+    fi
+else
+    echo "WARNING: Backend service not yet deployed. Skipping Cloud Scheduler Job creation."
+    echo "After deploying the backend, create the scheduler job manually:"
+    echo "  gcloud scheduler jobs create http $SCHEDULER_JOB \\"
+    echo "    --location=$REGION \\"
+    echo "    --schedule='0 */6 * * *' \\"
+    echo "    --uri=<BACKEND_URL>/api/scan \\"
+    echo "    --http-method=POST \\"
+    echo "    --attempt-deadline=600s"
+fi
+
+# 7. Database Initialization Info
 echo "========================================================"
 echo "SETUP COMPLETE!"
 echo "========================================================"
 echo "Next Steps:"
 echo "1. Initialize the database schema:"
 echo "   Run the following command locally (requires cloud-sql-proxy installed):"
-echo "   ./cloud-sql-proxy $DB_INSTANCE --port 5434 &"
-echo "   psql \"host=127.0.0.1 port=5434 sslmode=disable dbname=$DB_NAME user=$DB_USER password=$DB_PASSWORD\" -f ../backend/src/db/init.sql"
+echo "   ./cloud-sql-proxy $PROJECT_ID:$REGION:$DB_INSTANCE --port 5434 &"
+echo "   psql \"host=127.0.0.1 port=5434 sslmode=disable dbname=$DB_NAME user=$DB_USER password=\$DB_PASSWORD\" -f ../backend/src/db/init.sql"
 echo ""
 echo "2. Updates required for GitHub Actions:"
 echo "   - Go to your GitHub Repository > Settings > Secrets and variables > Actions"
 echo "   - Add/Update 'GCP_CREDENTIALS' with the content of $KEY_FILE"
 echo "   - Add/Update 'DB_PASSWORD' with the password you set."
 echo "   - Add/Update 'DB_NAME' to '$DB_NAME'"
-echo "   - Update your '.github/workflows/deploy-beta.yml' to use PROJECT_ID: '$NEW_PROJECT_ID'"
+echo "   - Copy deploy.yml to .github/workflows/:"
+echo "     cp deploy.yml ../.github/workflows/deploy-gcp.yml"
 echo ""
