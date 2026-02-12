@@ -11,46 +11,20 @@ export class DbSellersProvider implements SellersJsonProvider {
   async batchGetSellers(domain: string, sellerIds: string[]): Promise<BatchSellersResult> {
     const domainLower = domain.toLowerCase();
 
-    // Check if we have data for this domain (get the latest snapshot ID)
-    // Only use fully processed files (processed_at IS NOT NULL)
-    const lastFetchRes = await query(
-      `SELECT id, fetched_at FROM raw_sellers_files WHERE domain = $1 AND processed_at IS NOT NULL ORDER BY fetched_at DESC LIMIT 1`,
-      [domainLower],
-    );
-
-    if (lastFetchRes.rows.length === 0) {
-      // Logic same as before
-      return {
-        domain,
-        requested_count: sellerIds.length,
-        found_count: 0,
-        results: sellerIds.map((id) => ({
-          sellerId: id,
-          seller: null,
-          found: false,
-          source: 'fresh',
-        })),
-        metadata: {},
-        cache: { is_cached: false, status: 'error' },
-      };
-    }
-
-    const rawFileId = lastFetchRes.rows[0].id;
-    const fetchedAt = lastFetchRes.rows[0].fetched_at;
-
-    // Fetch sellers matching the IDs from the LATEST snapshot
-    // FIX: Select 'seller_domain' as the seller's domain (e.g. asahi.com), NOT 'domain' which is the source (e.g. ad-generation.jp)
+    // Optimized Query: Use DOMAIN (Primary Key) instead of raw_file_id
+    // This allows using the Primary Key Index (domain, seller_id) which is much faster
+    // than scanning for raw_file_id (which is unindexed).
     const sellersRes = await query(
       `SELECT seller_id, name, seller_type, is_confidential, seller_domain as domain 
          FROM sellers_catalog 
-         WHERE raw_file_id = $1 AND seller_id = ANY($2)`,
-      [rawFileId, sellerIds],
+         WHERE domain = $1 AND seller_id = ANY($2)`,
+      [domainLower, sellerIds],
     );
 
     const foundSellersMap = new Map();
     sellersRes.rows.forEach((row) => {
       // Normalize boolean for is_confidential to 0/1 as expected by package types
-      row.is_confidential = row.is_confidential === true ? 1 : 0;
+      row.is_confidential = row.is_confidential === true || row.is_confidential === 1 ? 1 : 0;
       foundSellersMap.set(row.seller_id, row);
     });
 
@@ -71,9 +45,9 @@ export class DbSellersProvider implements SellersJsonProvider {
       results,
       metadata: {}, // Metadata support to be added
       cache: {
-        is_cached: true,
-        last_updated: fetchedAt,
-        status: 'success',
+        is_cached: sellersRes.rows.length > 0,
+        last_updated: new Date().toISOString(), // Approximate since we skipped the raw file lookup for performance
+        status: sellersRes.rows.length > 0 ? 'success' : 'error',
       },
     };
   }

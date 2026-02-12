@@ -153,21 +153,28 @@ export class AdsTxtService {
     // Fetch sellers info in parallel batches
     const sellerLookup = new Map<string, any>(); // Key: "sysDomain:accountId" -> Seller Object
 
-    await Promise.all(
-      Array.from(accountsByDomain.entries()).map(async ([sysDomain, accountIds]) => {
-        try {
-          const result = await this.sellersProvider.batchGetSellers(sysDomain, Array.from(accountIds));
-          result.results.forEach((r) => {
-            if (r.found && r.seller) {
-              sellerLookup.set(`${sysDomain}:${r.sellerId}`, r.seller);
-            }
-          });
-        } catch (e) {
-          console.warn(`Failed to batch fetch sellers for ${sysDomain}:`, e);
-          // Continue without seller info for this domain
-        }
-      }),
-    );
+    // Limit concurrency to avoid DB overload on small instances
+    const entries = Array.from(accountsByDomain.entries());
+    const CHUNK_SIZE = 5;
+
+    for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+      const chunk = entries.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map(async ([sysDomain, accountIds]) => {
+          try {
+            const result = await this.sellersProvider.batchGetSellers(sysDomain, Array.from(accountIds));
+            result.results.forEach((r) => {
+              if (r.found && r.seller) {
+                sellerLookup.set(`${sysDomain}:${r.sellerId}`, r.seller);
+              }
+            });
+          } catch (e) {
+            console.warn(`Failed to batch fetch sellers for ${sysDomain}:`, e);
+            // Continue without seller info for this domain
+          }
+        }),
+      );
+    }
 
     // 4. Format Records
     const formattedRecords: ValidationRecord[] = validatedEntries.map((entry) => {
