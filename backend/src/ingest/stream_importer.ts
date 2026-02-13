@@ -123,6 +123,7 @@ export class StreamImporter {
         // 4. Build pipeline
         const seenSellerIds = new Set<string>();
         let certAuthorityId: string | null = null;
+        let processedRecords = 0;
 
         // Create parser and attach listeners to capture 'identifiers' from header or footer
         const parser = JSONStream.parse('sellers.*');
@@ -201,6 +202,7 @@ export class StreamImporter {
                 const certIdStr = certAuthorityId ? certAuthorityId : '\\N';
 
                 const row = `${sellerId}\t${options.domain}\t${sellerType}\t${name}\t${sellerDomain}\t${identifiersStr}\t${isConfidential}\t${rawFileId}\t${certIdStr}\n`;
+                processedRecords++;
                 callback(null, row);
               } catch (e) {
                 // Skip malformed record but continue stream
@@ -223,7 +225,11 @@ export class StreamImporter {
         await client.query('UPDATE raw_sellers_files SET processed_at = NOW() WHERE id = $1', [rawFileId]);
 
         await client.query('COMMIT');
-        console.log(`Import completed for ${options.domain}`);
+        if (processedRecords === 0) {
+          console.warn(`Import completed for ${options.domain} but NO records were processed.`);
+        } else {
+          console.log(`Import completed for ${options.domain}. Processed ${processedRecords} records.`);
+        }
       } catch (err: any) {
         await client.query('ROLLBACK');
         console.error(`Error importing ${options.domain}:`, err);
