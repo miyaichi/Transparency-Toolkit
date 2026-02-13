@@ -1,0 +1,1 @@
+ALTER TABLE raw_sellers_files ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ;

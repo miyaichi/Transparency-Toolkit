@@ -140,15 +140,8 @@ export class StreamImporter {
         parser.on('header', extractCertId);
         parser.on('footer', extractCertId);
 
-        // Debug events
-        response.data.on('end', () => console.log(`[DEBUG] Response stream ended for ${options.domain}`));
-        response.data.on('error', (e: any) => console.error(`[DEBUG] Response stream error for ${options.domain}:`, e));
-        parser.on('end', () => console.log(`[DEBUG] Parser stream ended for ${options.domain}`));
-        parser.on('error', (e: any) => console.error(`[DEBUG] Parser stream error for ${options.domain}:`, e));
-        ingestStream.on('finish', () => console.log(`[DEBUG] Ingest stream finished for ${options.domain}`));
-        ingestStream.on('error', (e: any) => console.error(`[DEBUG] Ingest stream error for ${options.domain}:`, e));
-
-        console.log(`[DEBUG] Starting pipeline for ${options.domain}`);
+        parser.on('header', extractCertId);
+        parser.on('footer', extractCertId);
 
         await pipeline(
           response.data,

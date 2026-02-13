@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS raw_sellers_files (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     domain TEXT NOT NULL,
     fetched_at TIMESTAMPTZ DEFAULT NOW(),
+    processed_at TIMESTAMPTZ,
     file_content_gzip BYTEA, -- Store compressed content if needed
     etag TEXT,
     http_status INT,
