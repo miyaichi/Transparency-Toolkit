@@ -145,6 +145,11 @@ export async function processMissingSellers() {
   // 2. 既に raw_sellers_files に取り込み済みのドメインを確認 (直近24時間以内とみなす)
   //    今回は「一度も取り込んでいない」または「古すぎる(例えば7日以上前)」ものを対象とする
 
+  //    今回は「一度も取り込んでいない」または「古すぎる(例えば7日以上前)」ものを対象とする
+
+  const MAX_PROCESS_LIMIT = 50;
+  let processedCount = 0;
+
   const importer = new StreamImporter();
 
   try {
@@ -175,6 +180,14 @@ export async function processMissingSellers() {
       }
 
       if (needsUpdate) {
+        // Check limit
+        if (processedCount >= MAX_PROCESS_LIMIT) {
+          console.log(
+            `Reached process limit on ${MAX_PROCESS_LIMIT} domains. Stopping early to avoid timeout.`,
+          );
+          break;
+        }
+
         console.log(`Fetching sellers.json for domain: ${supplyDomain}`);
         try {
           let url = `https://${supplyDomain}/sellers.json`;
@@ -192,6 +205,7 @@ export async function processMissingSellers() {
 
           await importer.importSellersJson(target);
           console.log(`Successfully imported ${supplyDomain}`);
+          processedCount++;
 
           // 連続アクセスでBANされないよう少しWait
           await new Promise((r) => setTimeout(r, 2000));
