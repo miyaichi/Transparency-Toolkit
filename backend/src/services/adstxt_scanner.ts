@@ -34,7 +34,7 @@ export class AdsTxtScanner {
 
     try {
       finalUrl = `https://${domain}/${filename}`;
-      const res = await client.get(finalUrl, { maxRedirects: 5 });
+      const res = await client.get(finalUrl, { maxRedirects: 5, timeout: 30000 });
       if (res.request?.res?.responseUrl) {
         finalUrl = res.request.res.responseUrl;
       }
@@ -45,7 +45,7 @@ export class AdsTxtScanner {
       // Fallback to HTTP
       try {
         finalUrl = `http://${domain}/${filename}`;
-        const res = await client.get(finalUrl, { maxRedirects: 5 });
+        const res = await client.get(finalUrl, { maxRedirects: 5, timeout: 30000 });
         if (res.request?.res?.responseUrl) {
           finalUrl = res.request.res.responseUrl;
         }
