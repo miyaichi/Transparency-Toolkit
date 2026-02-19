@@ -25,6 +25,7 @@ export default function BulkImportPage() {
   const { language } = useTranslation()
   const ja = language === "ja"
 
+  const [fileType, setFileType] = useState<"ads.txt" | "app-ads.txt">("ads.txt")
   const [domainText, setDomainText] = useState("")
   const [importing, setImporting] = useState(false)
   const [scanning, setScanning] = useState(false)
@@ -41,14 +42,14 @@ export default function BulkImportPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch("/api/proxy/monitor")
+      const res = await fetch(`/api/proxy/monitor?file_type=${fileType}`)
       if (res.ok) {
         setStats(await res.json())
       }
     } catch {
       // ignore
     }
-  }, [])
+  }, [fileType])
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -85,7 +86,7 @@ export default function BulkImportPage() {
         const res = await fetch("/api/proxy/monitor", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ domains: chunk, file_type: "ads.txt" }),
+          body: JSON.stringify({ domains: chunk, file_type: fileType }),
         })
         if (!res.ok) {
           const data = await res.json().catch(() => ({ error: res.statusText }))
@@ -102,7 +103,7 @@ export default function BulkImportPage() {
     } finally {
       setImporting(false)
     }
-  }, [domainText, ja, fetchStats])
+  }, [domainText, fileType, ja, fetchStats])
 
   const handleBulkScan = useCallback(async () => {
     setScanning(true)
@@ -118,7 +119,7 @@ export default function BulkImportPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            file_type: "ads.txt",
+            file_type: fileType,
             batch_size: 50,
             delay_ms: 1000,
           }),
@@ -146,7 +147,7 @@ export default function BulkImportPage() {
     } finally {
       setScanning(false)
     }
-  }, [fetchStats])
+  }, [fileType, fetchStats])
 
   const handleStop = useCallback(() => {
     abortRef.current = true
@@ -186,7 +187,10 @@ export default function BulkImportPage() {
       {stats && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">{ja ? "モニタリング状況" : "Monitor Status"}</CardTitle>
+            <CardTitle className="text-lg">
+            {ja ? "モニタリング状況" : "Monitor Status"}
+            <span className="ml-2 text-sm font-normal text-muted-foreground">{fileType}</span>
+          </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 gap-4 text-center">
@@ -214,12 +218,36 @@ export default function BulkImportPage() {
       {/* Import Card */}
       <Card>
         <CardHeader>
-          <CardTitle>{ja ? "ドメインリスト" : "Domain List"}</CardTitle>
-          <CardDescription>
-            {ja
-              ? "1行に1ドメイン。テキスト入力またはファイルアップロード。"
-              : "One domain per line. Paste or upload a file."}
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle>{ja ? "ドメインリスト" : "Domain List"}</CardTitle>
+              <CardDescription className="mt-1.5">
+                {ja
+                  ? "1行に1ドメイン。テキスト入力またはファイルアップロード。"
+                  : "One domain per line. Paste or upload a file."}
+              </CardDescription>
+            </div>
+            <div className="flex rounded-md border overflow-hidden shrink-0">
+              {(["ads.txt", "app-ads.txt"] as const).map((ft) => (
+                <button
+                  key={ft}
+                  onClick={() => {
+                    setFileType(ft)
+                    setImportResult(null)
+                    setScanResults([])
+                  }}
+                  disabled={importing || scanning}
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    fileType === ft
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {ft}
+                </button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
