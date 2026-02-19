@@ -361,8 +361,8 @@ export default function BulkImportPage() {
                     style={{
                       width: `${Math.min(
                         100,
-                        ((parseInt(stats.total) - lastResult.remaining) /
-                          Math.max(1, parseInt(stats.total))) *
+                        ((parseInt(stats.unscanned) - lastResult.remaining) /
+                          Math.max(1, parseInt(stats.unscanned))) *
                           100
                       )}%`,
                     }}

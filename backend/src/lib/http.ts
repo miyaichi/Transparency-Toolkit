@@ -16,7 +16,7 @@ const agent = new https.Agent({
 });
 
 const client = axios.create({
-  timeout: 300000, // 300s (5min)
+  timeout: 30000, // 30s
   headers: {
     // Mimic Chrome User-Agent to bypass some WAF/Bot protections
     'User-Agent':
