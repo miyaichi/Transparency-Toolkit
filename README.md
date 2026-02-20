@@ -23,6 +23,33 @@ A step-by-step wizard to clean and fix ads.txt files:
 - **Sellers Discovery**: Automatically discover and fetch new sellers.json files from monitored publisher supply chains.
 - **Insite Analytics**: View publisher reputation and supply path insights (powered by OpenSincera API).
 
+### 📥 Bulk Import & Scan (Admin)
+
+A two-step workflow for administrators to register and scan a large number of domains at once.
+
+> **Note:** This page is not linked from the navigation menu and is intended for administrators only. Access it directly at `/bulk-import`.
+
+**Step 1 – Import**
+
+Paste a list of domains (one per line) or upload a `.txt`/`.csv` file. Domains are registered in the monitoring table in bulk (up to 50,000 per request, deduplicated automatically). Existing domains are reactivated if previously deactivated.
+
+**Step 2 – Bulk Scan**
+
+After import, click **Start Scan** to begin scanning all unscanned (and scan-interval-expired) domains. Scans are executed in batches of 50 with a 1-second delay between requests. Progress and remaining count are shown in real time. The scan can be stopped at any time and resumed later.
+
+**Relationship with the Scheduled Job**
+
+| | Bulk Scan | Scheduled Job |
+|---|---|---|
+| **Target** | Unscanned domains (initial ingestion) | Domains past their scan interval (refresh) |
+| **Trigger** | Manual (admin) | Automatic (cron / Cloud Scheduler) |
+| **Throughput** | High (continuous batches) | Low (50 domains per run) |
+
+The intended workflow is:
+1. Register domains via **Bulk Import**
+2. Scan them all immediately via **Bulk Scan**
+3. Let the **Scheduled Job** handle periodic re-scans going forward (default interval: 24 hours)
+
 ### 🌍 Internationalization
 - Fully localized for **English** and **Japanese**.
 
