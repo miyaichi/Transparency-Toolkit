@@ -27,7 +27,8 @@ out
 # Env / secrets
 .env
 .env*
-gcp-key.json
+gcp-key*.json
+pg_pass.txt
 cloud-sql-proxy
 
 # Local infra
