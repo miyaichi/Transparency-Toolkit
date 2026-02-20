@@ -110,7 +110,6 @@ const historyRoute = createRoute({
     }),
   },
   responses: {
-    // ... (abbrev)
     200: {
       description: 'Scan history',
       content: {

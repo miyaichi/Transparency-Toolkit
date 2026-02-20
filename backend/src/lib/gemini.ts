@@ -12,10 +12,6 @@ export const getGeminiModel = () => {
     genAI = new GoogleGenerativeAI(API_KEY);
   }
 
-  // TODO: Update the model used to match the Gemini model update.
-  //
-  // Situation in Dec 2025:
-  // - gemini-2.0-flash is stable.
-  // - gemini-3-flash-preview is a preview release. The stable version may be released in Q1 2026.
+  // TODO: Switch to the stable release once gemini-3-flash graduates from preview.
   return genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 };

@@ -50,10 +50,10 @@ export class MonitoredDomainsService {
   }
 
   async updateLastScanned(domain: string, fileType: 'ads.txt' | 'app-ads.txt' | 'sellers.json') {
-    await query(
-      `UPDATE monitored_domains SET last_scanned_at = NOW() WHERE domain = $1 AND file_type = $2`,
-      [domain, fileType],
-    );
+    await query(`UPDATE monitored_domains SET last_scanned_at = NOW() WHERE domain = $1 AND file_type = $2`, [
+      domain,
+      fileType,
+    ]);
   }
 
   /**

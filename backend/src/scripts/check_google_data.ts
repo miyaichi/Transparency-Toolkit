@@ -1,4 +1,3 @@
-
 import { pool, query } from '../db/client';
 
 async function checkGoogle() {

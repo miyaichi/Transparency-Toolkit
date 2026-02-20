@@ -53,7 +53,6 @@ export class StreamImporter {
         } catch (netErr: any) {
           if (attempt === maxRetries) {
             console.warn(`Network error fetching sellers.json for ${options.domain}:`, netErr.message);
-            // REFACTORED: No need for client here
             await this.createRawFileRecord(options.domain, 0, null);
             return;
           }
@@ -68,7 +67,6 @@ export class StreamImporter {
       const etag = response.headers['etag'] || null;
 
       // 1. Raw File Record作成 (Save metadata even if failed)
-      // REFACTORED: No need for client here
       const rawFileId = await this.createRawFileRecord(
         options.domain,
         httpStatus,
@@ -255,11 +253,7 @@ export class StreamImporter {
   }
 
   // REFACTORED: Removed client parameter, use pool directly
-  private async createRawFileRecord(
-    domain: string,
-    httpStatus: number | null,
-    etag: string | null,
-  ): Promise<string> {
+  private async createRawFileRecord(domain: string, httpStatus: number | null, etag: string | null): Promise<string> {
     const res = await pool.query(
       `
       INSERT INTO raw_sellers_files (domain, fetched_at, http_status, etag)

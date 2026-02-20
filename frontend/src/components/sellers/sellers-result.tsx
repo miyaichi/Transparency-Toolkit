@@ -63,7 +63,7 @@ export function SellersResult({ domain }: Props) {
   const [filter, setFilter] = useState("")
   const [page, setPage] = useState(1)
 
-  // 1. Trigger Fetch/Update (Sudo-background) - Keep this to ensure data is fresh but don't use its result for the heavy table
+  // 1. Trigger Fetch/Update (Pseudo-background) - Keep this to ensure data is fresh but don't use its result for the heavy table
   // Using a key that doesn't change with page to avoid re-triggering fetch on pagination
   const {
     data: fetchMetadata,

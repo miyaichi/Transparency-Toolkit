@@ -128,9 +128,9 @@ describe('AdsTxtScanner', () => {
       status: 200,
       request: {
         res: {
-          responseUrl: 'https://www.example.com/ads.txt'
-        }
-      }
+          responseUrl: 'https://www.example.com/ads.txt',
+        },
+      },
     });
 
     mockedQuery.mockResolvedValueOnce({ rows: [{ id: '1' }] });

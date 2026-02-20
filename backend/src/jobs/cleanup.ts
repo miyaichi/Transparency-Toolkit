@@ -1,9 +1,9 @@
 import { query } from '../db/client';
 
 /**
- * 定期的なデータクリーンアップを実行する
- * - 古い Ads.txt スキャン履歴の削除
- * - 古い raw_sellers_files (それに紐づく catalog も削除) の削除
+ * Runs periodic data cleanup tasks:
+ * - Deletes old ads.txt scan history (retains 90 days)
+ * - Deletes old raw_sellers_files and associated catalog entries (retains 30 days)
  */
 export async function runCleanup() {
   console.log('Running cleanup tasks...');

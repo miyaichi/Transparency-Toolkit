@@ -36,9 +36,7 @@ export default function BulkImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef(false)
 
-  const domainCount = domainText
-    .split("\n")
-    .filter((l) => l.trim().length > 0).length
+  const domainCount = domainText.split("\n").filter((l) => l.trim().length > 0).length
 
   const fetchStats = useCallback(async () => {
     try {
@@ -86,7 +84,7 @@ export default function BulkImportPage() {
         const res = await fetch("/api/proxy/monitor", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ domains: chunk, file_type: fileType }),
+          body: JSON.stringify({ domains: chunk, file_type: fileType })
         })
         if (!res.ok) {
           const data = await res.json().catch(() => ({ error: res.statusText }))
@@ -121,8 +119,8 @@ export default function BulkImportPage() {
           body: JSON.stringify({
             file_type: fileType,
             batch_size: 50,
-            delay_ms: 1000,
-          }),
+            delay_ms: 1000
+          })
         })
 
         if (!res.ok) {
@@ -158,7 +156,7 @@ export default function BulkImportPage() {
     (acc, r) => ({
       processed: acc.processed + r.processed,
       succeeded: acc.succeeded + r.succeeded,
-      failed: acc.failed + r.failed,
+      failed: acc.failed + r.failed
     }),
     { processed: 0, succeeded: 0, failed: 0 }
   )
@@ -173,9 +171,7 @@ export default function BulkImportPage() {
   return (
     <div className="container mx-auto py-10 space-y-8 max-w-4xl">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {ja ? "バルクインポート" : "Bulk Import"}
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">{ja ? "バルクインポート" : "Bulk Import"}</h1>
         <p className="text-muted-foreground">
           {ja
             ? "ドメインリストを一括でモニタリング対象に登録し、ads.txtをスキャンします。"
@@ -188,9 +184,9 @@ export default function BulkImportPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">
-            {ja ? "モニタリング状況" : "Monitor Status"}
-            <span className="ml-2 text-sm font-normal text-muted-foreground">{fileType}</span>
-          </CardTitle>
+              {ja ? "モニタリング状況" : "Monitor Status"}
+              <span className="ml-2 text-sm font-normal text-muted-foreground">{fileType}</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 gap-4 text-center">
@@ -251,18 +247,8 @@ export default function BulkImportPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".txt,.csv"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="gap-2"
-            >
+            <input ref={fileInputRef} type="file" accept=".txt,.csv" className="hidden" onChange={handleFileUpload} />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="gap-2">
               <Upload className="h-4 w-4" />
               {ja ? "ファイル選択" : "Upload File"}
             </Button>
@@ -282,16 +268,8 @@ export default function BulkImportPage() {
           />
 
           <div className="flex gap-2">
-            <Button
-              onClick={handleImport}
-              disabled={importing || domainCount === 0}
-              className="gap-2"
-            >
-              {importing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
+            <Button onClick={handleImport} disabled={importing || domainCount === 0} className="gap-2">
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {ja ? "インポート" : "Import"}
             </Button>
           </div>
@@ -328,23 +306,9 @@ export default function BulkImportPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
-            <Button
-              onClick={handleBulkScan}
-              disabled={scanning}
-              className="gap-2"
-            >
-              {scanning ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-              {scanning
-                ? ja
-                  ? "スキャン中..."
-                  : "Scanning..."
-                : ja
-                  ? "スキャン開始"
-                  : "Start Scan"}
+            <Button onClick={handleBulkScan} disabled={scanning} className="gap-2">
+              {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {scanning ? (ja ? "スキャン中..." : "Scanning...") : ja ? "スキャン開始" : "Start Scan"}
             </Button>
             {scanning && (
               <Button variant="destructive" onClick={handleStop}>
@@ -361,23 +325,19 @@ export default function BulkImportPage() {
                   <div className="text-xs text-muted-foreground">{ja ? "処理済" : "Processed"}</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-green-600">
-                    {scanTotals.succeeded.toLocaleString()}
-                  </div>
+                  <div className="text-xl font-bold text-green-600">{scanTotals.succeeded.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground">{ja ? "成功" : "Succeeded"}</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-red-600">
-                    {scanTotals.failed.toLocaleString()}
-                  </div>
+                  <div className="text-xl font-bold text-red-600">{scanTotals.failed.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground">{ja ? "失敗" : "Failed"}</div>
                 </div>
               </div>
 
               {lastResult && (
                 <div className="text-sm text-muted-foreground">
-                  {ja ? "残り" : "Remaining"}: {lastResult.remaining.toLocaleString()}{" "}
-                  {ja ? "ドメイン" : "domains"} ・ {ja ? "バッチ" : "Batch"} #{scanResults.length}
+                  {ja ? "残り" : "Remaining"}: {lastResult.remaining.toLocaleString()} {ja ? "ドメイン" : "domains"} ・{" "}
+                  {ja ? "バッチ" : "Batch"} #{scanResults.length}
                 </div>
               )}
 
@@ -389,10 +349,9 @@ export default function BulkImportPage() {
                     style={{
                       width: `${Math.min(
                         100,
-                        ((parseInt(stats.unscanned) - lastResult.remaining) /
-                          Math.max(1, parseInt(stats.unscanned))) *
+                        ((parseInt(stats.unscanned) - lastResult.remaining) / Math.max(1, parseInt(stats.unscanned))) *
                           100
-                      )}%`,
+                      )}%`
                     }}
                   />
                 </div>

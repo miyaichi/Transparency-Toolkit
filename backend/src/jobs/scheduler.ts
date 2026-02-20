@@ -106,9 +106,7 @@ export async function processMonitoredDomains() {
     }
   }
 
-  // Close importer pool if we opened it (though StreamImporter manages its own pool, we should probably close it if it's designed that way)
-  // Current StreamImporter usage in processMissingSellers closes it. Ideally we should share or close here.
-  // The StreamImporter class creates a pool in constructor. We should close it.
+  // StreamImporter creates a connection pool in its constructor; close it when done.
   await importer.close();
 }
 
@@ -142,10 +140,7 @@ export async function processMissingSellers() {
 
   console.log(`Found ${supplyDomains.size} unique supply domains from scanned ads.txt files`);
 
-  // 2. 既に raw_sellers_files に取り込み済みのドメインを確認 (直近24時間以内とみなす)
-  //    今回は「一度も取り込んでいない」または「古すぎる(例えば7日以上前)」ものを対象とする
-
-  //    今回は「一度も取り込んでいない」または「古すぎる(例えば7日以上前)」ものを対象とする
+  // 2. 既に raw_sellers_files に取り込み済みのドメインを確認し、未取り込みまたは6時間以上経過したものを対象とする
 
   const MAX_PROCESS_LIMIT = 50;
   let processedCount = 0;
@@ -182,9 +177,7 @@ export async function processMissingSellers() {
       if (needsUpdate) {
         // Check limit
         if (processedCount >= MAX_PROCESS_LIMIT) {
-          console.log(
-            `Reached process limit on ${MAX_PROCESS_LIMIT} domains. Stopping early to avoid timeout.`,
-          );
+          console.log(`Reached process limit on ${MAX_PROCESS_LIMIT} domains. Stopping early to avoid timeout.`);
           break;
         }
 

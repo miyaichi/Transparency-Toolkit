@@ -53,8 +53,7 @@ export default function OptimizerPage() {
     certAuthorityFixed: 0
   })
 
-  // Reset owner input when domain changes if user hasn't typed anything custom?
-  // For now, auto-fill it to match domain by default.
+  // Auto-fill owner domain to match publisher domain by default.
   useEffect(() => {
     setOwnerDomainInput(domain)
   }, [domain])
@@ -62,7 +61,7 @@ export default function OptimizerPage() {
   const handleFetch = async () => {
     if (!domain) return
     const normalizedDomain = extractRootDomain(domain)
-    // Update state to normalized if different?
+    // Normalize domain before fetching (e.g. strip subdomains)
     if (normalizedDomain !== domain) {
       setDomain(normalizedDomain)
     }
@@ -84,7 +83,7 @@ export default function OptimizerPage() {
 
       const data = await response.json()
       setInputContent(data.content || "")
-      // Keep inputType as URL
+      // inputType intentionally left unchanged (remains "url" after fetch)
     } catch (e) {
       console.error("Fetch failed", e)
       alert("Failed to fetch ads.txt from domain. Please check the domain and try again.")
@@ -96,7 +95,7 @@ export default function OptimizerPage() {
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Mock processing effect replaced with real backend call
+  // Re-run optimization whenever input content or options change
   useEffect(() => {
     // Clear previous error
     setError(null)

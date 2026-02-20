@@ -11,10 +11,10 @@ const AnalyticsResponseSchema = z.object({
   primary_supply_type: z.string().optional(),
   categories: z.array(z.string()).optional(),
   rank: z.number().nullable(),
-  adstxt_lines: z.number().nullable(), // Deprecated
-  app_adstxt_lines: z.number().nullable(), // Deprecated
-  direct_ratio: z.number().nullable(), // Deprecated
-  reseller_ratio: z.number().nullable(), // Deprecated
+  adstxt_lines: z.number().nullable(), // Legacy field (repurposed for avg_ads_to_content_ratio)
+  app_adstxt_lines: z.number().nullable(), // Legacy field (always null)
+  direct_ratio: z.number().nullable(), // Legacy field (repurposed for id_absorption_rate)
+  reseller_ratio: z.number().nullable(), // Legacy field (repurposed for reseller presence flag)
   avg_ads_in_view: z.number().nullable().optional(),
   avg_page_weight: z.number().nullable().optional(),
   avg_cpu: z.number().nullable().optional(),
