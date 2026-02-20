@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Load configuration
-source ./config.sh
+source ./config_old.sh
 
 echo "========================================================"
 echo "WARNING: YOU ARE ABOUT TO DELETE RESOURCES IN PROJECT: $OLD_PROJECT_ID"
