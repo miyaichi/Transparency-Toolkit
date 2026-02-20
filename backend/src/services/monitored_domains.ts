@@ -84,6 +84,8 @@ export class MonitoredDomainsService {
 
   /**
    * Count total and unscanned monitored domains.
+   * "unscanned" means either never scanned OR due for re-scan (same criteria as getDueDomains).
+   * "scanned" means recently scanned and not yet due for re-scan.
    */
   async getStats(fileType?: 'ads.txt' | 'app-ads.txt' | 'sellers.json') {
     const params: string[] = [];
@@ -92,8 +94,14 @@ export class MonitoredDomainsService {
       `SELECT
          COUNT(*) AS total,
          COUNT(*) FILTER (WHERE is_active = true) AS active,
-         COUNT(*) FILTER (WHERE last_scanned_at IS NULL AND is_active = true) AS unscanned,
-         COUNT(*) FILTER (WHERE last_scanned_at IS NOT NULL AND is_active = true) AS scanned
+         COUNT(*) FILTER (WHERE is_active = true AND (
+           last_scanned_at IS NULL
+           OR last_scanned_at < NOW() - (scan_interval_minutes || ' minutes')::interval
+         )) AS unscanned,
+         COUNT(*) FILTER (WHERE is_active = true AND
+           last_scanned_at IS NOT NULL AND
+           last_scanned_at >= NOW() - (scan_interval_minutes || ' minutes')::interval
+         ) AS scanned
        FROM monitored_domains
        WHERE 1=1 ${ftClause}`,
       params,
