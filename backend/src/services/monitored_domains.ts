@@ -25,8 +25,8 @@ export class MonitoredDomainsService {
   }
 
   async getDueDomains(limit = 50, fileType?: 'ads.txt' | 'app-ads.txt' | 'sellers.json') {
-    // Find domains where last_scanned_at is null OR older than interval
-    // Interval is in minutes.
+    // Use next_scan_at (jitter-based) when available; fall back to the legacy
+    // last_scanned_at + interval calculation for rows that pre-date the migration.
     const params: (number | string)[] = [limit];
     const ftClause = fileType ? `AND file_type = $${params.push(fileType)}` : '';
     const res = await query(
@@ -35,10 +35,14 @@ export class MonitoredDomainsService {
        WHERE is_active = true
        ${ftClause}
        AND (
-         last_scanned_at IS NULL
-         OR
-         last_scanned_at < NOW() - (scan_interval_minutes || ' minutes')::interval
+         (next_scan_at IS NULL AND last_scanned_at IS NULL)
+         OR COALESCE(next_scan_at,
+           last_scanned_at + (scan_interval_minutes || ' minutes')::interval
+         ) <= NOW()
        )
+       ORDER BY COALESCE(next_scan_at,
+         last_scanned_at + (scan_interval_minutes || ' minutes')::interval
+       ) ASC NULLS FIRST
        LIMIT $1`,
       params,
     );
@@ -50,10 +54,14 @@ export class MonitoredDomainsService {
   }
 
   async updateLastScanned(domain: string, fileType: 'ads.txt' | 'app-ads.txt' | 'sellers.json') {
-    await query(`UPDATE monitored_domains SET last_scanned_at = NOW() WHERE domain = $1 AND file_type = $2`, [
-      domain,
-      fileType,
-    ]);
+    await query(
+      `UPDATE monitored_domains
+       SET
+         last_scanned_at = NOW(),
+         next_scan_at = NOW() + ((scan_interval_minutes * (0.5 + random())) || ' minutes')::interval
+       WHERE domain = $1 AND file_type = $2`,
+      [domain, fileType],
+    );
   }
 
   /**
@@ -86,6 +94,7 @@ export class MonitoredDomainsService {
    * Count total and unscanned monitored domains.
    * "unscanned" means either never scanned OR due for re-scan (same criteria as getDueDomains).
    * "scanned" means recently scanned and not yet due for re-scan.
+   * Uses next_scan_at (jitter-based) with COALESCE fallback for pre-migration rows.
    */
   async getStats(fileType?: 'ads.txt' | 'app-ads.txt' | 'sellers.json') {
     const params: string[] = [];
@@ -95,13 +104,17 @@ export class MonitoredDomainsService {
          COUNT(*) AS total,
          COUNT(*) FILTER (WHERE is_active = true) AS active,
          COUNT(*) FILTER (WHERE is_active = true AND (
-           last_scanned_at IS NULL
-           OR last_scanned_at < NOW() - (scan_interval_minutes || ' minutes')::interval
+           (next_scan_at IS NULL AND last_scanned_at IS NULL)
+           OR COALESCE(next_scan_at,
+             last_scanned_at + (scan_interval_minutes || ' minutes')::interval
+           ) <= NOW()
          )) AS unscanned,
-         COUNT(*) FILTER (WHERE is_active = true AND
-           last_scanned_at IS NOT NULL AND
-           last_scanned_at >= NOW() - (scan_interval_minutes || ' minutes')::interval
-         ) AS scanned
+         COUNT(*) FILTER (WHERE is_active = true AND NOT (
+           (next_scan_at IS NULL AND last_scanned_at IS NULL)
+           OR COALESCE(next_scan_at,
+             last_scanned_at + (scan_interval_minutes || ' minutes')::interval
+           ) <= NOW()
+         )) AS scanned
        FROM monitored_domains
        WHERE 1=1 ${ftClause}`,
       params,

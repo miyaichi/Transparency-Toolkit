@@ -256,8 +256,8 @@ export class StreamImporter {
   private async createRawFileRecord(domain: string, httpStatus: number | null, etag: string | null): Promise<string> {
     const res = await pool.query(
       `
-      INSERT INTO raw_sellers_files (domain, fetched_at, http_status, etag)
-      VALUES ($1, NOW(), $2, $3)
+      INSERT INTO raw_sellers_files (domain, fetched_at, http_status, etag, next_fetch_at)
+      VALUES ($1, NOW(), $2, $3, NOW() + ((360 * (0.5 + random())) || ' minutes')::interval)
       RETURNING id
     `,
       [domain, httpStatus, etag],

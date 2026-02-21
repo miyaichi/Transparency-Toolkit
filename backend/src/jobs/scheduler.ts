@@ -140,72 +140,59 @@ export async function processMissingSellers() {
 
   console.log(`Found ${supplyDomains.size} unique supply domains from scanned ads.txt files`);
 
-  // 2. 既に raw_sellers_files に取り込み済みのドメインを確認し、未取り込みまたは6時間以上経過したものを対象とする
+  if (supplyDomains.size === 0) return;
 
+  // 2. Single set-based query to find supply domains due for a (re-)fetch.
+  //    "Due" means: never fetched, OR next_fetch_at has passed (jitter-based),
+  //    OR next_fetch_at is NULL with fetched_at older than 6h (pre-migration rows).
   const MAX_PROCESS_LIMIT = 50;
-  let processedCount = 0;
+
+  const dueDomainRes = await query(
+    `WITH latest_fetches AS (
+       SELECT DISTINCT ON (domain)
+         domain,
+         fetched_at,
+         next_fetch_at
+       FROM raw_sellers_files
+       WHERE domain = ANY($1::text[])
+       ORDER BY domain, fetched_at DESC
+     )
+     SELECT candidate.domain
+     FROM unnest($1::text[]) AS candidate(domain)
+     LEFT JOIN latest_fetches lf ON lf.domain = candidate.domain
+     WHERE
+       lf.domain IS NULL
+       OR lf.next_fetch_at <= NOW()
+       OR (lf.next_fetch_at IS NULL AND lf.fetched_at < NOW() - INTERVAL '6 hours')
+     LIMIT $2`,
+    [Array.from(supplyDomains), MAX_PROCESS_LIMIT],
+  );
+
+  const domainsDue: string[] = dueDomainRes.rows.map((r: { domain: string }) => r.domain);
+
+  console.log(`${domainsDue.length} supply domains due for sellers.json fetch`);
 
   const importer = new StreamImporter();
 
   try {
-    for (const supplyDomain of supplyDomains) {
-      // チェック：最近取り込まれたか？
-      const checkRes = await query(
-        `
-                SELECT fetched_at FROM raw_sellers_files 
-                WHERE domain = $1 
-                ORDER BY fetched_at DESC LIMIT 1
-            `,
-        [supplyDomain],
-      );
+    for (const supplyDomain of domainsDue) {
+      console.log(`Fetching sellers.json for domain: ${supplyDomain}`);
+      try {
+        let url = `https://${supplyDomain}/sellers.json`;
 
-      let needsUpdate = false;
-      if (checkRes.rows.length === 0) {
-        needsUpdate = true;
-      } else {
-        const lastFetched = new Date(checkRes.rows[0].fetched_at).getTime();
-        const diff = new Date().getTime() - lastFetched;
-        // 6 hours
-        if (diff > 6 * 60 * 60 * 1000) {
-          needsUpdate = true;
-          console.log(
-            `Re-fetching outdated sellers.json for ${supplyDomain} (Age: ${Math.round(diff / (1000 * 60 * 60))} hours)`,
-          );
-        }
-      }
-
-      if (needsUpdate) {
-        // Check limit
-        if (processedCount >= MAX_PROCESS_LIMIT) {
-          console.log(`Reached process limit on ${MAX_PROCESS_LIMIT} domains. Stopping early to avoid timeout.`);
-          break;
+        // Use special URL if defined
+        if (supplyDomain in SPECIAL_DOMAINS) {
+          url = SPECIAL_DOMAINS[supplyDomain];
+          console.log(`Using special URL for ${supplyDomain}: ${url}`);
         }
 
-        console.log(`Fetching sellers.json for domain: ${supplyDomain}`);
-        try {
-          let url = `https://${supplyDomain}/sellers.json`;
+        await importer.importSellersJson({ domain: supplyDomain, url });
+        console.log(`Successfully imported ${supplyDomain}`);
 
-          // Use special URL if defined
-          if (supplyDomain in SPECIAL_DOMAINS) {
-            url = SPECIAL_DOMAINS[supplyDomain];
-            console.log(`Using special URL for ${supplyDomain}: ${url}`);
-          }
-
-          const target = {
-            domain: supplyDomain,
-            url,
-          };
-
-          await importer.importSellersJson(target);
-          console.log(`Successfully imported ${supplyDomain}`);
-          processedCount++;
-
-          // 連続アクセスでBANされないよう少しWait
-          await new Promise((r) => setTimeout(r, 2000));
-        } catch (err: any) {
-          console.error(`Failed to import ${supplyDomain}: ${err.message}`);
-          // 個別の失敗はログに出して次へ進む
-        }
+        // Wait between requests to avoid rate limiting
+        await new Promise((r) => setTimeout(r, 2000));
+      } catch (err: any) {
+        console.error(`Failed to import ${supplyDomain}: ${err.message}`);
       }
     }
   } finally {

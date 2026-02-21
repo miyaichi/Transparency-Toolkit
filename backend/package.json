@@ -8,6 +8,7 @@
     "dev": "nodemon --watch src --exec ts-node src/index.ts",
     "build": "tsc",
     "ingest": "ts-node src/ingest/runner.ts",
+    "migrate:04": "ts-node src/scripts/migrate_04_jitter_scheduling.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest"
