@@ -17,8 +17,8 @@ export interface OpenSinceraCacheRecord {
 }
 
 export interface FindOpenSinceraCacheParams {
-  domain?: string;
-  publisherId?: string;
+  domain?: string | null;
+  publisherId?: string | null;
 }
 
 export interface UpsertOpenSinceraCacheParams extends FindOpenSinceraCacheParams {

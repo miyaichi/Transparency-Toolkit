@@ -76,14 +76,14 @@ app.get('/publisher', zValidator('query', searchSchema), async (c) => {
     const service = getService();
 
     const response = await service.getPublisherMetadata({
-      publisherDomain: domain,
-      publisherId,
+      publisherDomain: domain || undefined,
+      publisherId: publisherId || undefined,
       limit: 1,
     });
 
     const publisher: PublisherMetadata | undefined = response.publishers[0];
 
-    const sourceUrl = getSourceUrl(service, domain, publisherId || publisher?.publisherId);
+    const sourceUrl = getSourceUrl(service, domain || undefined, publisherId || publisher?.publisherId);
 
     if (!publisher) {
       await upsertOpenSinceraCache({
@@ -117,7 +117,7 @@ app.get('/publisher', zValidator('query', searchSchema), async (c) => {
     lastFetchAt = Date.now();
     if (error instanceof OpenSinceraHttpError) {
       const service = cachedService || getService();
-      const sourceUrl = getSourceUrl(service, domain, publisherId || undefined);
+      const sourceUrl = getSourceUrl(service, domain || undefined, publisherId || undefined);
 
       if (error.status === 404) {
         await upsertOpenSinceraCache({
