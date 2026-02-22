@@ -46,12 +46,24 @@ export interface GetPublisherMetadataResponse {
   publishers: PublisherMetadata[];
   totalCount: number;
   hasMore: boolean;
+  rawResponse?: any;
 }
 
 export interface OpenSinceraApiError {
   code: string;
   message: string;
   details?: any;
+}
+
+export class OpenSinceraHttpError extends Error {
+  status?: number;
+  data?: any;
+
+  constructor(message: string, status?: number, data?: any) {
+    super(message);
+    this.status = status;
+    this.data = data;
+  }
 }
 
 export class OpenSinceraService {
@@ -81,6 +93,11 @@ export class OpenSinceraService {
     });
 
     this.setupInterceptors();
+  }
+
+  public buildPublisherUrl(request: GetPublisherMetadataRequest): string {
+    const base = this.config.baseUrl.replace(/\/+$/, '');
+    return `${base}${this.buildPublisherPath(request)}`;
   }
 
   private setupInterceptors(): void {
@@ -121,16 +138,7 @@ export class OpenSinceraService {
 
   async getPublisherMetadata(request: GetPublisherMetadataRequest = {}): Promise<GetPublisherMetadataResponse> {
     try {
-      let endpoint: string;
-
-      if (request.publisherId) {
-        endpoint = `/publishers?id=${encodeURIComponent(request.publisherId)}`;
-      } else if (request.publisherDomain) {
-        endpoint = `/publishers?domain=${encodeURIComponent(request.publisherDomain)}`;
-      } else {
-        throw new Error('Either publisherId or publisherDomain is required');
-      }
-
+      const endpoint = this.buildPublisherPath(request);
       const response: AxiosResponse<any> = await this.client.get(endpoint);
 
       if (response.status === 200) {
@@ -178,33 +186,39 @@ export class OpenSinceraService {
             publishers: [mappedPublisher],
             totalCount: 1,
             hasMore: false,
+            rawResponse: response.data,
           };
         } else {
           return {
             publishers: [],
             totalCount: 0,
             hasMore: false,
+            rawResponse: response.data,
           };
         }
       }
 
       if (response.status === 401) {
-        throw new Error('Invalid API key or authentication failed');
+        throw new OpenSinceraHttpError('Invalid API key or authentication failed', response.status, response.data);
       }
 
       if (response.status === 403) {
-        throw new Error('Access forbidden - insufficient permissions');
+        throw new OpenSinceraHttpError('Access forbidden - insufficient permissions', response.status, response.data);
       }
 
       if (response.status === 404) {
-        throw new Error('Publisher not found');
+        throw new OpenSinceraHttpError('Publisher not found', response.status, response.data);
       }
 
       if (response.status === 429) {
-        throw new Error('Rate limit exceeded - please try again later');
+        throw new OpenSinceraHttpError('Rate limit exceeded - please try again later', response.status, response.data);
       }
 
-      throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+      throw new OpenSinceraHttpError(
+        `API request failed with status ${response.status}: ${response.statusText}`,
+        response.status,
+        response.data,
+      );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to get publisher metadata', {
@@ -224,13 +238,31 @@ export class OpenSinceraService {
       if (axios.isAxiosError(error)) {
         if (error.response?.data?.error) {
           const apiError = error.response.data.error as OpenSinceraApiError;
-          throw new Error(`OpenSincera API Error: ${apiError.message} (${apiError.code})`);
+          throw new OpenSinceraHttpError(
+            `OpenSincera API Error: ${apiError.message} (${apiError.code})`,
+            error.response.status,
+            error.response.data,
+          );
         }
-        throw new Error(`HTTP ${error.response?.status}: ${error.response?.statusText || errorMessage}`);
+        throw new OpenSinceraHttpError(
+          `HTTP ${error.response?.status}: ${error.response?.statusText || errorMessage}`,
+          error.response?.status,
+          error.response?.data,
+        );
       }
 
       throw error;
     }
+  }
+
+  private buildPublisherPath(request: GetPublisherMetadataRequest): string {
+    if (request.publisherId) {
+      return `/publishers?id=${encodeURIComponent(request.publisherId)}`;
+    }
+    if (request.publisherDomain) {
+      return `/publishers?domain=${encodeURIComponent(request.publisherDomain)}`;
+    }
+    throw new Error('Either publisherId or publisherDomain is required');
   }
 
   private mapStatus(sinceraStatus: any): 'active' | 'inactive' | 'suspended' {
