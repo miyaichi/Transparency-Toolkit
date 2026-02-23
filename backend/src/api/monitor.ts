@@ -206,9 +206,15 @@ app.openapi(bulkScanRoute, async (c) => {
 
   for (const item of dueDomains) {
     try {
-      await scanner.scanAndSave(item.domain, fileType as 'ads.txt' | 'app-ads.txt');
-      await service.updateLastScanned(item.domain, fileType);
-      succeeded++;
+      const result = await scanner.scanAndSave(item.domain, fileType as 'ads.txt' | 'app-ads.txt');
+      if (result.status_code === 0 && result.error_message?.includes('ENOTFOUND')) {
+        console.log(`Removing ${item.domain} (${fileType}): DNS resolution failed`);
+        await service.removeDomain(item.domain, fileType);
+        failed++;
+      } else {
+        await service.updateLastScanned(item.domain, fileType);
+        succeeded++;
+      }
     } catch (e: any) {
       console.error(`Bulk scan failed for ${item.domain}: ${e.message}`);
       await service.updateLastScanned(item.domain, fileType);

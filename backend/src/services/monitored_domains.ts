@@ -1,5 +1,22 @@
 import { query } from '../db/client';
 
+// Normalize a domain: strip protocol, path/query/fragment, and port
+function normalizeDomain(input: string): string {
+  let d = input.trim().toLowerCase();
+  d = d.replace(/^https?:\/\//i, '');
+  const slashIdx = d.indexOf('/');
+  if (slashIdx !== -1) d = d.substring(0, slashIdx);
+  d = d.replace(/:\d+$/, '');
+  return d;
+}
+
+// Valid hostname: labels separated by dots, last label is alpha-only and >= 2 chars
+const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,}$/;
+
+function isValidDomain(d: string): boolean {
+  return DOMAIN_RE.test(d);
+}
+
 export class MonitoredDomainsService {
   async addDomain(domain: string, fileType: 'ads.txt' | 'app-ads.txt' | 'sellers.json' = 'ads.txt') {
     const res = await query(
@@ -75,8 +92,8 @@ export class MonitoredDomainsService {
   ): Promise<{ added: number; total: number }> {
     if (domains.length === 0) return { added: 0, total: 0 };
 
-    // Deduplicate and normalize
-    const unique = [...new Set(domains.map((d) => d.trim().toLowerCase()).filter((d) => d.length > 0))];
+    // Normalize, validate, and deduplicate
+    const unique = [...new Set(domains.map(normalizeDomain).filter(isValidDomain))];
 
     // Batch insert using UNNEST for PostgreSQL
     const res = await query(
