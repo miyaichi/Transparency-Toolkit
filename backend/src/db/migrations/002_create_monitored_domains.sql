@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS
         domain TEXT NOT NULL UNIQUE,
         is_active BOOLEAN DEFAULT TRUE,
         last_scanned_at TIMESTAMPTZ,
-        scan_interval_minutes INT DEFAULT 1440,
+        scan_interval_minutes INT DEFAULT 20160,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
     );

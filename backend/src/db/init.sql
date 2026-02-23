@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS
         added_at TIMESTAMPTZ DEFAULT NOW(),
         last_scanned_at TIMESTAMPTZ,
         next_scan_at TIMESTAMPTZ,
-        scan_interval_minutes INT DEFAULT 1440,
+        scan_interval_minutes INT DEFAULT 20160,
         is_active BOOLEAN DEFAULT true,
         PRIMARY KEY (domain, file_type)
     );
@@ -98,13 +98,20 @@ CREATE TABLE IF NOT EXISTS
         source_url TEXT,
         fetched_at TIMESTAMPTZ DEFAULT NOW(),
         expires_at TIMESTAMPTZ NOT NULL,
-        CONSTRAINT opensincera_cache_domain_or_id CHECK (domain IS NOT NULL OR publisher_id IS NOT NULL),
+        CONSTRAINT opensincera_cache_domain_or_id CHECK (
+            domain IS NOT NULL
+            OR publisher_id IS NOT NULL
+        ),
         CONSTRAINT opensincera_cache_valid_status CHECK (status IN ('success', 'not_found', 'error'))
     );
 
-CREATE UNIQUE INDEX IF NOT EXISTS opensincera_cache_domain_unique ON opensincera_cache (domain) WHERE domain IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS opensincera_cache_domain_unique ON opensincera_cache (domain)
+WHERE
+    domain IS NOT NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS opensincera_cache_publisher_id_unique ON opensincera_cache (publisher_id) WHERE publisher_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS opensincera_cache_publisher_id_unique ON opensincera_cache (publisher_id)
+WHERE
+    publisher_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS opensincera_cache_expires_at_idx ON opensincera_cache (expires_at);
 
