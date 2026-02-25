@@ -9,6 +9,7 @@
     "build": "tsc",
     "ingest": "ts-node src/ingest/runner.ts",
     "migrate:04": "ts-node src/scripts/migrate_04_jitter_scheduling.ts",
+    "migrate:05": "ts-node src/scripts/migrate_05_opensincera_cache.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest"

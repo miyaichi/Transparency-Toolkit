@@ -104,7 +104,14 @@ export const upsertOpenSinceraCache = async (
     throw new Error('Either domain or publisherId must be provided for OpenSincera cache upsert');
   }
 
-  const conflictConstraint = publisherId ? 'opensincera_cache_publisher_id_unique' : 'opensincera_cache_domain_unique';
+  // Use partial index inference instead of ON CONFLICT ON CONSTRAINT, because
+  // opensincera_cache_domain_unique and opensincera_cache_publisher_id_unique are
+  // created as unique indexes (CREATE UNIQUE INDEX), not named constraints in pg_constraint.
+  // ON CONFLICT ON CONSTRAINT requires a named constraint; ON CONFLICT (col) WHERE predicate
+  // is the correct syntax for partial unique indexes.
+  const conflictClause = publisherId
+    ? 'ON CONFLICT (publisher_id) WHERE publisher_id IS NOT NULL'
+    : 'ON CONFLICT (domain) WHERE domain IS NOT NULL';
 
   const res = await query(
     `INSERT INTO opensincera_cache (
@@ -120,7 +127,7 @@ export const upsertOpenSinceraCache = async (
         expires_at
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW() + ($9::BIGINT) * INTERVAL '1 millisecond')
-      ON CONFLICT ON CONSTRAINT ${conflictConstraint}
+      ${conflictClause}
       DO UPDATE
         SET status = EXCLUDED.status,
             raw_response = EXCLUDED.raw_response,
