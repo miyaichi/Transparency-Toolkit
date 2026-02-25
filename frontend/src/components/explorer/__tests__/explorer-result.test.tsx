@@ -12,7 +12,7 @@ describe("ExplorerResult", () => {
     domain: "example.com",
     ads_txt_url: "https://example.com/ads.txt",
     stats: {
-      total: 2,
+      total: 99,
       valid: 2,
       invalid: 0,
       warnings: 0
@@ -89,7 +89,7 @@ describe("ExplorerResult", () => {
 
     // Check stats
     expect(screen.getByText("Total Records")).toBeInTheDocument()
-    expect(screen.getByText("2")).toBeInTheDocument()
+    expect(screen.getByText("99")).toBeInTheDocument()
 
     // Check table headers
     expect(screen.getByText("Advertising System")).toBeInTheDocument()

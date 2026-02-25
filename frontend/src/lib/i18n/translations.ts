@@ -220,7 +220,14 @@ export const translations = {
     }
   },
   explorerPage: {
-    fetching: { en: "Fetching {{type}}...", ja: "{{type}}を取得中..." }
+    fetching: { en: "Fetching {{type}}...", ja: "{{type}}を取得中..." },
+    validOnly: { en: "Valid only", ja: "有効のみ" },
+    validInSellers: { en: "In sellers.json", ja: "sellers.json照合" },
+    validCount: { en: "Valid (sellers.json)", ja: "有効 (sellers.json)" },
+    invalidCount: { en: "Not Found (sellers.json)", ja: "未確認 (sellers.json)" },
+    maxHop: { en: "Max Hop", ja: "最大ホップ数" },
+    avgHop: { en: "Avg Hop", ja: "平均ホップ数" },
+    hop: { en: "Hop", ja: "ホップ" }
   },
   sellersPage: {
     metadata: { en: "Metadata", ja: "メタデータ" },
