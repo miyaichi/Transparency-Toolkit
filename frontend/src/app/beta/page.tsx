@@ -12,14 +12,14 @@ const markdownContent = {
 Transparency Toolkit はAPTI(Advertisers and Publishers Transparency Initiative)の会員向けサービスとして開発しており、現在、**パブリックベータ版**として公開されています。
 このフェーズでは、機能の安定性確認と、ユーザーの皆様からのフィードバックに基づいた改善を目的としています。
 
-[Transparency Tool Kit](https://adstxt-frontend-893655878736.asia-northeast1.run.app/)
+[Transparency Tool Kit](https://ttkit.apti.jp/)
 
 ## Implemented Features (実装されている主な機能)
 
 現在、以下の機能をご利用いただけます：
 
 ### 🔍 Validator & Explorer
-- **Ads.txt Validator**: 入力ドメインの Ads.txt / App-ads.txt をフェッチし、パースと行単位のバリデーションを実行します。致命的エラーと警告が分類され、問題のある行は原因と推奨修正案付きで一覧表示されます。登録済みの Sellers.json とクロスチェックし、存在しない Seller ID や誤ったリレーション（DIRECT/RESELLER）を検知します。
+- **Ads.txt Validator**: 入力ドメインの Ads.txt / App-ads.txt をフェッチし、パースと行単位のバリデーションを実行します。致命的エラーと警告が分類され、問題のある行は原因と推奨修正案付きで一覧表示されます。登録済みの Sellers.json とクロスチェックし、存在しない Seller ID や誤ったリレーション（DIRECT/RESELLER）を検知します。[エラー詳細解説](/warnings)ページで各エラーの詳しい原因と解決策を確認できます。
 - **Data Explorer**: Ads.txt / App-ads.txt / Sellers.json のデータを高速検索し、SellerID、ドメイン、販売形態（DIRECT/RESELLER）、認証ステータスなどで絞り込みができます。検索結果から各 Seller の詳細（関連 SSP、Cret ID、Sellers.json での登録情報）にドリルダウンし、結果をダウンロードできます。
 
 ### ⚡ Optimizer
@@ -46,8 +46,9 @@ Transparency Toolkit はAPTI(Advertisers and Publishers Transparency Initiative)
 ### 📊 Analytics
 - **Insite Analytics**: OpenSincera API と連携し、パブリッシャーのパフォーマンスメトリクスを可視化します。ID 吸収率（直接性）、広告対コンテンツ比率、広告更新頻度、ユニーク広告枠数、ページ重量、CPU 使用率、供給経路数、リセラー数などの技術指標を分析できます。これらのデータを基に、Gemini AI がパブリッシャ向けの改善提案（優先度・実装手順付き）を生成し、ベンチマークと比較しながら具体的な改善策を提示します。
 
-### 📋 Scan Status
-- **スキャン状況**: Ads.txt / App-ads.txt / Sellers.json の過去のスキャン結果を一覧表示します。各スキャンの実行日時、ステータスコード、レコード数、有効/警告件数を確認でき、バックグラウンドで実行されたスキャンの履歴を追跡できます。
+### 📋 Scan Status & Bulk Import
+- **Scan Status**: Ads.txt / App-ads.txt / Sellers.json の過去のスキャン結果を一覧表示します。各スキャンの実行日時、ステータスコード、レコード数、有効/警告件数を確認でき、バックグラウンドで実行されたスキャンの履歴を追跡できます。
+- **Bulk Import**: ドメインリストを一括でモニタリング対象に登録し、Ads.txt / App-ads.txt のバルクスキャンを実行します。バルクスキャンの進捗をリアルタイムで確認できます。
 
 ## Feedback (フィードバックについて)
 
@@ -66,14 +67,14 @@ Transparency Toolkit はAPTI(Advertisers and Publishers Transparency Initiative)
 Transparency Toolkit is being developed as a service for APTI (Advertisers and Publishers Transparency Initiative) members and is currently available as a **Public Beta**.
 In this phase, we aim to verify the stability of features and make improvements based on user feedback.
 
-[Transparency Tool Kit](https://adstxt-frontend-893655878736.asia-northeast1.run.app/)
+[Transparency Tool Kit](https://ttkit.apti.jp/)
 
 ## Implemented Features
 
 Currently, the following features are available:
 
 ### 🔍 Validator & Explorer
-- **Ads.txt Validator**: Fetches Ads.txt / App-ads.txt for entered domains, parses them, and performs line-by-line validation. Fatal errors and warnings are categorized, and problematic lines are listed with causes and recommended fixes. It cross-checks with registered Sellers.json to detect missing Seller IDs or incorrect relationships (DIRECT/RESELLER).
+- **Ads.txt Validator**: Fetches Ads.txt / App-ads.txt for entered domains, parses them, and performs line-by-line validation. Fatal errors and warnings are categorized, and problematic lines are listed with causes and recommended fixes. It cross-checks with registered Sellers.json to detect missing Seller IDs or incorrect relationships (DIRECT/RESELLER). You can check detailed solutions for each error on the [Error & Warnings Documentation](/warnings) page.
 - **Data Explorer**: Enables high-speed searching of Ads.txt / App-ads.txt / Sellers.json data, allowing filtering by SellerID, domain, account type (DIRECT/RESELLER), validation status, etc. You can drill down from search results to details of each Seller (related SSP, Cret ID, registration info in Sellers.json) and download the results.
 
 ### ⚡ Optimizer
@@ -100,8 +101,9 @@ Currently, the following features are available:
 ### 📊 Analytics
 - **Insite Analytics**: Integrates with OpenSincera API to visualize publisher performance metrics. Analyzes technical indicators such as ID absorption rate (Directness), ads-to-content ratio, ad refresh frequency, unique ad inventory count, page weight, CPU usage, supply path count, and reseller count. Based on this data, Gemini AI generates improvement proposals for publishers (with priority and implementation steps) and presents concrete measures while comparing with benchmarks.
 
-### 📋 Scan Status
+### 📋 Scan Status & Bulk Import
 - **Scan Status**: Lists past scan results for Ads.txt / App-ads.txt / Sellers.json. You can check the execution date/time, status code, record count, valid/warning count for each scan, and track the history of scans executed in the background.
+- **Bulk Import**: Imports a list of domains for monitoring in bulk and executes bulk scans for Ads.txt / App-ads.txt. You can check the scanning progress in real-time.
 
 ## Feedback
 
@@ -126,18 +128,16 @@ export default function BetaPage() {
           <button
             type="button"
             onClick={() => setLang("ja")}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              lang === "ja" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"
-            }`}
+            className={`px-3 py-1 rounded text-sm transition-colors ${lang === "ja" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"
+              }`}
           >
             日本語
           </button>
           <button
             type="button"
             onClick={() => setLang("en")}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              lang === "en" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"
-            }`}
+            className={`px-3 py-1 rounded text-sm transition-colors ${lang === "en" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"
+              }`}
           >
             English
           </button>
