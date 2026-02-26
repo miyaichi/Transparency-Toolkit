@@ -137,8 +137,8 @@ app.openapi(historyRoute, async (c) => {
   return c.json(history);
 });
 
-export default app;
 
+// Progress tracking endpoint
 // Progress tracking endpoint
 import { progressTracker } from '../lib/progress_tracker';
 
@@ -191,3 +191,5 @@ app.openapi(progressRoute, async (c) => {
 
   return c.json(progress);
 });
+
+export default app;
