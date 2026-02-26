@@ -74,17 +74,44 @@ export class StreamImporter {
       );
 
       // Detect HTML responses (soft 404s or captive portals) to avoid JSON parse errors
+      // However, if Content-Type is HTML but actual content is JSON (valid case like loopme.com),
+      // we should proceed. This allows for servers with misconfigured Content-Type headers.
       if (httpStatus < 400 && contentType.toLowerCase().includes('text/html')) {
-        console.warn(
-        `Invalid Content-Type (likely soft 404 or captive portal) for ${options.domain}: ` +
-        `URL: ${usedUrl}, Status: ${httpStatus}, Content-Type: ${contentType}`
-      );
-        await pool.query('UPDATE raw_sellers_files SET http_status = $1, etag = $2 WHERE id = $3', [
-          415,
-          `Invalid Content-Type: ${contentType}`.substring(0, 255),
-          rawFileId,
-        ]);
-        return;
+        // Check if the actual response body starts with JSON indicators
+        let bodyStart = '';
+        try {
+          // Peek at the response body to detect if it's actually JSON
+          const bodyBuffer = response.data;
+          if (Buffer.isBuffer(bodyBuffer)) {
+            bodyStart = bodyBuffer.toString('utf8', 0, Math.min(100, bodyBuffer.length)).trim();
+          } else if (typeof bodyBuffer === 'string') {
+            bodyStart = bodyBuffer.trim().substring(0, 100);
+          }
+        } catch (e) {
+          // If we can't peek, assume it's not JSON
+          bodyStart = '';
+        }
+
+        // If body starts with JSON indicators, proceed with import
+        if (bodyStart.startsWith('{') || bodyStart.startsWith('[')) {
+          console.warn(
+            `Content-Type mismatch (HTML) but JSON content detected for ${options.domain}. ` +
+            `Proceeding with import (server misconfiguration likely). URL: ${usedUrl}`
+          );
+          // Continue with processing - don't return here
+        } else {
+          // No JSON content detected - genuine HTML response, abort
+          console.warn(
+            `Invalid Content-Type (likely soft 404 or captive portal) for ${options.domain}: ` +
+            `URL: ${usedUrl}, Status: ${httpStatus}, Content-Type: ${contentType}, Body: ${bodyStart.substring(0, 50)}...`
+          );
+          await pool.query('UPDATE raw_sellers_files SET http_status = $1, etag = $2 WHERE id = $3', [
+            415,
+            `Invalid Content-Type: ${contentType}`.substring(0, 255),
+            rawFileId,
+          ]);
+          return;
+        }
       }
 
       if (httpStatus >= 400) {
