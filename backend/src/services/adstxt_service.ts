@@ -6,6 +6,8 @@ import { AdsTxtScanner } from './adstxt_scanner';
 import { DbSellersProvider } from './db_sellers_provider';
 
 import { SellersService } from './sellers_service';
+import { progressTracker } from '../lib/progress_tracker';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface ValidationRecord {
   line_number: number;
@@ -45,6 +47,8 @@ export interface ValidationResult {
   stats: ValidationStats;
   scan_id?: string;
   error?: string;
+  progress_id?: string;  // For tracking sellers.json fetching progress
+  is_processing?: boolean;  // Flag indicating sellers.json fetch is in progress
 }
 
 export class AdsTxtService {
@@ -116,21 +120,37 @@ export class AdsTxtService {
       }
     });
 
-    await Promise.all(
+    // Create progress tracker
+    const progressId = uuidv4();
+    const domainsToFetch = Array.from(systemDomains);
+    progressTracker.createProgress(progressId, domainsToFetch);
+    
+    let hasProcessingDomains = false;
+
+    // Fire and forget to avoid timeout on large files (e.g. Google)
+    Promise.all(
       Array.from(systemDomains).map(async (sysDomain) => {
         try {
           const has = await this.sellersProvider.hasSellerJson(sysDomain);
           if (!has) {
-            // Fire and forget to avoid timeout on large files (e.g. Google)
-            this.sellersService.fetchAndProcessSellers(sysDomain, true).catch((err) => {
-              console.warn(`Background fetch failed for ${sysDomain}:`, err);
+            hasProcessingDomains = true;
+            this.sellersService.fetchAndProcessSellers(sysDomain, true).then(() => {
+              progressTracker.updateDomainProgress(progressId, sysDomain, 'completed');
+            }).catch((err) => {
+              console.warn(`Background fetch failed for ${sysDomain}:`, err.message);
+              progressTracker.updateDomainProgress(progressId, sysDomain, 'failed', err.message);
             });
+          } else {
+            progressTracker.updateDomainProgress(progressId, sysDomain, 'completed');
           }
-        } catch (e) {
-          console.warn(`Failed to auto-fetch sellers.json for ${sysDomain}:`, e);
+        } catch (e: any) {
+          console.warn(`Failed to check sellers.json for ${sysDomain}:`, e.message);
+          progressTracker.updateDomainProgress(progressId, sysDomain, 'failed', e.message);
         }
       }),
-    );
+    ).catch((err) => {
+      console.warn('Error in sellers.json fetch batch:', err);
+    });
 
     const validatedEntries = await crossCheckAdsTxtRecords(domain, parsedEntries, null, this.sellersProvider);
 
@@ -249,6 +269,8 @@ export class AdsTxtService {
       records: formattedRecords,
       stats,
       scan_id: scanId,
+      progress_id: progressId,
+      is_processing: hasProcessingDomains,
     };
   }
 
