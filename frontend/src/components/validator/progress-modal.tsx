@@ -111,7 +111,7 @@ export function ProgressModal({
           <div className="flex flex-col items-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <h2 className="text-lg font-semibold">
-              {t("validator.fetchingProgress") || "Fetching sellers.json..."}
+              {"Fetching sellers.json..."}
             </h2>
             <p className="text-sm text-muted-foreground text-center">
               This may take a few moments...
@@ -180,7 +180,7 @@ export function ProgressModal({
               <>
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 <h2 className="text-lg font-semibold">
-                  {t("validator.fetchingProgress") || "Fetching sellers.json..."}
+                  {"Fetching sellers.json..."}
                 </h2>
               </>
             )}
