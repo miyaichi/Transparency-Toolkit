@@ -33,38 +33,48 @@ interface ProgressResponse {
   }
 }
 
-export function ProgressModal({ progressId, isOpen, onClose, onComplete }: ProgressModalProps) {
+export function ProgressModal({
+  progressId,
+  isOpen,
+  onClose,
+  onComplete,
+}: ProgressModalProps) {
   const { t } = useTranslation()
   const [progress, setProgress] = useState<ProgressResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasCompleted, setHasCompleted] = useState(false)
+  const [shouldStopPolling, setShouldStopPolling] = useState(false)
 
   // Polling logic
   const fetchProgress = useCallback(async () => {
-    if (!progressId) return
+    if (!progressId || shouldStopPolling) return
 
     try {
       setLoading(true)
-      setError(null)
 
       const response = await fetch(`/api/adstxt/progress/${progressId}`)
 
       if (response.status === 404) {
         setError("Progress tracking expired. Please try validation again.")
+        setShouldStopPolling(true)
         return
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+        setError(`HTTP ${response.status}`)
+        setShouldStopPolling(true)
+        return
       }
 
+      setError(null)
       const data: ProgressResponse = await response.json()
       setProgress(data)
 
       // Auto-close when completed
       if (data.overall_status === "completed" && !hasCompleted) {
         setHasCompleted(true)
+        setShouldStopPolling(true)
         // Delay closing to let user see completion
         setTimeout(() => {
           onComplete?.()
@@ -73,14 +83,15 @@ export function ProgressModal({ progressId, isOpen, onClose, onComplete }: Progr
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch progress")
+      setShouldStopPolling(true)
     } finally {
       setLoading(false)
     }
-  }, [progressId, onClose, onComplete, hasCompleted])
+  }, [progressId, onClose, onComplete, hasCompleted, shouldStopPolling])
 
   // Auto-poll every 500ms
   useEffect(() => {
-    if (!isOpen || !progressId) return
+    if (!isOpen || !progressId || shouldStopPolling) return
 
     // Fetch immediately on open
     fetchProgress()
@@ -89,7 +100,7 @@ export function ProgressModal({ progressId, isOpen, onClose, onComplete }: Progr
     const interval = setInterval(fetchProgress, 500)
 
     return () => clearInterval(interval)
-  }, [isOpen, progressId, fetchProgress])
+  }, [isOpen, progressId, fetchProgress, shouldStopPolling])
 
   if (!isOpen) return null
 
@@ -99,8 +110,12 @@ export function ProgressModal({ progressId, isOpen, onClose, onComplete }: Progr
         <Card className="w-full max-w-md p-6">
           <div className="flex flex-col items-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <h2 className="text-lg font-semibold">{t("validator.fetchingProgress") || "Fetching sellers.json..."}</h2>
-            <p className="text-sm text-muted-foreground text-center">This may take a few moments...</p>
+            <h2 className="text-lg font-semibold">
+              {t("validator.fetchingProgress") || "Fetching sellers.json..."}
+            </h2>
+            <p className="text-sm text-muted-foreground text-center">
+              This may take a few moments...
+            </p>
           </div>
         </Card>
       </div>
@@ -112,7 +127,9 @@ export function ProgressModal({ progressId, isOpen, onClose, onComplete }: Progr
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-6">
           <div className="flex items-start justify-between mb-4">
-            <h2 className="text-lg font-semibold text-destructive">{t("common.error") || "Error"}</h2>
+            <h2 className="text-lg font-semibold text-destructive">
+              {t("common.error") || "Error"}
+            </h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -122,6 +139,9 @@ export function ProgressModal({ progressId, isOpen, onClose, onComplete }: Progr
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+          <Button onClick={onClose} className="w-full mt-4">
+            Close
+          </Button>
         </Card>
       </div>
     )
@@ -129,9 +149,17 @@ export function ProgressModal({ progressId, isOpen, onClose, onComplete }: Progr
 
   if (!progress) return null
 
-  const totalDomains = progress.summary.processing + progress.summary.completed + progress.summary.failed
+  const totalDomains =
+    progress.summary.processing +
+    progress.summary.completed +
+    progress.summary.failed
   const progressPercent =
-    totalDomains > 0 ? Math.round(((progress.summary.completed + progress.summary.failed) / totalDomains) * 100) : 0
+    totalDomains > 0
+      ? Math.round(
+          ((progress.summary.completed + progress.summary.failed) / totalDomains) *
+            100
+        )
+      : 0
 
   const isCompleted = progress.overall_status === "completed"
 
@@ -246,8 +274,14 @@ export function ProgressModal({ progressId, isOpen, onClose, onComplete }: Progr
                   >
                     <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground truncate">{item.domain}</div>
-                      {item.error && <div className="text-xs text-muted-foreground mt-1 break-words">{item.error}</div>}
+                      <div className="font-medium text-foreground truncate">
+                        {item.domain}
+                      </div>
+                      {item.error && (
+                        <div className="text-xs text-muted-foreground mt-1 break-words">
+                          {item.error}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
