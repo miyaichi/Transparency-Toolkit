@@ -109,6 +109,11 @@ export function ValidatorResult({ domain, type }: Props) {
   // Check if we have missing sellers.json warnings
   const hasMissingSellers = data.records.some((r) => r.validation_key === "noSellersJson")
 
+  // Calculate stats safely
+  const directCount = data.stats.direct_count || 0
+  const resellerCount = data.stats.reseller_count || 0
+  const totalExchangeEntries = directCount + resellerCount
+
   return (
     <div className="space-y-6">
       {/* Progress Modal */}
@@ -155,15 +160,13 @@ export function ValidatorResult({ domain, type }: Props) {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-blue-600">
-                {data.stats.direct_count + (data.stats.reseller_count || 0) > 0
-                  ? Math.round(
-                      (data.stats.direct_count / (data.stats.direct_count + (data.stats.reseller_count || 0))) * 100
-                    )
+                {totalExchangeEntries > 0
+                  ? Math.round((directCount / totalExchangeEntries) * 100)
                   : 0}
                 %
               </div>
               <p className="text-xs text-muted-foreground">
-                {data.stats.direct_count} {t("common.records")}
+                {directCount} {t("common.records")}
               </p>
             </CardContent>
           </Card>
@@ -175,16 +178,13 @@ export function ValidatorResult({ domain, type }: Props) {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-purple-600">
-                {data.stats.direct_count + (data.stats.reseller_count || 0) > 0
-                  ? Math.round(
-                      ((data.stats.reseller_count || 0) / (data.stats.direct_count + (data.stats.reseller_count || 0))) *
-                        100
-                    )
+                {totalExchangeEntries > 0
+                  ? Math.round((resellerCount / totalExchangeEntries) * 100)
                   : 0}
                 %
               </div>
               <p className="text-xs text-muted-foreground">
-                {data.stats.reseller_count} {t("common.records")}
+                {resellerCount} {t("common.records")}
               </p>
             </CardContent>
           </Card>
