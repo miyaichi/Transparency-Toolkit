@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input"
 import { useTranslation } from "@/lib/i18n/language-context"
 import { CheckCircle, Download, HelpCircle, Loader2, XCircle } from "lucide-react"
 import Link from "next/link"
+import { useState, useEffect } from "react"
 
 import { useAdsTxtData } from "@/hooks/use-ads-txt-data"
+import { ProgressModal } from "./progress-modal"
 
 type Props = {
   domain: string
@@ -19,6 +21,18 @@ export function ValidatorResult({ domain, type }: Props) {
   const { t, language } = useTranslation()
 
   const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(domain, type)
+
+  // Progress modal state
+  const [showProgressModal, setShowProgressModal] = useState(false)
+  const [progressId, setProgressId] = useState<string | null>(null)
+
+  // Show progress modal when validation returns processing status
+  useEffect(() => {
+    if (data?.is_processing && data?.progress_id) {
+      setProgressId(data.progress_id)
+      setShowProgressModal(true)
+    }
+  }, [data?.is_processing, data?.progress_id])
 
   // Download functionality
   const handleDownload = () => {
@@ -44,7 +58,7 @@ export function ValidatorResult({ domain, type }: Props) {
           col1,
           col2,
           r.relationship || "",
-          r.account_type || "", // Assuming account_type maps to Cert ID in parser
+          r.certification_authority_id || "", // Fixed: use certification_authority_id instead of account_type
           r.is_valid ? "OK" : "ERROR",
           r.warning_message || r.validation_key || ""
         ]
@@ -97,6 +111,19 @@ export function ValidatorResult({ domain, type }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Progress Modal */}
+      {progressId && (
+        <ProgressModal
+          progressId={progressId}
+          isOpen={showProgressModal}
+          onClose={() => setShowProgressModal(false)}
+          onComplete={() => {
+            // Auto-refresh data after progress completes
+            setProgressId(null)
+          }}
+        />
+      )}
+
       {hasMissingSellers && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-start space-x-3 text-blue-900 animate-in fade-in slide-in-from-top-2">
           <Loader2 className="h-5 w-5 text-blue-600 animate-spin mt-0.5 shrink-0" />
@@ -148,9 +175,10 @@ export function ValidatorResult({ domain, type }: Props) {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-purple-600">
-                {data.stats.direct_count !== undefined && data.stats.direct_count + data.stats.reseller_count > 0
+                {data.stats.direct_count + (data.stats.reseller_count || 0) > 0
                   ? Math.round(
-                      (data.stats.reseller_count / (data.stats.direct_count + data.stats.reseller_count)) * 100
+                      ((data.stats.reseller_count || 0) / (data.stats.direct_count + (data.stats.reseller_count || 0))) *
+                        100
                     )
                   : 0}
                 %
@@ -163,184 +191,106 @@ export function ValidatorResult({ domain, type }: Props) {
         )}
         <Card>
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm text-red-600">{t("common.invalidRecords")}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 text-2xl font-bold text-red-600">{data.stats.invalid}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm text-yellow-600">{t("common.warnings")}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0 text-2xl font-bold text-yellow-600">{data.stats.warnings}</CardContent>
         </Card>
+        <Card>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm text-red-600">{t("common.invalid")}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 text-2xl font-bold text-red-600">{data.stats.invalid}</CardContent>
+        </Card>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative max-w-sm w-full">
+      {/* Filter Bar and Download Button */}
+      <div className="flex gap-4 items-end">
+        <div className="flex-1">
+          <label className="text-sm font-medium text-muted-foreground">{t("common.search")}</label>
           <Input
-            placeholder={t("common.filterPlaceholder")}
+            placeholder={t("common.searchPlaceholder") || "Search..."}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="pl-8"
+            className="mt-1"
           />
-          {/* Search icon could go here */}
         </div>
-        <Button variant="outline" onClick={handleDownload} className="shrink-0">
-          <Download className="mr-2 h-4 w-4" /> {t("common.downloadCsv")}
+        <Button onClick={handleDownload} className="gap-2">
+          <Download className="h-4 w-4" />
+          {t("common.downloadCSV") || "Download CSV"}
         </Button>
       </div>
 
-      {/* Table - Rebuilt with plain HTML for better scroll/background control */}
-      <div className="rounded-md border bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left min-w-max border-collapse">
-            <thead className="bg-muted/50 text-muted-foreground font-medium">
-              <tr>
-                <th className="p-3 border-b w-16 font-medium">{t("common.line")}</th>
-                <th className="p-3 border-b font-medium">{t("common.advertisingSystem")}</th>
-                <th className="p-3 border-b font-medium">{t("common.publisherAccountId")}</th>
-                <th className="p-3 border-b font-medium">{t("common.relationship")}</th>
-                <th className="p-3 border-b font-medium">{t("common.certId")}</th>
-                <th className="p-3 border-b font-medium">{t("common.status")}</th>
-                <th className="p-3 border-b font-medium">{t("common.message")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRecords?.length ? (
-                filteredRecords.map((record, i) => {
-                  // Message Translation Logic
-                  const key = record.validation_key
-                  const params = {
-                    domain: record.domain || "",
-                    account_id: record.account_id || "",
-                    seller_domain: record.domain || "", // Assuming seller domain is same field
-                    publisher_domain: domain,
-                    seller_type: "INTERMEDIARY" // Don't have this in record currently
-                  }
-
-                  // Try to translate validation key
-                  let translatedMessage = ""
-                  if (key) {
-                    const path = `warnings.${key}.description`
-                    const val = t(path, params)
-                    if (val !== path) {
-                      translatedMessage = val
-                    }
-                  }
-
-                  const displayMessage = translatedMessage || record.warning_message || record.validation_key || ""
-
-                  const rowClass = !record.is_valid
-                    ? "bg-red-50 hover:bg-red-100/80"
-                    : record.has_warning
-                      ? "bg-yellow-50 hover:bg-yellow-100/80"
-                      : "hover:bg-muted/50"
-
-                  const isVariable = !!record.variable_type
-
-                  return (
-                    <tr key={i} className={`border-b border-gray-100 last:border-0 transition-colors ${rowClass}`}>
-                      <td className="p-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                        {record.line_number}
-                      </td>
-                      <td className="p-3 font-medium whitespace-nowrap">
-                        {isVariable ? (
-                          <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200 font-normal">
-                            {record.variable_type}
-                          </Badge>
-                        ) : (
-                          record.domain || <span className="text-muted-foreground italic">-</span>
-                        )}
-                      </td>
-                      <td className="p-3 font-mono text-xs whitespace-nowrap">
-                        {isVariable ? (
-                          <span className="text-slate-700">{record.value}</span>
-                        ) : (
-                          record.account_id || <span className="text-muted-foreground italic">-</span>
-                        )}
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
-                        {record.relationship ? (
-                          <Badge
-                            variant="outline"
-                            className={
-                              record.relationship.toUpperCase() === "DIRECT"
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : ""
-                            }
-                          >
-                            {record.relationship}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground italic">-</span>
-                        )}
-                      </td>
-                      <td className="p-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                        {record.certification_authority_id || "-"}
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
-                        {record.is_valid ? (
-                          <div className="flex items-center text-green-600 font-medium text-xs">
-                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> {t("common.ok")}
-                          </div>
-                        ) : (
-                          <div className="flex items-center text-red-600 font-medium text-xs">
-                            <XCircle className="w-3.5 h-3.5 mr-1" /> {t("common.error")}
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-3 text-xs max-w-md min-w-[300px]">
-                        {record.has_warning ? (
-                          record.validation_key ? (
-                            <Link
-                              href={`/warnings#${toKebabCase(record.validation_key)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-yellow-700 hover:underline decoration-yellow-700/50 underline-offset-4 flex items-center gap-1 group"
-                            >
-                              <span className="truncate">{displayMessage}</span>
-                              <HelpCircle className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                            </Link>
-                          ) : (
-                            <span className="text-yellow-700 truncate block">{displayMessage}</span>
-                          )
-                        ) : !record.is_valid ? (
-                          record.validation_key ? (
-                            <Link
-                              href={`/warnings#${toKebabCase(record.validation_key)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-red-600 font-mono hover:underline decoration-red-600/50 underline-offset-4 flex items-center gap-1 group"
-                            >
-                              <span className="truncate">{displayMessage}</span>
-                              <HelpCircle className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                            </Link>
-                          ) : (
-                            <span className="text-red-600 font-mono truncate block">{displayMessage}</span>
-                          )
-                        ) : null}
-                      </td>
-                    </tr>
-                  )
-                })
-              ) : (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                    {t("common.noRecords")}
-                  </td>
+      {/* Records Table */}
+      {filteredRecords && filteredRecords.length > 0 ? (
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-3 font-semibold">{t("common.line")}</th>
+                  <th className="text-left p-3 font-semibold">{t("common.advertisingSystem")}</th>
+                  <th className="text-left p-3 font-semibold">{t("common.publisherAccountId")}</th>
+                  <th className="text-left p-3 font-semibold">{t("common.relationship")}</th>
+                  <th className="text-left p-3 font-semibold">{t("common.certId")}</th>
+                  <th className="text-left p-3 font-semibold">{t("common.status")}</th>
+                  <th className="text-left p-3 font-semibold">{t("common.message")}</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="text-xs text-muted-foreground text-right">
-        {t("common.sourceUrl")}:{" "}
-        <a href={data.ads_txt_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
-          {data.ads_txt_url}
-        </a>
-      </div>
+              </thead>
+              <tbody>
+                {filteredRecords.map((record, idx) => (
+                  <tr key={idx} className="border-b hover:bg-muted/30 transition-colors">
+                    <td className="p-3 font-mono text-xs">{record.line_number}</td>
+                    <td className="p-3">
+                      {record.variable_type ? (
+                        <Badge variant="outline">{record.variable_type}</Badge>
+                      ) : (
+                        <span>{record.domain}</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      {record.variable_type ? (
+                        <code className="text-xs bg-muted px-2 py-1 rounded">{record.value}</code>
+                      ) : (
+                        <code className="text-xs bg-muted px-2 py-1 rounded">{record.account_id}</code>
+                      )}
+                    </td>
+                    <td className="p-3">{record.relationship}</td>
+                    <td className="p-3">{record.certification_authority_id || "-"}</td>
+                    <td className="p-3">
+                      {record.is_valid ? (
+                        <div className="flex items-center gap-1 text-green-600">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>OK</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-red-600">
+                          <XCircle className="h-4 w-4" />
+                          <span>ERROR</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-3 text-muted-foreground">
+                      {record.warning_message && (
+                        <div className="flex items-start gap-1">
+                          <HelpCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-yellow-600" />
+                          <span>{record.warning_message}</span>
+                        </div>
+                      )}
+                      {record.validation_key && !record.warning_message && (
+                        <code className="text-xs bg-yellow-100 text-yellow-900 px-2 py-1 rounded">
+                          {record.validation_key}
+                        </code>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">{t("common.noRecords")}</div>
+      )}
     </div>
   )
 }

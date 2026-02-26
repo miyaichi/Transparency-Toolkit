@@ -33,6 +33,8 @@ export type ValidationResponse = {
   records: ValidationRecord[]
   stats: ValidationStats
   scan_id?: string
+  progress_id?: string
+  is_processing?: boolean
 }
 
 export type Seller = {
