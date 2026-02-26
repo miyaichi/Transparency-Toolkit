@@ -128,16 +128,18 @@ export default function BetaPage() {
           <button
             type="button"
             onClick={() => setLang("ja")}
-            className={`px-3 py-1 rounded text-sm transition-colors ${lang === "ja" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"
-              }`}
+            className={`px-3 py-1 rounded text-sm transition-colors ${
+              lang === "ja" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"
+            }`}
           >
             日本語
           </button>
           <button
             type="button"
             onClick={() => setLang("en")}
-            className={`px-3 py-1 rounded text-sm transition-colors ${lang === "en" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"
-              }`}
+            className={`px-3 py-1 rounded text-sm transition-colors ${
+              lang === "en" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"
+            }`}
           >
             English
           </button>

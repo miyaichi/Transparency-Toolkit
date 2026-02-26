@@ -109,10 +109,12 @@ class ProgressTracker {
       domains: {
         processing: domains.filter((d) => d.status === 'processing').map((d) => d.domain),
         completed: domains.filter((d) => d.status === 'completed').map((d) => d.domain),
-        failed: domains.filter((d) => d.status === 'failed').map((d) => ({
-          domain: d.domain,
-          error: d.error,
-        })),
+        failed: domains
+          .filter((d) => d.status === 'failed')
+          .map((d) => ({
+            domain: d.domain,
+            error: d.error,
+          })),
       },
     };
   }

@@ -47,8 +47,8 @@ export interface ValidationResult {
   stats: ValidationStats;
   scan_id?: string;
   error?: string;
-  progress_id?: string;  // For tracking sellers.json fetching progress
-  is_processing?: boolean;  // Flag indicating sellers.json fetch is in progress
+  progress_id?: string; // For tracking sellers.json fetching progress
+  is_processing?: boolean; // Flag indicating sellers.json fetch is in progress
 }
 
 export class AdsTxtService {
@@ -124,7 +124,7 @@ export class AdsTxtService {
     const progressId = uuidv4();
     const domainsToFetch = Array.from(systemDomains);
     progressTracker.createProgress(progressId, domainsToFetch);
-    
+
     let hasProcessingDomains = false;
 
     // Fire and forget to avoid timeout on large files (e.g. Google)
@@ -134,12 +134,15 @@ export class AdsTxtService {
           const has = await this.sellersProvider.hasSellerJson(sysDomain);
           if (!has) {
             hasProcessingDomains = true;
-            this.sellersService.fetchAndProcessSellers(sysDomain, true).then(() => {
-              progressTracker.updateDomainProgress(progressId, sysDomain, 'completed');
-            }).catch((err) => {
-              console.warn(`Background fetch failed for ${sysDomain}:`, err.message);
-              progressTracker.updateDomainProgress(progressId, sysDomain, 'failed', err.message);
-            });
+            this.sellersService
+              .fetchAndProcessSellers(sysDomain, true)
+              .then(() => {
+                progressTracker.updateDomainProgress(progressId, sysDomain, 'completed');
+              })
+              .catch((err) => {
+                console.warn(`Background fetch failed for ${sysDomain}:`, err.message);
+                progressTracker.updateDomainProgress(progressId, sysDomain, 'failed', err.message);
+              });
           } else {
             progressTracker.updateDomainProgress(progressId, sysDomain, 'completed');
           }

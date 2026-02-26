@@ -85,9 +85,7 @@ export const findOpenSinceraCache = async (
   return res.rows[0] ? parseCacheRow(res.rows[0]) : null;
 };
 
-export const upsertOpenSinceraCache = async (
-  params: UpsertOpenSinceraCacheParams,
-): Promise<OpenSinceraCacheRecord> => {
+export const upsertOpenSinceraCache = async (params: UpsertOpenSinceraCacheParams): Promise<OpenSinceraCacheRecord> => {
   const {
     domain = null,
     publisherId = null,

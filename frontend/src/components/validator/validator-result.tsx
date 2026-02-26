@@ -160,10 +160,7 @@ export function ValidatorResult({ domain, type }: Props) {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-blue-600">
-                {totalExchangeEntries > 0
-                  ? Math.round((directCount / totalExchangeEntries) * 100)
-                  : 0}
-                %
+                {totalExchangeEntries > 0 ? Math.round((directCount / totalExchangeEntries) * 100) : 0}%
               </div>
               <p className="text-xs text-muted-foreground">
                 {directCount} {t("common.records")}
@@ -178,10 +175,7 @@ export function ValidatorResult({ domain, type }: Props) {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-purple-600">
-                {totalExchangeEntries > 0
-                  ? Math.round((resellerCount / totalExchangeEntries) * 100)
-                  : 0}
-                %
+                {totalExchangeEntries > 0 ? Math.round((resellerCount / totalExchangeEntries) * 100) : 0}%
               </div>
               <p className="text-xs text-muted-foreground">
                 {resellerCount} {t("common.records")}

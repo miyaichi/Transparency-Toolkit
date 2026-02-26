@@ -34,7 +34,6 @@ export class StreamImporter {
             url: usedUrl,
             responseType: 'stream',
             validateStatus: () => true,
-            
           } as any);
 
           if (response.status === 404 && !options.domain.startsWith('www.') && attempt === 0) {
@@ -82,16 +81,13 @@ export class StreamImporter {
         // will catch genuinely invalid responses.
         console.warn(
           `Content-Type mismatch (HTML) for ${options.domain}. ` +
-          `Proceeding with import assuming valid JSON (server misconfiguration likely). URL: ${usedUrl}`
+            `Proceeding with import assuming valid JSON (server misconfiguration likely). URL: ${usedUrl}`,
         );
         // Continue with processing - JSON parser will validate the content
       }
 
       if (httpStatus >= 400) {
-        console.warn(
-        `Failed to fetch sellers.json for ${options.domain}. Status: ${httpStatus}, ` +
-        `URL: ${usedUrl}`
-      );
+        console.warn(`Failed to fetch sellers.json for ${options.domain}. Status: ${httpStatus}, ` + `URL: ${usedUrl}`);
         return; // Stop processing, but record is saved to indicate attempt
       }
 

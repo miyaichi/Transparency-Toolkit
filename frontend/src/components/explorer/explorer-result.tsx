@@ -242,10 +242,7 @@ export function ExplorerResult({ domain, type }: Props) {
                   const hop = getHopCount(record)
 
                   return (
-                    <TableRow
-                      key={i}
-                      className={notFound ? "bg-red-50/60 hover:bg-red-50" : "hover:bg-muted/50"}
-                    >
+                    <TableRow key={i} className={notFound ? "bg-red-50/60 hover:bg-red-50" : "hover:bg-muted/50"}>
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         {record.line_number === -1 ? t("common.auto") : record.line_number}
                       </TableCell>
