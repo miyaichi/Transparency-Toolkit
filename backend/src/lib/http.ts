@@ -16,7 +16,8 @@ const agent = new https.Agent({
 });
 
 const client = axios.create({
-  timeout: 30000, // 30s
+  timeout: 60000, // 60s (increased from 30s to account for redirects and network delays)
+  maxRedirects: 10, // Explicitly set higher redirect limit for streaming responses
   headers: {
     // Mimic Chrome User-Agent to bypass some WAF/Bot protections
     'User-Agent':

@@ -34,7 +34,7 @@ export class StreamImporter {
             url: usedUrl,
             responseType: 'stream',
             validateStatus: () => true,
-            'axios-retry': { retries: 0 },
+            
           } as any);
 
           if (response.status === 404 && !options.domain.startsWith('www.') && attempt === 0) {
@@ -75,7 +75,10 @@ export class StreamImporter {
 
       // Detect HTML responses (soft 404s or captive portals) to avoid JSON parse errors
       if (httpStatus < 400 && contentType.toLowerCase().includes('text/html')) {
-        console.warn(`Invalid Content-Type for ${options.domain}: ${contentType}`);
+        console.warn(
+        `Invalid Content-Type (likely soft 404 or captive portal) for ${options.domain}: ` +
+        `URL: ${usedUrl}, Status: ${httpStatus}, Content-Type: ${contentType}`
+      );
         await pool.query('UPDATE raw_sellers_files SET http_status = $1, etag = $2 WHERE id = $3', [
           415,
           `Invalid Content-Type: ${contentType}`.substring(0, 255),
@@ -85,7 +88,10 @@ export class StreamImporter {
       }
 
       if (httpStatus >= 400) {
-        console.warn(`Failed to fetch sellers.json for ${options.domain}. Status: ${httpStatus}`);
+        console.warn(
+        `Failed to fetch sellers.json for ${options.domain}. Status: ${httpStatus}, ` +
+        `URL: ${usedUrl}`
+      );
         return; // Stop processing, but record is saved to indicate attempt
       }
 
