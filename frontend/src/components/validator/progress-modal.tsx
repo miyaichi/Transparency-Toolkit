@@ -56,7 +56,7 @@ export function ProgressModal({
       const response = await fetch(`/api/adstxt/progress/${progressId}`)
 
       if (response.status === 404) {
-        setError("進捗情報が見つかりません。バックエンドで処理がまだ開始されていないか、処理が完了した可能性があります。")
+        setError("sellers.json が取得できないエントリーがあります。")
         setShouldStopPolling(true)
         return
       }
