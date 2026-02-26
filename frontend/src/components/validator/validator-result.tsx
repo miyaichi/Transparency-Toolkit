@@ -140,7 +140,7 @@ export function ValidatorResult({ domain, type }: Props) {
         />
       )}
 
-      {hasMissingSellers && (
+      {hasMissingSellers && !showProgressModal && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-start space-x-3 text-blue-900 animate-in fade-in slide-in-from-top-2">
           <Loader2 className="h-5 w-5 text-blue-600 animate-spin mt-0.5 shrink-0" />
           <div className="text-sm">

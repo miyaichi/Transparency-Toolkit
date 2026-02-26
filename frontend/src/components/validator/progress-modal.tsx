@@ -56,7 +56,7 @@ export function ProgressModal({
       const response = await fetch(`/api/adstxt/progress/${progressId}`)
 
       if (response.status === 404) {
-        setError("Progress tracking expired. Please try validation again.")
+        setError("進捗情報の有効期限が切れました。もう一度検証してください。")
         setShouldStopPolling(true)
         return
       }
@@ -82,7 +82,7 @@ export function ProgressModal({
         }, 1500)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch progress")
+      setError(err instanceof Error ? err.message : "進捗情報の取得に失敗しました")
       setShouldStopPolling(true)
     } finally {
       setLoading(false)
@@ -111,10 +111,10 @@ export function ProgressModal({
           <div className="flex flex-col items-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <h2 className="text-lg font-semibold">
-              {"Fetching sellers.json..."}
+              sellers.json を取得中...
             </h2>
             <p className="text-sm text-muted-foreground text-center">
-              This may take a few moments...
+              お待ちください...
             </p>
           </div>
         </Card>
@@ -128,7 +128,7 @@ export function ProgressModal({
         <Card className="w-full max-w-md p-6">
           <div className="flex items-start justify-between mb-4">
             <h2 className="text-lg font-semibold text-destructive">
-              {t("common.error") || "Error"}
+              注意
             </h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -136,11 +136,11 @@ export function ProgressModal({
           </div>
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>取得失敗</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <Button onClick={onClose} className="w-full mt-4">
-            Close
+            閉じる
           </Button>
         </Card>
       </div>
@@ -156,7 +156,8 @@ export function ProgressModal({
   const progressPercent =
     totalDomains > 0
       ? Math.round(
-          ((progress.summary.completed + progress.summary.failed) / totalDomains) *
+          ((progress.summary.completed + progress.summary.failed) /
+            totalDomains) *
             100
         )
       : 0
@@ -173,14 +174,14 @@ export function ProgressModal({
               <>
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <h2 className="text-lg font-semibold">
-                  {t("validator.completionTitle") || "Sellers.json Fetching Complete"}
+                  取得完了
                 </h2>
               </>
             ) : (
               <>
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 <h2 className="text-lg font-semibold">
-                  {"Fetching sellers.json..."}
+                  sellers.json を取得中...
                 </h2>
               </>
             )}
@@ -198,8 +199,8 @@ export function ProgressModal({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="font-medium">
-                {progress.summary.completed + progress.summary.failed}/{totalDomains}{" "}
-                {t("validator.domainsProcessed") || "domains processed"}
+                {progress.summary.completed + progress.summary.failed}/
+                {totalDomains} ドメイン処理済み
               </span>
               <span className="text-muted-foreground">{progressPercent}%</span>
             </div>
@@ -217,7 +218,7 @@ export function ProgressModal({
               <div className="flex items-center gap-2 mb-3">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 <h3 className="font-semibold text-sm">
-                  {t("validator.processing") || "Processing"} ({progress.summary.processing})
+                  処理中 ({progress.summary.processing})
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -227,7 +228,9 @@ export function ProgressModal({
                     className="flex items-center gap-2 text-sm p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-900"
                   >
                     <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
-                    <span className="text-muted-foreground truncate">{domain}</span>
+                    <span className="text-muted-foreground truncate">
+                      {domain}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -240,7 +243,7 @@ export function ProgressModal({
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <h3 className="font-semibold text-sm">
-                  {t("validator.completed") || "Completed"} ({progress.summary.completed})
+                  完了 ({progress.summary.completed})
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -250,7 +253,9 @@ export function ProgressModal({
                     className="flex items-center gap-2 text-sm p-2 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-900"
                   >
                     <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span className="text-muted-foreground truncate">{domain}</span>
+                    <span className="text-muted-foreground truncate">
+                      {domain}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -263,7 +268,7 @@ export function ProgressModal({
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
                 <h3 className="font-semibold text-sm">
-                  {t("validator.failed") || "Failed"} ({progress.summary.failed})
+                  取得失敗 ({progress.summary.failed})
                 </h3>
               </div>
               <div className="space-y-2">
@@ -293,10 +298,9 @@ export function ProgressModal({
           {isCompleted && (
             <Alert>
               <Zap className="h-4 w-4" />
-              <AlertTitle>Complete</AlertTitle>
+              <AlertTitle>完了</AlertTitle>
               <AlertDescription>
-                {t("validator.fetchComplete") ||
-                  "All sellers.json fetching completed! Your validation results are now updated."}
+                すべての sellers.json 取得が完了しました。検証結果が更新されています。
               </AlertDescription>
             </Alert>
           )}
