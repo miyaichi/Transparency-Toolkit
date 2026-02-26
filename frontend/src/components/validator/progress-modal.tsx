@@ -56,13 +56,13 @@ export function ProgressModal({
       const response = await fetch(`/api/adstxt/progress/${progressId}`)
 
       if (response.status === 404) {
-        setError("進捗情報の有効期限が切れました。もう一度検証してください。")
+        setError("進捗情報が見つかりません。バックエンドで処理がまだ開始されていないか、処理が完了した可能性があります。")
         setShouldStopPolling(true)
         return
       }
 
       if (!response.ok) {
-        setError(`HTTP ${response.status}`)
+        setError(`エラーが発生しました (HTTP ${response.status})`)
         setShouldStopPolling(true)
         return
       }
