@@ -26,28 +26,22 @@ export const translations = {
       ja: "ads.txtおよびapp-ads.txtファイルを検証、ダウンロードします。"
     },
     progressModal: {
-      fetchingTitle: { en: "Fetching sellers.json...", ja: "sellers.json を取得中..." },
-      waitMessage: { en: "Please wait...", ja: "お待ちください..." },
-      completedTitle: { en: "Completed", ja: "取得完了" },
-      fetchingLabel: { en: "Fetching sellers.json...", ja: "sellers.json を取得中..." },
-      domainsProcessed: { en: "domains processed", ja: "ドメイン処理済み" },
-      processing: { en: "Processing", ja: "処理中" },
-      completed: { en: "Completed", ja: "完了" },
-      failed: { en: "Fetching Failed", ja: "取得失敗" },
-      fetchComplete: { en: "Complete", ja: "完了" },
-      fetchCompleteMessage: {
-        en: "All sellers.json fetching completed! Validation results are now updated.",
-        ja: "すべての sellers.json 取得が完了しました。検証結果が更新されています。"
-      },
-      fetchFailedTitle: { en: "Error", ja: "注意" },
-      fetchFailedLabel: { en: "Fetching Failed", ja: "取得失敗" },
-      sellerJsonNotFound: {
-        en: "sellers.json could not be fetched for some entries.",
-        ja: "sellers.json が取得できないエントリーがあります。"
-      },
-      fetchError: { en: "Failed to fetch progress information.", ja: "進捗情報の取得に失敗しました。" },
-      closeButton: { en: "Close", ja: "閉じる" }
-    },
+          fetchingTitle: { en: "Fetching sellers.json...", ja: "sellers.json を取得中..." },
+          waitMessage: { en: "Please wait...", ja: "お待ちください..." },
+          completedTitle: { en: "Completed", ja: "取得完了" },
+          fetchingLabel: { en: "Fetching sellers.json...", ja: "sellers.json を取得中..." },
+          domainsProcessed: { en: "domains processed", ja: "ドメイン処理済み" },
+          processing: { en: "Processing", ja: "処理中" },
+          completed: { en: "Completed", ja: "完了" },
+          failed: { en: "Fetching Failed", ja: "取得失敗" },
+          fetchComplete: { en: "Complete", ja: "完了" },
+          fetchCompleteMessage: { en: "All sellers.json fetching completed! Validation results are now updated.", ja: "すべての sellers.json 取得が完了しました。検証結果が更新されています。" },
+          fetchFailedTitle: { en: "Error", ja: "注意" },
+          fetchFailedLabel: { en: "Fetching Failed", ja: "取得失敗" },
+          sellerJsonNotFound: { en: "sellers.json could not be fetched for some entries.", ja: "sellers.json が取得できないエントリーがあります。" },
+          fetchError: { en: "Failed to fetch progress information.", ja: "進捗情報の取得に失敗しました。" },
+          closeButton: { en: "Close", ja: "閉じる" }
+        },,
     scanStatusDescription: {
       en: "Recent scan results for ads.txt, app-ads.txt, and sellers.json files.",
       ja: "ads.txt、app-ads.txt、およびsellers.jsonファイルの最近のスキャン結果です。"

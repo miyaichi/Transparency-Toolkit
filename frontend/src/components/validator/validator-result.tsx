@@ -1,8 +1,13 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { useTranslation } from "@/lib/i18n/language-context"
-import { Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { CheckCircle, Download, HelpCircle, Loader2, XCircle } from "lucide-react"
+import Link from "next/link"
+import { useState, useEffect } from "react"
 
 import { useAdsTxtData } from "@/hooks/use-ads-txt-data"
 import { ProgressModal } from "./progress-modal"
@@ -15,7 +20,10 @@ type Props = {
 export function ValidatorResult({ domain, type }: Props) {
   const { t, language } = useTranslation()
 
-  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(domain, type)
+  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(
+    domain,
+    type
+  )
 
   // Progress modal state
   const [showProgressModal, setShowProgressModal] = useState(false)
@@ -42,7 +50,7 @@ export function ValidatorResult({ domain, type }: Props) {
       t("common.relationship"),
       t("common.certId"),
       t("common.status"),
-      t("common.message")
+      t("common.message"),
     ]
     const csvContent = [
       headers.join(","),
@@ -58,11 +66,11 @@ export function ValidatorResult({ domain, type }: Props) {
           r.relationship || "",
           r.certification_authority_id || "", // Fixed: use certification_authority_id instead of account_type
           r.is_valid ? "OK" : "ERROR",
-          r.warning_message || r.validation_key || ""
+          r.warning_message || r.validation_key || "",
         ]
           .map((f) => `"${String(f).replace(/"/g, '""')}"`)
           .join(",")
-      })
+      }),
     ].join("\n")
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
@@ -79,7 +87,9 @@ export function ValidatorResult({ domain, type }: Props) {
 
   if (!domain) {
     return (
-      <div className="text-muted-foreground text-center py-20 bg-muted/20 rounded-lg">{t("common.enterDomain")}</div>
+      <div className="text-muted-foreground text-center py-20 bg-muted/20 rounded-lg">
+        {t("common.enterDomain")}
+      </div>
     )
   }
 
@@ -129,6 +139,4 @@ export function ValidatorResult({ domain, type }: Props) {
           }}
         />
       )}
-    </div>
-  )
-}
+
