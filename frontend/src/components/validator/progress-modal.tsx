@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Loader2, CheckCircle2, AlertCircle, Zap } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Loader2, CheckCircle2, AlertCircle, Zap, X } from "lucide-react"
 import { useTranslation } from "@/lib/i18n/language-context"
 
 interface ProgressModalProps {
@@ -97,42 +98,45 @@ export function ProgressModal({
     return () => clearInterval(interval)
   }, [isOpen, progressId, fetchProgress])
 
+  if (!isOpen) return null
+
   if (!progress && loading && !error) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {t("validator.fetchingProgress") || "Fetching sellers.json..."}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center justify-center py-8">
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-6">
+          <div className="flex flex-col items-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <h2 className="text-lg font-semibold">
+              {t("validator.fetchingProgress") || "Fetching sellers.json..."}
+            </h2>
+            <p className="text-sm text-muted-foreground text-center">
+              This may take a few moments...
+            </p>
           </div>
-        </DialogContent>
-      </Dialog>
+        </Card>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-destructive">
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-6">
+          <div className="flex items-start justify-between mb-4">
+            <h2 className="text-lg font-semibold text-destructive">
               {t("common.error") || "Error"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="flex gap-3">
-              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm">{error}</p>
-              </div>
-            </div>
+            </h2>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </Card>
+      </div>
     )
   }
 
@@ -154,25 +158,36 @@ export function ProgressModal({
   const isCompleted = progress.overall_status === "completed"
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-card border-b p-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             {isCompleted ? (
               <>
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
-                {t("validator.completionTitle") || "Sellers.json Fetching Complete"}
+                <h2 className="text-lg font-semibold">
+                  {t("validator.completionTitle") || "Sellers.json Fetching Complete"}
+                </h2>
               </>
             ) : (
               <>
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                {t("validator.fetchingProgress") || "Fetching sellers.json..."}
+                <h2 className="text-lg font-semibold">
+                  {t("validator.fetchingProgress") || "Fetching sellers.json..."}
+                </h2>
               </>
             )}
-          </DialogTitle>
-        </DialogHeader>
+          </div>
+          {!isCompleted && (
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
 
-        <div className="space-y-6">
+        {/* Content */}
+        <div className="p-6 space-y-6">
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
@@ -193,7 +208,7 @@ export function ProgressModal({
 
           {/* Processing Domains */}
           {progress.summary.processing > 0 && (
-            <Card className="p-4">
+            <div>
               <div className="flex items-center gap-2 mb-3">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 <h3 className="font-semibold text-sm">
@@ -205,19 +220,19 @@ export function ProgressModal({
                 {progress.domains.processing.map((domain) => (
                   <div
                     key={domain}
-                    className="flex items-center gap-2 text-sm p-2 bg-blue-50 dark:bg-blue-950 rounded"
+                    className="flex items-center gap-2 text-sm p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-900"
                   >
                     <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
-                    <span className="text-muted-foreground">{domain}</span>
+                    <span className="text-muted-foreground truncate">{domain}</span>
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Completed Domains */}
           {progress.summary.completed > 0 && (
-            <Card className="p-4">
+            <div>
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <h3 className="font-semibold text-sm">
@@ -229,19 +244,19 @@ export function ProgressModal({
                 {progress.domains.completed.map((domain) => (
                   <div
                     key={domain}
-                    className="flex items-center gap-2 text-sm p-2 bg-green-50 dark:bg-green-950 rounded"
+                    className="flex items-center gap-2 text-sm p-2 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-900"
                   >
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-muted-foreground">{domain}</span>
+                    <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span className="text-muted-foreground truncate">{domain}</span>
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Failed Domains */}
           {progress.summary.failed > 0 && (
-            <Card className="p-4 border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-900">
+            <div>
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
                 <h3 className="font-semibold text-sm">
@@ -253,15 +268,15 @@ export function ProgressModal({
                 {progress.domains.failed.map((item) => (
                   <div
                     key={item.domain}
-                    className="flex items-start gap-2 text-sm p-2 bg-white dark:bg-background rounded border border-amber-200 dark:border-amber-900"
+                    className="flex items-start gap-2 text-sm p-3 bg-amber-50 dark:bg-amber-950 rounded border border-amber-200 dark:border-amber-900"
                   >
                     <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="font-medium text-foreground">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground truncate">
                         {item.domain}
                       </div>
                       {item.error && (
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className="text-xs text-muted-foreground mt-1 break-words">
                           {item.error}
                         </div>
                       )}
@@ -269,21 +284,22 @@ export function ProgressModal({
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Status Message */}
           {isCompleted && (
-            <div className="flex items-center gap-2 p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-900">
-              <Zap className="h-5 w-5 text-green-600" />
-              <p className="text-sm text-green-800 dark:text-green-200">
+            <Alert>
+              <Zap className="h-4 w-4" />
+              <AlertTitle>Complete</AlertTitle>
+              <AlertDescription>
                 {t("validator.fetchComplete") ||
                   "All sellers.json fetching completed! Your validation results are now updated."}
-              </p>
-            </div>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </Card>
+    </div>
   )
 }
