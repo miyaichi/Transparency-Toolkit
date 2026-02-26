@@ -44,6 +44,8 @@ const ValidationResponseSchema = z.object({
     warnings: z.number(),
   }),
   scan_id: z.string().optional(),
+  progress_id: z.string().optional().openapi({ description: 'ID to track sellers.json fetching progress' }),
+  is_processing: z.boolean().optional().openapi({ description: 'Whether sellers.json fetching is in progress' }),
 });
 
 // Route
@@ -136,3 +138,56 @@ app.openapi(historyRoute, async (c) => {
 });
 
 export default app;
+
+// Progress tracking endpoint
+import { progressTracker } from '../lib/progress_tracker';
+
+const progressRoute = createRoute({
+  method: 'get',
+  path: '/progress/:progressId',
+  request: {
+    params: z.object({
+      progressId: z.string().openapi({ description: 'Progress tracking ID from validation result' }),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            progress_id: z.string(),
+            overall_status: z.enum(['processing', 'completed', 'partial']),
+            summary: z.object({
+              processing: z.number(),
+              completed: z.number(),
+              failed: z.number(),
+            }),
+            domains: z.object({
+              processing: z.array(z.string()),
+              completed: z.array(z.string()),
+              failed: z.array(
+                z.object({
+                  domain: z.string(),
+                  error: z.string().optional(),
+                }),
+              ),
+            }),
+          }),
+        },
+      },
+      description: 'Progress status for sellers.json fetching',
+    },
+    404: { description: 'Progress not found' },
+  },
+});
+
+app.openapi(progressRoute, async (c) => {
+  const { progressId } = c.req.valid('param');
+
+  const progress = progressTracker.getProgressSummary(progressId);
+  if (!progress) {
+    return c.json({ error: 'Progress not found. It may have expired.' }, 404);
+  }
+
+  return c.json(progress);
+});
