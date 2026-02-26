@@ -44,7 +44,7 @@ export function ValidatorResult({ domain, type }: Props) {
           col1,
           col2,
           r.relationship || "",
-          r.account_type || "", // Assuming account_type maps to Cert ID in parser
+          r.certification_authority_id || "", // Cert ID from certification_authority_id
           r.is_valid ? "OK" : "ERROR",
           r.warning_message || r.validation_key || ""
         ]
