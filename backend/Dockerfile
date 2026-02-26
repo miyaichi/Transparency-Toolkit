@@ -12,10 +12,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-# Hono/Node server typically needs dependencies for production run (unless bundled perfectly, but node_modules is safer for simplest setup)
-# For a smaller image, we can prune devDependencies
-RUN npm ci --omit=dev
 
 EXPOSE 3000
 
