@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { Loader2, CheckCircle2, AlertCircle, Zap, X } from "lucide-react"
+import { Card } from "@/components/ui/card"
 import { useTranslation } from "@/lib/i18n/language-context"
+import { AlertCircle, CheckCircle2, Loader2, X, Zap } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 
 interface ProgressModalProps {
   progressId: string
@@ -33,12 +32,7 @@ interface ProgressResponse {
   }
 }
 
-export function ProgressModal({
-  progressId,
-  isOpen,
-  onClose,
-  onComplete,
-}: ProgressModalProps) {
+export function ProgressModal({ progressId, isOpen, onClose, onComplete }: ProgressModalProps) {
   const { t } = useTranslation()
   const [progress, setProgress] = useState<ProgressResponse | null>(null)
   const [loading, setLoading] = useState(false)
@@ -149,18 +143,9 @@ export function ProgressModal({
 
   if (!progress) return null
 
-  const totalDomains =
-    progress.summary.processing +
-    progress.summary.completed +
-    progress.summary.failed
+  const totalDomains = progress.summary.processing + progress.summary.completed + progress.summary.failed
   const progressPercent =
-    totalDomains > 0
-      ? Math.round(
-          ((progress.summary.completed + progress.summary.failed) /
-            totalDomains) *
-            100
-        )
-      : 0
+    totalDomains > 0 ? Math.round(((progress.summary.completed + progress.summary.failed) / totalDomains) * 100) : 0
 
   const isCompleted = progress.overall_status === "completed"
 
@@ -173,9 +158,7 @@ export function ProgressModal({
             {isCompleted ? (
               <>
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
-                <h2 className="text-lg font-semibold">
-                  {t("common.progressModal.completedTitle") || "取得完了"}
-                </h2>
+                <h2 className="text-lg font-semibold">{t("common.progressModal.completedTitle") || "取得完了"}</h2>
               </>
             ) : (
               <>
@@ -199,8 +182,8 @@ export function ProgressModal({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="font-medium">
-                {progress.summary.completed + progress.summary.failed}/
-                {totalDomains} {t("common.progressModal.domainsProcessed") || "ドメイン処理済み"}
+                {progress.summary.completed + progress.summary.failed}/{totalDomains}{" "}
+                {t("common.progressModal.domainsProcessed") || "ドメイン処理済み"}
               </span>
               <span className="text-muted-foreground">{progressPercent}%</span>
             </div>
@@ -228,9 +211,7 @@ export function ProgressModal({
                     className="flex items-center gap-2 text-sm p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-900"
                   >
                     <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
-                    <span className="text-muted-foreground truncate">
-                      {domain}
-                    </span>
+                    <span className="text-muted-foreground truncate">{domain}</span>
                   </div>
                 ))}
               </div>
@@ -253,9 +234,7 @@ export function ProgressModal({
                     className="flex items-center gap-2 text-sm p-2 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-900"
                   >
                     <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span className="text-muted-foreground truncate">
-                      {domain}
-                    </span>
+                    <span className="text-muted-foreground truncate">{domain}</span>
                   </div>
                 ))}
               </div>
@@ -279,14 +258,8 @@ export function ProgressModal({
                   >
                     <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground truncate">
-                        {item.domain}
-                      </div>
-                      {item.error && (
-                        <div className="text-xs text-muted-foreground mt-1 break-words">
-                          {item.error}
-                        </div>
-                      )}
+                      <div className="font-medium text-foreground truncate">{item.domain}</div>
+                      {item.error && <div className="text-xs text-muted-foreground mt-1 break-words">{item.error}</div>}
                     </div>
                   </div>
                 ))}
@@ -300,7 +273,8 @@ export function ProgressModal({
               <Zap className="h-4 w-4" />
               <AlertTitle>{t("common.progressModal.fetchComplete") || "完了"}</AlertTitle>
               <AlertDescription>
-                {t("common.progressModal.fetchCompleteMessage") || "すべての sellers.json 取得が完了しました。検証結果が更新されています。"}
+                {t("common.progressModal.fetchCompleteMessage") ||
+                  "すべての sellers.json 取得が完了しました。検証結果が更新されています。"}
               </AlertDescription>
             </Alert>
           )}

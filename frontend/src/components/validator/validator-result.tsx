@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useTranslation } from "@/lib/i18n/language-context"
 import { CheckCircle, Download, HelpCircle, Loader2, XCircle } from "lucide-react"
-import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
 import { useAdsTxtData } from "@/hooks/use-ads-txt-data"
 import { ProgressModal } from "./progress-modal"
@@ -20,10 +19,7 @@ type Props = {
 export function ValidatorResult({ domain, type }: Props) {
   const { t, language } = useTranslation()
 
-  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(
-    domain,
-    type
-  )
+  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(domain, type)
 
   // Progress modal state
   const [showProgressModal, setShowProgressModal] = useState(false)
@@ -50,7 +46,7 @@ export function ValidatorResult({ domain, type }: Props) {
       t("common.relationship"),
       t("common.certId"),
       t("common.status"),
-      t("common.message"),
+      t("common.message")
     ]
     const csvContent = [
       headers.join(","),
@@ -66,11 +62,11 @@ export function ValidatorResult({ domain, type }: Props) {
           r.relationship || "",
           r.certification_authority_id || "", // Fixed: use certification_authority_id instead of account_type
           r.is_valid ? "OK" : "ERROR",
-          r.warning_message || r.validation_key || "",
+          r.warning_message || r.validation_key || ""
         ]
           .map((f) => `"${String(f).replace(/"/g, '""')}"`)
           .join(",")
-      }),
+      })
     ].join("\n")
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
@@ -87,9 +83,7 @@ export function ValidatorResult({ domain, type }: Props) {
 
   if (!domain) {
     return (
-      <div className="text-muted-foreground text-center py-20 bg-muted/20 rounded-lg">
-        {t("common.enterDomain")}
-      </div>
+      <div className="text-muted-foreground text-center py-20 bg-muted/20 rounded-lg">{t("common.enterDomain")}</div>
     )
   }
 
@@ -140,28 +134,19 @@ export function ValidatorResult({ domain, type }: Props) {
         />
       )}
 
-
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm text-muted-foreground">
-              {t("common.totalRecords")}
-            </CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t("common.totalRecords")}</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0 text-2xl font-bold">
-            {data.stats.total}
-          </CardContent>
+          <CardContent className="p-4 pt-0 text-2xl font-bold">{data.stats.total}</CardContent>
         </Card>
         <Card>
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm text-green-600">
-              {t("common.validRecords")}
-            </CardTitle>
+            <CardTitle className="text-sm text-green-600">{t("common.validRecords")}</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0 text-2xl font-bold text-green-600">
-            {data.stats.valid}
-          </CardContent>
+          <CardContent className="p-4 pt-0 text-2xl font-bold text-green-600">{data.stats.valid}</CardContent>
         </Card>
         {data.stats.direct_count !== undefined && (
           <Card>
@@ -170,10 +155,7 @@ export function ValidatorResult({ domain, type }: Props) {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-blue-600">
-                {totalExchangeEntries > 0
-                  ? Math.round((directCount / totalExchangeEntries) * 100)
-                  : 0}
-                %
+                {totalExchangeEntries > 0 ? Math.round((directCount / totalExchangeEntries) * 100) : 0}%
               </div>
               <p className="text-xs text-muted-foreground">
                 {directCount} {t("common.records")}
@@ -184,16 +166,11 @@ export function ValidatorResult({ domain, type }: Props) {
         {data.stats.reseller_count !== undefined && (
           <Card>
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm text-purple-600">
-                {t("common.reseller")}
-              </CardTitle>
+              <CardTitle className="text-sm text-purple-600">{t("common.reseller")}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-purple-600">
-                {totalExchangeEntries > 0
-                  ? Math.round((resellerCount / totalExchangeEntries) * 100)
-                  : 0}
-                %
+                {totalExchangeEntries > 0 ? Math.round((resellerCount / totalExchangeEntries) * 100) : 0}%
               </div>
               <p className="text-xs text-muted-foreground">
                 {resellerCount} {t("common.records")}
@@ -205,26 +182,20 @@ export function ValidatorResult({ domain, type }: Props) {
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm text-yellow-600">{t("common.warnings")}</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0 text-2xl font-bold text-yellow-600">
-            {data.stats.warnings}
-          </CardContent>
+          <CardContent className="p-4 pt-0 text-2xl font-bold text-yellow-600">{data.stats.warnings}</CardContent>
         </Card>
         <Card>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm text-red-600">{t("common.invalid")}</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0 text-2xl font-bold text-red-600">
-            {data.stats.invalid}
-          </CardContent>
+          <CardContent className="p-4 pt-0 text-2xl font-bold text-red-600">{data.stats.invalid}</CardContent>
         </Card>
       </div>
 
       {/* Filter Bar and Download Button */}
       <div className="flex gap-4 items-end">
         <div className="flex-1">
-          <label className="text-sm font-medium text-muted-foreground">
-            {t("common.search")}
-          </label>
+          <label className="text-sm font-medium text-muted-foreground">{t("common.search")}</label>
           <Input
             placeholder={t("common.searchPlaceholder") || "Search..."}
             value={filter}
@@ -246,12 +217,8 @@ export function ValidatorResult({ domain, type }: Props) {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="text-left p-3 font-semibold">{t("common.line")}</th>
-                  <th className="text-left p-3 font-semibold">
-                    {t("common.advertisingSystem")}
-                  </th>
-                  <th className="text-left p-3 font-semibold">
-                    {t("common.publisherAccountId")}
-                  </th>
+                  <th className="text-left p-3 font-semibold">{t("common.advertisingSystem")}</th>
+                  <th className="text-left p-3 font-semibold">{t("common.publisherAccountId")}</th>
                   <th className="text-left p-3 font-semibold">{t("common.relationship")}</th>
                   <th className="text-left p-3 font-semibold">{t("common.certId")}</th>
                   <th className="text-left p-3 font-semibold">{t("common.status")}</th>
@@ -273,9 +240,7 @@ export function ValidatorResult({ domain, type }: Props) {
                       {record.variable_type ? (
                         <code className="text-xs bg-muted px-2 py-1 rounded">{record.value}</code>
                       ) : (
-                        <code className="text-xs bg-muted px-2 py-1 rounded">
-                          {record.account_id}
-                        </code>
+                        <code className="text-xs bg-muted px-2 py-1 rounded">{record.account_id}</code>
                       )}
                     </td>
                     <td className="p-3">{record.relationship}</td>
