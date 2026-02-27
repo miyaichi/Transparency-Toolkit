@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Load configuration
-source ./config_old.sh
+source ./config.sh
 
 echo "========================================================"
-echo "WARNING: YOU ARE ABOUT TO DELETE RESOURCES IN PROJECT: $OLD_PROJECT_ID"
+echo "WARNING: YOU ARE ABOUT TO DELETE RESOURCES IN PROJECT: $PROJECT_ID"
 echo "Resources to be deleted:"
 echo " - Cloud Run Services: $BACKEND_SERVICE, $FRONTEND_SERVICE"
 echo " - Artifact Registry: $REPO_NAME"
@@ -14,8 +14,8 @@ echo "========================================================"
 echo "Press CTRL+C to cancel within 5 seconds..."
 sleep 5
 
-echo "Setting project to $OLD_PROJECT_ID..."
-gcloud config set project "$OLD_PROJECT_ID"
+echo "Setting project to $PROJECT_ID..."
+gcloud config set project "$PROJECT_ID"
 
 echo "1. Deleting Cloud Scheduler Job..."
 gcloud scheduler jobs delete "$SCHEDULER_JOB" --location="$REGION" --quiet || echo "Job not found or already deleted."
@@ -31,4 +31,4 @@ echo "4. Deleting Cloud SQL Instance..."
 # This takes a while
 gcloud sql instances delete "$DB_INSTANCE" --quiet || echo "Instance not found."
 
-echo "Teardown complete for project $OLD_PROJECT_ID."
+echo "Teardown complete for project $PROJECT_ID."
