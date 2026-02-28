@@ -28,7 +28,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/psl": "^1.1.3",
     "@types/uuid": "^10.0.0",
-    "adstxt-validator": "^1.2.7",
+    "adstxt-validator": "^1.2.8",
     "axios": "^1.6.0",
     "axios-retry": "^4.5.0",
     "dotenv": "^16.3.0",
