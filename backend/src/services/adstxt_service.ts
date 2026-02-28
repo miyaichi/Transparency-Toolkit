@@ -207,7 +207,16 @@ export class AdsTxtService {
       const record = entry as any;
 
       if (record.validation_key) {
-        const msg = createValidationMessage(record.validation_key, [], 'en');
+        // Build placeholders array in the order expected by replacePlaceholders:
+        // [domain, accountId, sellerDomain, accountType]
+        const params = record.warning_params || {};
+        const placeholders = [
+          params.domain || record.domain || '',
+          params.accountId || record.account_id || '',
+          params.sellerDomain || '',
+          params.accountType || record.account_type || '',
+        ];
+        const msg = createValidationMessage(record.validation_key, placeholders, 'en');
         if (msg) warning_message = msg.message;
       } else if (!record.is_valid && record.raw_line) {
         // Try to diagnose invalid records that don't have a specific validation key yet
