@@ -19,7 +19,7 @@ type Props = {
 export function ValidatorResult({ domain, type }: Props) {
   const { t, language } = useTranslation()
 
-  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(domain, type)
+  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(domain, type, language)
 
   // Progress modal state
   const [showProgressModal, setShowProgressModal] = useState(false)

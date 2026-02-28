@@ -9,6 +9,7 @@ const ValidationRequestSchema = z.object({
   domain: z.string().openapi({ example: 'example-publisher.com', description: 'Domain to fetch ads.txt from' }),
   type: z.enum(['ads.txt', 'app-ads.txt']).optional().openapi({ description: 'File type (default: ads.txt)' }),
   save: z.enum(['true', 'false']).optional().openapi({ description: 'Save snapshot to database' }),
+  lang: z.enum(['en', 'ja']).optional().openapi({ description: 'Locale for validation messages (default: en)' }),
 });
 
 const ValidationRecordSchema = z.object({
@@ -70,7 +71,7 @@ const validateRoute = createRoute({
 });
 
 app.openapi(validateRoute, async (c) => {
-  const { domain, save, type } = c.req.valid('query');
+  const { domain, save, type, lang } = c.req.valid('query');
   const shouldSave = save === 'true';
   const fileType = type || 'ads.txt';
 
@@ -87,7 +88,7 @@ app.openapi(validateRoute, async (c) => {
   }
 
   try {
-    const result = await service.validateDomain(domain, fileType, shouldSave);
+    const result = await service.validateDomain(domain, fileType, shouldSave, lang || 'en');
     return c.json(result as any);
   } catch (e: any) {
     // Determine status code based on error message or type if possible, default to 500

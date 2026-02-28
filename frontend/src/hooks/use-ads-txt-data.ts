@@ -11,12 +11,12 @@ export function isFoundInSellers(r: ValidationRecord): boolean {
   return r.seller_type !== undefined || r.seller_name !== undefined
 }
 
-export function useAdsTxtData(domain: string, type: "ads.txt" | "app-ads.txt") {
+export function useAdsTxtData(domain: string, type: "ads.txt" | "app-ads.txt", lang: string = "en") {
   const [filter, setFilter] = useState("")
   const [validOnly, setValidOnly] = useState(false)
 
   const { data, error, isLoading } = useSWR<ValidationResponse>(
-    domain ? `/api/proxy/validator?domain=${domain}&type=${type}&save=true` : null,
+    domain ? `/api/proxy/validator?domain=${domain}&type=${type}&save=true&lang=${lang}` : null,
     fetcher,
     {
       revalidateOnFocus: false,

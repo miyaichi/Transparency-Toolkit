@@ -62,7 +62,7 @@ export class AdsTxtService {
     this.sellersService = new SellersService();
   }
 
-  async validateDomain(domain: string, type: string = 'ads.txt', save: boolean = false): Promise<ValidationResult> {
+  async validateDomain(domain: string, type: string = 'ads.txt', save: boolean = false, lang: string = 'en'): Promise<ValidationResult> {
     let content = '';
     let finalUrl = '';
     let scanId: string | undefined;
@@ -216,7 +216,7 @@ export class AdsTxtService {
           params.sellerDomain || '',
           params.accountType || record.account_type || '',
         ];
-        const msg = createValidationMessage(record.validation_key, placeholders, 'en');
+        const msg = createValidationMessage(record.validation_key, placeholders, lang);
         if (msg) warning_message = msg.message;
       } else if (!record.is_valid && record.raw_line) {
         // Try to diagnose invalid records that don't have a specific validation key yet
