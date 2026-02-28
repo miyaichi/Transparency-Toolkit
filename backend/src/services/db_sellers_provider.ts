@@ -14,10 +14,11 @@ export class DbSellersProvider implements SellersJsonProvider {
     // Optimized Query: Use DOMAIN (Primary Key) instead of raw_file_id
     // This allows using the Primary Key Index (domain, seller_id) which is much faster
     // than scanning for raw_file_id (which is unindexed).
+    // FIX: Use LOWER() for case-insensitive comparison to handle PostgreSQL collation
     const sellersRes = await query(
       `SELECT seller_id, name, seller_type, is_confidential, seller_domain as domain 
          FROM sellers_catalog 
-         WHERE domain = $1 AND seller_id = ANY($2)`,
+         WHERE LOWER(domain) = LOWER($1) AND seller_id = ANY($2)`,
       [domainLower, sellerIds],
     );
 
@@ -62,13 +63,14 @@ export class DbSellersProvider implements SellersJsonProvider {
     // Check if we have actual seller data in the catalog.
     // Checking raw_sellers_files is insufficient because processing might have failed or yielded 0 records,
     // leaving us with a "processed" file but no data to validate against.
-    const res = await query(`SELECT 1 FROM sellers_catalog WHERE domain = $1 LIMIT 1`, [domain.toLowerCase()]);
+    // FIX: Use LOWER() for case-insensitive comparison to handle PostgreSQL collation
+    const res = await query(`SELECT 1 FROM sellers_catalog WHERE LOWER(domain) = LOWER($1) LIMIT 1`, [domain.toLowerCase()]);
     return res.rowCount !== null && res.rowCount > 0;
   }
 
   async getCacheInfo(domain: string): Promise<CacheInfo> {
     const res = await query(
-      `SELECT fetched_at, http_status, processed_at FROM raw_sellers_files WHERE domain = $1 ORDER BY fetched_at DESC LIMIT 1`,
+      `SELECT fetched_at, http_status, processed_at FROM raw_sellers_files WHERE LOWER(domain) = LOWER($1) ORDER BY fetched_at DESC LIMIT 1`,
       [domain.toLowerCase()],
     );
 
