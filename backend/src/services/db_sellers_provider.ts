@@ -9,7 +9,8 @@ import {
 
 export class DbSellersProvider implements SellersJsonProvider {
   async batchGetSellers(domain: string, sellerIds: string[]): Promise<BatchSellersResult> {
-    const domainLower = domain.toLowerCase();
+    // CRITICAL: Normalize domain - trim whitespace and ensure lowercase
+    const domainLower = domain.toLowerCase().trim();
 
     // Optimized Query: Use DOMAIN (Primary Key) instead of raw_file_id
     // This allows using the Primary Key Index (domain, seller_id) which is much faster
