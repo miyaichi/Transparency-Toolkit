@@ -59,6 +59,13 @@ jobs:
             --timeout 600 \
             --allow-unauthenticated
 
+          # Explicitly route 100% traffic to latest revision
+          # (prevents stale traffic pinning from manual gcloud interventions)
+          gcloud run services update-traffic ${{ env.BACKEND_SERVICE }} \
+            --to-latest \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }}
+
       # Get Backend URL
       - name: Get Backend URL
         run: |
