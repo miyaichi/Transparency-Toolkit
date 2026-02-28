@@ -186,7 +186,7 @@ export function ValidatorResult({ domain, type }: Props) {
         </Card>
         <Card>
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm text-red-600">{t("common.invalid")}</CardTitle>
+            <CardTitle className="text-sm text-red-600">{t("common.invalidRecords")}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0 text-2xl font-bold text-red-600">{data.stats.invalid}</CardContent>
         </Card>
