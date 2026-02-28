@@ -262,7 +262,16 @@ export function ValidatorResult({ domain, type }: Props) {
                       {record.warning_message && (
                         <div className="flex items-start gap-1">
                           <HelpCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-yellow-600" />
-                          <span>{record.warning_message}</span>
+                          {record.validation_key ? (
+                            <a
+                              href={`/warnings#${toKebabCase(record.validation_key)}`}
+                              className="hover:underline text-yellow-700"
+                            >
+                              {record.warning_message}
+                            </a>
+                          ) : (
+                            <span>{record.warning_message}</span>
+                          )}
                         </div>
                       )}
                       {record.validation_key && !record.warning_message && (
