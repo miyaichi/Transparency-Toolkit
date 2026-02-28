@@ -210,12 +210,12 @@ export class AdsTxtService {
         // Build placeholders array in the order expected by replacePlaceholders:
         // [domain, accountId, sellerDomain, accountType]
         const params = record.warning_params || {};
-        const placeholders = [
-          params.domain || record.domain || '',
-          params.accountId || record.account_id || '',
-          params.sellerDomain || '',
-          params.accountType || record.account_type || '',
-        ];
+        const domainPlaceholder = params.domain ?? params.publisher_domain ?? record.domain ?? '';
+        const accountIdPlaceholder = params.accountId ?? params.account_id ?? record.account_id ?? '';
+        const sellerDomainPlaceholder = params.sellerDomain ?? params.seller_domain ?? '';
+        const accountTypePlaceholder = params.accountType ?? params.account_type ?? params.seller_type ?? record.account_type ?? '';
+
+        const placeholders = [domainPlaceholder, accountIdPlaceholder, sellerDomainPlaceholder, accountTypePlaceholder];
         const msg = createValidationMessage(record.validation_key, placeholders, lang);
         if (msg) warning_message = msg.message;
       } else if (!record.is_valid && record.raw_line) {
