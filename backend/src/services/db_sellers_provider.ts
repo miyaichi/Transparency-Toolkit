@@ -65,14 +65,15 @@ export class DbSellersProvider implements SellersJsonProvider {
     // Checking raw_sellers_files is insufficient because processing might have failed or yielded 0 records,
     // leaving us with a "processed" file but no data to validate against.
     // FIX: Use LOWER() for case-insensitive comparison to handle PostgreSQL collation
-    const res = await query(`SELECT 1 FROM sellers_catalog WHERE LOWER(domain) = LOWER($1) LIMIT 1`, [domain.toLowerCase()]);
+    const domainLower = domain.toLowerCase().trim();
+    const res = await query(`SELECT 1 FROM sellers_catalog WHERE LOWER(domain) = LOWER($1) LIMIT 1`, [domainLower]);
     return res.rowCount !== null && res.rowCount > 0;
   }
 
   async getCacheInfo(domain: string): Promise<CacheInfo> {
     const res = await query(
       `SELECT fetched_at, http_status, processed_at FROM raw_sellers_files WHERE LOWER(domain) = LOWER($1) ORDER BY fetched_at DESC LIMIT 1`,
-      [domain.toLowerCase()],
+      [domain.toLowerCase().trim()],
     );
 
     if (res.rowCount === 0) {
