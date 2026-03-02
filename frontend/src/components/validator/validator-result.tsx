@@ -110,9 +110,7 @@ export function ValidatorResult({ domain, type }: Props) {
       <div className="p-6 bg-red-50 rounded-lg border border-red-200">
         <h3 className="font-semibold text-red-700 mb-2">{t("common.failedToLoad")}</h3>
         <p className="text-red-600">{errorMessage}</p>
-        {status !== 0 && (
-          <p className="text-xs text-muted-foreground mt-1">HTTP {status}</p>
-        )}
+        {status !== 0 && <p className="text-xs text-muted-foreground mt-1">HTTP {status}</p>}
         <button
           onClick={() => mutate()}
           className="mt-4 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
@@ -222,7 +220,7 @@ export function ValidatorResult({ domain, type }: Props) {
         </div>
         <Button onClick={handleDownload} className="gap-2">
           <Download className="h-4 w-4" />
-          {t("common.downloadCSV") || "Download CSV"}
+          {t("common.downloadCsv")}
         </Button>
       </div>
 

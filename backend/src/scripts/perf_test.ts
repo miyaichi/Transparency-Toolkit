@@ -80,10 +80,10 @@ async function profileDomain(domain: string) {
   t = process.hrtime.bigint();
   const parsedEntries = parseAdsTxtContent(content, domain);
   const parseMs = ms(t);
-  const uniqueDomains = new Set(
-    parsedEntries.filter((e: any) => e.domain).map((e: any) => e.domain.toLowerCase())
+  const uniqueDomains = new Set(parsedEntries.filter((e: any) => e.domain).map((e: any) => e.domain.toLowerCase()));
+  console.log(
+    `[2] Parse                  : ${parseMs.toFixed(0)} ms  (${parsedEntries.length} entries, ${uniqueDomains.size} unique SSP domains)`,
   );
-  console.log(`[2] Parse                  : ${parseMs.toFixed(0)} ms  (${parsedEntries.length} entries, ${uniqueDomains.size} unique SSP domains)`);
 
   // Phase 3: crossCheckAdsTxtRecords (with instrumented provider)
   const { stats, provider: inst } = instrumentedProvider(provider);
@@ -92,8 +92,12 @@ async function profileDomain(domain: string) {
   const crossCheckMs = ms(t);
 
   console.log(`[3] crossCheckAdsTxtRecords: ${crossCheckMs.toFixed(0)} ms`);
-  console.log(`    hasSellerJson  calls: ${stats.hasSellerJson}  total: ${stats.hasMs.toFixed(0)} ms  avg: ${(stats.hasMs / (stats.hasSellerJson || 1)).toFixed(0)} ms`);
-  console.log(`    batchGetSellers calls: ${stats.batchGetSellers}  total: ${stats.batchMs.toFixed(0)} ms  avg: ${(stats.batchMs / (stats.batchGetSellers || 1)).toFixed(0)} ms`);
+  console.log(
+    `    hasSellerJson  calls: ${stats.hasSellerJson}  total: ${stats.hasMs.toFixed(0)} ms  avg: ${(stats.hasMs / (stats.hasSellerJson || 1)).toFixed(0)} ms`,
+  );
+  console.log(
+    `    batchGetSellers calls: ${stats.batchGetSellers}  total: ${stats.batchMs.toFixed(0)} ms  avg: ${(stats.batchMs / (stats.batchGetSellers || 1)).toFixed(0)} ms`,
+  );
 
   // Phase 4: Extra batchGetSellers in adstxt_service.ts (duplicated work)
   const accountsByDomain = new Map<string, Set<string>>();
@@ -118,11 +122,13 @@ async function profileDomain(domain: string) {
         await provider.batchGetSellers(d, Array.from(ids));
         extraBatchMs += ms(ct);
         extraBatchCalls++;
-      })
+      }),
     );
   }
   const extraTotalMs = ms(t);
-  console.log(`[4] Extra batchGetSellers  : ${extraTotalMs.toFixed(0)} ms  (${extraBatchCalls} calls, chunk=${CHUNK_SIZE})`);
+  console.log(
+    `[4] Extra batchGetSellers  : ${extraTotalMs.toFixed(0)} ms  (${extraBatchCalls} calls, chunk=${CHUNK_SIZE})`,
+  );
 
   const totalMs = fetchMs + parseMs + crossCheckMs + extraTotalMs;
   console.log(`\n    TOTAL estimated        : ${totalMs.toFixed(0)} ms`);
@@ -150,4 +156,7 @@ async function main() {
   await pool.end();
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

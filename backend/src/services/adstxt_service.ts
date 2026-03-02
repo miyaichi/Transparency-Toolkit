@@ -62,7 +62,12 @@ export class AdsTxtService {
     this.sellersService = new SellersService();
   }
 
-  async validateDomain(domain: string, type: string = 'ads.txt', save: boolean = false, lang: string = 'en'): Promise<ValidationResult> {
+  async validateDomain(
+    domain: string,
+    type: string = 'ads.txt',
+    save: boolean = false,
+    lang: string = 'en',
+  ): Promise<ValidationResult> {
     let content = '';
     let finalUrl = '';
     let scanId: string | undefined;
@@ -213,7 +218,8 @@ export class AdsTxtService {
         const domainPlaceholder = params.domain ?? params.publisher_domain ?? record.domain ?? '';
         const accountIdPlaceholder = params.accountId ?? params.account_id ?? record.account_id ?? '';
         const sellerDomainPlaceholder = params.sellerDomain ?? params.seller_domain ?? '';
-        const accountTypePlaceholder = params.accountType ?? params.account_type ?? params.seller_type ?? record.account_type ?? '';
+        const accountTypePlaceholder =
+          params.accountType ?? params.account_type ?? params.seller_type ?? record.account_type ?? '';
 
         const placeholders = [domainPlaceholder, accountIdPlaceholder, sellerDomainPlaceholder, accountTypePlaceholder];
         const msg = createValidationMessage(record.validation_key, placeholders, lang);
