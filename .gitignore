@@ -24,9 +24,6 @@ build
 out
 .next
 
-# Vendor packages (intentionally committed, override dist exclusion above)
-!backend/vendor/**
-
 # Env / secrets
 .env
 .env*
