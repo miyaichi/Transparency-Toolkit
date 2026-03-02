@@ -15,7 +15,7 @@ export function useAdsTxtData(domain: string, type: "ads.txt" | "app-ads.txt", l
   const [filter, setFilter] = useState("")
   const [validOnly, setValidOnly] = useState(false)
 
-  const { data, error, isLoading } = useSWR<ValidationResponse>(
+  const { data, error, isLoading, mutate } = useSWR<ValidationResponse>(
     domain ? `/api/proxy/validator?domain=${domain}&type=${type}&save=true&lang=${lang}` : null,
     fetcher,
     {
@@ -43,6 +43,7 @@ export function useAdsTxtData(domain: string, type: "ads.txt" | "app-ads.txt", l
     data,
     error,
     isLoading,
+    mutate,
     filter,
     setFilter,
     validOnly,

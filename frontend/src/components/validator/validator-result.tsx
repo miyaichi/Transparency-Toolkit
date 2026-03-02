@@ -9,6 +9,7 @@ import { CheckCircle, Download, HelpCircle, Loader2, XCircle } from "lucide-reac
 import { useEffect, useState } from "react"
 
 import { useAdsTxtData } from "@/hooks/use-ads-txt-data"
+import { ApiError } from "@/lib/api-utils"
 import { ProgressModal } from "./progress-modal"
 
 type Props = {
@@ -19,7 +20,7 @@ type Props = {
 export function ValidatorResult({ domain, type }: Props) {
   const { t, language } = useTranslation()
 
-  const { data, error, isLoading, filter, setFilter, filteredRecords } = useAdsTxtData(domain, type, language)
+  const { data, error, isLoading, filter, setFilter, filteredRecords, mutate } = useAdsTxtData(domain, type, language)
 
   // Progress modal state
   const [showProgressModal, setShowProgressModal] = useState(false)
@@ -97,11 +98,27 @@ export function ValidatorResult({ domain, type }: Props) {
   }
 
   if (error) {
+    const status = error instanceof ApiError ? error.status : 0
+    const errorMessage =
+      status === 504
+        ? t("common.validatorError.timeout")
+        : status === 500 || status === 502 || status === 503
+          ? t("common.validatorError.serverError")
+          : t("common.validatorError.fetchFailed")
+
     return (
-      <div className="p-6 text-red-500 bg-red-50 rounded-lg border border-red-200">
-        <h3 className="font-semibold mb-2">{t("common.failedToLoad")}</h3>
-        <p>{error.message}</p>
-        <p className="text-sm mt-2 text-muted-foreground">Backend URL: /api/proxy/validator</p>
+      <div className="p-6 bg-red-50 rounded-lg border border-red-200">
+        <h3 className="font-semibold text-red-700 mb-2">{t("common.failedToLoad")}</h3>
+        <p className="text-red-600">{errorMessage}</p>
+        {status !== 0 && (
+          <p className="text-xs text-muted-foreground mt-1">HTTP {status}</p>
+        )}
+        <button
+          onClick={() => mutate()}
+          className="mt-4 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+        >
+          {t("common.validatorError.retry")}
+        </button>
       </div>
     )
   }

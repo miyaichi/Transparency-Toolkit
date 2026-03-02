@@ -160,6 +160,21 @@ export const translations = {
       en: "Failed to load report",
       ja: "レポートの読み込みに失敗しました"
     },
+    validatorError: {
+      timeout: {
+        en: "Processing took too long. The ads.txt file may be very large. Please wait a moment and try again.",
+        ja: "処理に時間がかかりすぎました。ads.txtファイルが非常に大きい場合があります。しばらく待ってから再試行してください。"
+      },
+      fetchFailed: {
+        en: "Could not fetch ads.txt. Please check that the domain is correct and has a publicly accessible ads.txt file.",
+        ja: "ads.txtを取得できませんでした。ドメイン名が正しいか、ads.txtが公開されているか確認してください。"
+      },
+      serverError: {
+        en: "A server error occurred. Please try again later.",
+        ja: "サーバーエラーが発生しました。しばらく経ってから再試行してください。"
+      },
+      retry: { en: "Retry", ja: "再試行" }
+    },
     sourceUrl: {
       en: "Source URL",
       ja: "ソースURL"

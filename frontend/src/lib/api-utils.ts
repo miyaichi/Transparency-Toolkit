@@ -58,16 +58,26 @@ export const triggerBackgroundScan = (domain: string, type: "ads.txt" | "app-ads
   fire()
 }
 
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 export const fetcher = async (url: string) => {
   const res = await fetch(url)
   if (!res.ok) {
     const text = await res.text()
+    let message = `Error ${res.status}: ${res.statusText}`
     try {
       const errorData = JSON.parse(text)
-      throw new Error(errorData.error || errorData.message || `Error ${res.status}: ${res.statusText}`)
-    } catch (e) {
-      throw new Error(`Error ${res.status}: ${res.statusText} - ${text.substring(0, 100)}`)
+      message = errorData.error || errorData.message || message
+    } catch {
+      // keep default message
     }
+    throw new ApiError(message, res.status)
   }
   return res.json()
 }
