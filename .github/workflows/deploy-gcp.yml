@@ -57,6 +57,7 @@ jobs:
             --add-cloudsql-instances ${DB_CONNECTION_NAME} \
             --set-env-vars DATABASE_URL="postgres://postgres:${{ secrets.DB_PASSWORD }}@/${{ secrets.DB_NAME }}?host=/cloudsql/${DB_CONNECTION_NAME}",OPENSINCERA_API_KEY=${{ secrets.OPENSINCERA_API_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},SENTRY_DSN=${{ secrets.SENTRY_DSN }} \
             --timeout 600 \
+            --min-instances 1 \
             --allow-unauthenticated
 
           # Explicitly route 100% traffic to latest revision
