@@ -125,6 +125,21 @@ export class StreamImporter {
         let certAuthorityId: string | null = null;
         let processedRecords = 0;
 
+        // BOM removal filter (UTF-8 BOM causes JSONStream to fail with "Unexpected ï")
+        let bomRemoved = false;
+        const stripBom = new Transform({
+          transform: (chunk: any, encoding: string, callback: any) => {
+            if (!bomRemoved) {
+              // Check for UTF-8 BOM (EF BB BF)
+              if (chunk[0] === 0xef && chunk[1] === 0xbb && chunk[2] === 0xbf) {
+                chunk = chunk.slice(3);
+              }
+              bomRemoved = true;
+            }
+            callback(null, chunk);
+          },
+        });
+
         // Create parser and attach listeners to capture 'identifiers' from header or footer
         const parser = JSONStream.parse('sellers.*');
 
@@ -140,11 +155,9 @@ export class StreamImporter {
         parser.on('header', extractCertId);
         parser.on('footer', extractCertId);
 
-        parser.on('header', extractCertId);
-        parser.on('footer', extractCertId);
-
         await pipeline(
           response.data,
+          stripBom,
           parser,
           new Transform({
             objectMode: true,
