@@ -532,6 +532,41 @@ export const translations = {
     }
   },
   footer: {
-    validationCodes: { en: "Validation Codes", ja: "検証コード一覧" }
+    validationCodes: { en: "Validation Codes", ja: "検証コード一覧" },
+    standardsTools: { en: "Standards & Tools", ja: "標準仕様とツール" }
+  },
+  standardsToolsPage: {
+    title: { en: "Standards & Tools", ja: "標準仕様とツール" },
+    description: {
+      en: "Resources related to programmatic advertising transparency standards and tools.",
+      ja: "プログラマティック広告透明性に関連する標準仕様とツールのリソースです。"
+    },
+    iabStandards: {
+      title: { en: "IAB Standards", ja: "IAB標準仕様" },
+      description: {
+        en: "All translated IAB Tech Lab specifications are available, including Ads.txt, App-ads.txt, Sellers.json, OpenRTB, and more. Both Japanese translations and original English versions can be referenced.",
+        ja: "Ads.txt、App-ads.txt、Sellers.json、OpenRTBをはじめとするIAB Tech Labの翻訳済み仕様書をすべて参照できます。日本語訳と英語原文の両方を確認できます。"
+      },
+      linkLabel: { en: "Browse Standards", ja: "仕様書を参照する" }
+    },
+    openTools: {
+      title: { en: "Open Tools for Transparency", ja: "透明性のためのオープンツール" },
+      transparencyToolkit: {
+        title: { en: "Transparency Toolkit", ja: "Transparency Toolkit" },
+        description: {
+          en: "A suite of tools for validating and analyzing ads.txt, app-ads.txt, and sellers.json files. Includes domain validator, data explorer, analytics, and optimizer.",
+          ja: "ads.txt、app-ads.txt、sellers.jsonファイルの検証・分析ツール群です。ドメインバリデーター、データエクスプローラー、インサイト分析、オプティマイザーを提供しています。"
+        },
+        linkLabel: { en: "Visit Site", ja: "サイトを見る" }
+      }
+    },
+    reports: {
+      title: { en: "Ad Transparency Monthly Reports", ja: "広告透明性 月次レポート" },
+      description: {
+        en: "Monthly reports analyzing ads.txt implementation rates, supply chain transparency, and dark pooling trends among Japanese publishers. Reports are updated monthly.",
+        ja: "日本のパブリッシャーにおけるads.txt実装率、サプライチェーン透明性、ダークプーリング傾向を分析した月次レポートです。毎月更新されます。"
+      },
+      linkLabel: { en: "View Reports", ja: "レポートを見る" }
+    }
   }
 }
