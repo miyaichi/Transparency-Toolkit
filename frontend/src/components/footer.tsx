@@ -14,9 +14,6 @@ export function Footer() {
           <Link href="/warnings" className="hover:underline hover:text-foreground transition-colors">
             {t("footer.validationCodes")}
           </Link>
-          <Link href="/standards-tools" className="hover:underline hover:text-foreground transition-colors">
-            {t("footer.standardsTools")}
-          </Link>
         </div>
       </div>
     </footer>

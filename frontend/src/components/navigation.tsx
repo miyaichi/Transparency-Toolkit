@@ -23,9 +23,6 @@ export function Navigation() {
       <Link href="/status" className="transition-colors hover:text-foreground/80 text-foreground/60 notranslate">
         {t("common.scanStatus")}
       </Link>
-      <Link href="/standards-tools" className="transition-colors hover:text-foreground/80 text-foreground/60 notranslate">
-        {t("footer.standardsTools")}
-      </Link>
     </nav>
   )
 }
