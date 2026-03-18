@@ -4,6 +4,7 @@ import { StreamImporter } from '../ingest/stream_importer';
 import { parseAdsTxtContent } from '../lib/adstxt/validator';
 import { AdsTxtScanner } from '../services/adstxt_scanner';
 import { MonitoredDomainsService } from '../services/monitored_domains';
+import { SupplyChainDiscoveryService } from '../services/supply_chain_discovery_service';
 import { runCleanup } from './cleanup';
 
 const monitoredDomainsService = new MonitoredDomainsService();
@@ -39,6 +40,9 @@ export async function runScheduledJobs() {
 
     // 2. Sync Sellers.json
     await processMissingSellers();
+
+    // 3. Supply Chain Discovery (Phase 1)
+    await processSupplyChainDiscovery();
   } catch (e) {
     console.error('Job failed:', e);
   } finally {
@@ -197,5 +201,40 @@ export async function processMissingSellers() {
     }
   } finally {
     await importer.close();
+  }
+}
+
+/**
+ * Supply Chain Discovery Job (Phase 1)
+ * 
+ * 1. Discover new INTERMEDIARY seller_domain references (up to MAX_DEPTH)
+ * 2. Process pending queue in batches
+ */
+export async function processSupplyChainDiscovery() {
+  const MAX_DEPTH = parseInt(process.env.SUPPLY_CHAIN_MAX_DEPTH || '2');
+  const BATCH_SIZE = parseInt(process.env.SUPPLY_CHAIN_BATCH_SIZE || '50');
+
+  console.log(`[SupplyChainDiscovery] Starting with MAX_DEPTH=${MAX_DEPTH}, BATCH_SIZE=${BATCH_SIZE}`);
+
+  const discoveryService = new SupplyChainDiscoveryService(MAX_DEPTH);
+
+  try {
+    // Step 1: Discover new domains at each depth level
+    for (let depth = 0; depth <= MAX_DEPTH; depth++) {
+      const discovered = await discoveryService.discoverIntermediaryDomains(depth);
+      console.log(`[SupplyChainDiscovery] Depth ${depth}: Discovered ${discovered} new domains`);
+    }
+
+    // Step 2: Process pending queue
+    const result = await discoveryService.processQueue(BATCH_SIZE);
+    console.log(
+      `[SupplyChainDiscovery] Queue processed: ${result.succeeded}/${result.processed} succeeded, ${result.failed} failed`,
+    );
+
+    // Step 3: Log queue stats
+    const stats = await discoveryService.getQueueStats();
+    console.log(`[SupplyChainDiscovery] Queue stats:`, stats);
+  } catch (error: any) {
+    console.error(`[SupplyChainDiscovery] Job failed:`, error.message);
   }
 }

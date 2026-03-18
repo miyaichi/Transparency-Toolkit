@@ -91,9 +91,31 @@ depth=4 解決    表示: 1, 2, 3, 4, 5, 6+
 
 各フェーズを実施する前に、以下の調査スクリプトを実行して**実施コスト（取得ドメイン数）と期待効果（解決率改善）を見積もる**。
 
-### Step 0: ベースライン確認（実装開始前）
+### Step 0: ベースライン確認（実装開始前） ✅ 完了 (2026-03-18)
 
 現在の DB の状態と、depth=2 拡張の規模を把握する。
+
+**実施日**: 2026-03-18  
+**結果サマリー**:
+- **Total sellers_catalog entries**: 1,866,199
+  - PUBLISHER: 1,743,703 (93.4%)
+  - INTERMEDIARY: 78,147 (4.2%)
+  - BOTH: 44,194 (2.4%)
+- **INTERMEDIARY seller_domain 分布**:
+  - Total entries: 78,148
+  - Unique seller_domains: 11,481
+  - From how many SSPs: 522
+  - Missing seller_domain: 1,190 (1.5%)
+- **depth=2 新規取得対象ドメイン数**: **10,731** (許容範囲内 ✅)
+- **Top 5 大規模 sellers.json ドメイン**:
+  1. google.com (30,231 refs)
+  2. justpremium.com (2,041 refs)
+  3. (empty string) (1,190 refs - データ品質問題)
+  4. thinkdigitalgroup.net (976 refs)
+  5. aniview.com (447 refs)
+
+**判断結果**: Phase 1 実装を推奨 ✅  
+理由: depth=2 新規ドメイン数 (10,731) は許容範囲内。50件/バッチで約215バッチで完了可能。
 
 ```sql
 -- 1. sellers_catalog の全体規模
@@ -449,21 +471,61 @@ function getHopCount(r: ValidationRecord): { label: string; resolved: boolean } 
 ## 実装優先順位
 
 ```
-Step 0: 調査スクリプト実行（ベースライン確認・depth=2 規模の見積もり）
-  ↓ 規模が許容範囲内なら
-Phase 1: supply_chain_discovery_queue テーブル作成 + 発見ジョブ追加（MAX_DEPTH=2）
-Phase 2: supply_chain_hops テーブル作成 + 再帰 CTE 実装
-Phase 3: validator API に hop_count / hop_resolved / resolved_depth フィールド追加
-Phase 4: フロントエンドで "N" vs "N+" の表示切り替え
+✅ Step 0: 調査スクリプト実行（ベースライン確認・depth=2 規模の見積もり） - 完了 (2026-03-18)
+  ↓ 規模が許容範囲内 (10,731 ドメイン) → Phase 1 実施決定
+✅ Phase 1: supply_chain_discovery_queue テーブル作成 + 発見ジョブ追加（MAX_DEPTH=2） - 完了 (2026-03-18)
+⏳ Phase 2: supply_chain_hops テーブル作成 + 再帰 CTE 実装 - 未実装
+⏳ Phase 3: validator API に hop_count / hop_resolved / resolved_depth フィールド追加 - 未実装
+⏳ Phase 4: フロントエンドで "N" vs "N+" の表示切り替え - 未実装
 
-  ↓ Step A 調査スクリプト実行（depth=2 完了後の評価・depth=3 規模の見積もり）
-Phase A: MAX_DEPTH を 3 に引き上げてキューを再処理
+  ↓ Step A 調査スクリプト実行（depth=2 完了後の評価・depth=3 規模の見積もり） - 待機中
+⏳ Phase A: MAX_DEPTH を 3 に引き上げてキューを再処理 - 待機中
   ↓ Step B 調査スクリプト実行
-Phase B: MAX_DEPTH を 4 に引き上げ（必要な場合のみ）
+⏳ Phase B: MAX_DEPTH を 4 に引き上げ（必要な場合のみ） - 待機中
 ```
 
 Phase 1 完了時点で sellers.json データの網羅率が向上し、現在の静的推定精度も間接的に改善する。
 各 Step の調査スクリプト結果をもとにコストと効果を評価し、次フェーズの実施を判断する。
+
+---
+
+## 実装状況レポート
+
+### ✅ Phase 1 実装完了 (2026-03-18)
+
+**実装内容**:
+
+1. **データベーステーブル作成** (`backend/src/db/migrations/20260318_supply_chain_discovery.sql`)
+   - `supply_chain_discovery_queue`: ドメイン発見キュー（depth, status, error_message）
+   - `supply_chain_hops`: ホップ数キャッシュ（Phase 2 で使用予定）
+
+2. **SupplyChainDiscoveryService** (`backend/src/services/supply_chain_discovery_service.ts`)
+   - `discoverIntermediaryDomains(targetDepth)`: INTERMEDIARY の seller_domain を抽出してキューに追加
+   - `processQueue(batchSize)`: キューから pending ドメインを取得して sellers.json を fetch
+   - `getQueueStats()`: キュー統計（total, byStatus, byDepth）
+
+3. **スケジューラー統合** (`backend/src/jobs/scheduler.ts`)
+   - `processSupplyChainDiscovery()`: 既存のスケジュールジョブに追加
+   - 環境変数サポート: `SUPPLY_CHAIN_MAX_DEPTH` (default: 2), `SUPPLY_CHAIN_BATCH_SIZE` (default: 50)
+
+4. **API エンドポイント** (`backend/src/api/jobs.ts`)
+   - `POST /api/jobs/supply-chain-discovery`: 手動実行
+   - `GET /api/jobs/supply-chain-stats`: キュー統計確認
+
+**初回実行結果** (2026-03-18 10:46):
+```
+Discovered: 10,730 domains at depth=0
+Queue Status:
+  - Total: 10,730
+  - Pending: 10,727
+  - Fetched: 3 (test run)
+Batch Processing: 3/3 succeeded, 0 failed
+```
+
+**次のステップ**:
+- 本番環境へデプロイ
+- スケジューラーによる自動処理開始（50件/バッチ、約215バッチで完了予定）
+- depth=0 完了後、Step A 調査スクリプト実行して Phase A（depth=3）の実施を判断
 
 ---
 
