@@ -2,6 +2,54 @@ import { query } from '../db/client';
 import { StreamImporter } from '../ingest/stream_importer';
 
 /**
+ * Validate if a string is a valid domain name
+ * 
+ * Rules:
+ * - Must not contain protocol (http://, https://)
+ * - Must not contain path or query string (/, ?, #)
+ * - Must contain at least one dot
+ * - Must only contain ASCII alphanumeric, dots, and hyphens
+ * - Must not start or end with hyphen or dot
+ * - Length between 3 and 253 characters
+ */
+function isValidDomain(domain: string): boolean {
+  if (!domain || typeof domain !== 'string') return false;
+
+  // Remove whitespace
+  domain = domain.trim();
+
+  // Check length
+  if (domain.length < 3 || domain.length > 253) return false;
+
+  // Reject if contains protocol
+  if (/^https?:\/\//i.test(domain)) return false;
+
+  // Reject if contains path, query, or fragment
+  if (/[\/\?\#]/.test(domain)) return false;
+
+  // Reject if contains non-ASCII characters (unicode domain names need punycode)
+  if (!/^[a-zA-Z0-9.-]+$/.test(domain)) return false;
+
+  // Must contain at least one dot
+  if (!domain.includes('.')) return false;
+
+  // Must not start or end with dot or hyphen
+  if (/^[.-]|[.-]$/.test(domain)) return false;
+
+  // Must not have consecutive dots
+  if (/\.\./.test(domain)) return false;
+
+  // Each label (part between dots) must be valid
+  const labels = domain.split('.');
+  for (const label of labels) {
+    if (label.length === 0 || label.length > 63) return false;
+    if (/^-|-$/.test(label)) return false;
+  }
+
+  return true;
+}
+
+/**
  * Supply Chain Discovery Service
  * 
  * Manages phased depth expansion for recursive supply chain traversal.
@@ -49,6 +97,14 @@ export class SupplyChainDiscoveryService {
       WHERE sc.seller_type = 'INTERMEDIARY'
         AND sc.seller_domain IS NOT NULL
         AND sc.seller_domain != ''
+        AND LENGTH(sc.seller_domain) BETWEEN 3 AND 253
+        AND sc.seller_domain ~ '^[a-zA-Z0-9.-]+$'
+        AND sc.seller_domain ~ '\\.'
+        AND sc.seller_domain !~ '^[.-]'
+        AND sc.seller_domain !~ '[.-]$'
+        AND sc.seller_domain !~ '\\.\\.'
+        AND sc.seller_domain !~ '^https?://'
+        AND sc.seller_domain !~ '[/?#]'
         AND ${depthFilter}
         AND NOT EXISTS (
           SELECT 1 FROM raw_sellers_files rsf
@@ -109,6 +165,26 @@ export class SupplyChainDiscoveryService {
 
     for (const item of pending) {
       const { domain, depth } = item;
+
+      // Validate domain before attempting fetch
+      if (!isValidDomain(domain)) {
+        console.warn(`[SupplyChainDiscovery] Skipping invalid domain: ${domain}`);
+        
+        // Mark as failed with validation error
+        await query(
+          `UPDATE supply_chain_discovery_queue
+           SET status = 'failed', 
+               error_message = 'Invalid domain name format',
+               retry_count = retry_count + 1,
+               last_retry_at = NOW()
+           WHERE domain = $1`,
+          [domain],
+        );
+        
+        failed++;
+        continue;
+      }
+
       const url = `https://${domain}/sellers.json`;
 
       try {
