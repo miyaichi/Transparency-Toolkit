@@ -73,6 +73,8 @@ graph TD
     Scheduler -->|Trigger| Importer[StreamImporter Service]
 
     Scanner -->|Fetch ads.txt| External[External Domains]
+    Scanner -->|403 fallback| Proxy[Bright Data Residential Proxy]
+    Proxy -->|Bypass WAF| External
     Importer -->|Fetch sellers.json Stream| External
 
     Scanner -->|Save Result| DB
@@ -127,6 +129,8 @@ npm run dev
 Access the application at [http://localhost:3000](http://localhost:3000).
 
 ### 3. Backend Setup (Optional for dev)
+
+> **Bright Data Proxy (Optional)**: Cloud Run からの ads.txt 取得が WAF に 403 でブロックされる場合、Bright Data Residential Proxy 経由のフォールバックを利用できます。`backend/.env` に `BRIGHTDATA_USER` / `BRIGHTDATA_PASS` を設定してください。詳細は [docs/brightdata-proxy.md](docs/brightdata-proxy.md) を参照。
 
 If you want to run the backend locally instead of via Docker:
 
