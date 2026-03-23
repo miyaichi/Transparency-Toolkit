@@ -1,7 +1,7 @@
 import psl from 'psl';
 import { query } from '../db/client';
 import { parseAdsTxtContent } from '../lib/adstxt/validator';
-import client from '../lib/http';
+import client, { fetchViaBrightData } from '../lib/http';
 
 export interface ScanResult {
   id: string;
@@ -53,7 +53,17 @@ export class AdsTxtScanner {
         statusCode = res.status;
         return { content, finalUrl, statusCode };
       } catch (inner: any) {
-        // Return mostly for status code, but rethrow to let caller handle logging/saving
+        // 403 かつ Bright Data が設定されている場合はフォールバック
+        const status = inner.response?.status ?? (e as any).response?.status;
+        if (status === 403 && process.env.BRIGHTDATA_USER) {
+          console.warn(`[adstxt] Direct fetch blocked (403) for ${domain}, retrying via Bright Data`);
+          const result = await fetchViaBrightData(`https://${domain}/${filename}`);
+          return {
+            content: result.data,
+            finalUrl: `https://${domain}/${filename}`,
+            statusCode: result.status,
+          };
+        }
         statusCode = inner.response?.status || 0;
         throw inner;
       }
