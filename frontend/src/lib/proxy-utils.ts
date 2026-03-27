@@ -16,6 +16,73 @@ interface ProxyOptions {
   defaultBackendUrl?: string
 }
 
+const RATE_LIMIT_HEADERS = ["x-ratelimit-limit", "x-ratelimit-remaining", "x-ratelimit-reset", "retry-after"]
+
+export async function proxyPublicApiRequest(request: Request, targetPath: string, options: ProxyOptions = {}) {
+  const { timeoutMs = 30000, defaultBackendUrl = DEFAULT_BACKEND_URL } = options
+
+  const backendUrl = getBackendUrl(defaultBackendUrl)
+
+  if (targetPath.includes("..")) {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 })
+  }
+
+  const urlObj = new URL(request.url)
+  const cleanPath = targetPath.startsWith("/") ? targetPath : `/${targetPath}`
+  const finalUrl = `${backendUrl}${cleanPath}${urlObj.search}`
+
+  console.log(`[Proxy] Forwarding ${request.method} to: ${finalUrl}`)
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    const apiKey = request.headers.get("x-api-key")
+    if (apiKey) headers["X-API-Key"] = apiKey
+
+    const res = await fetch(finalUrl, {
+      method: request.method,
+      headers,
+      signal: controller.signal,
+      cache: "no-store",
+    })
+    clearTimeout(timeoutId)
+
+    const responseHeaders: Record<string, string> = {}
+    for (const h of RATE_LIMIT_HEADERS) {
+      const val = res.headers.get(h)
+      if (val) responseHeaders[h] = val
+    }
+
+    const text = await res.text()
+    let body: object | string
+    try {
+      body = JSON.parse(text)
+    } catch {
+      body = text
+    }
+
+    if (typeof body === "object") {
+      return NextResponse.json(body, { status: res.status, headers: responseHeaders })
+    }
+    return new NextResponse(body, {
+      status: res.status,
+      headers: { "Content-Type": "text/plain", ...responseHeaders },
+    })
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    if (error.name === "AbortError") {
+      return NextResponse.json({ error: "Upstream timeout" }, { status: 504 })
+    }
+    if (error.cause?.code === "ECONNREFUSED") {
+      return NextResponse.json({ error: "Backend unavailable" }, { status: 503 })
+    }
+    console.error(`[Proxy] Error: ${error.message}`)
+    return NextResponse.json({ error: "Internal Proxy Error" }, { status: 500 })
+  }
+}
+
 export async function proxyRequest(request: Request, targetPath: string, options: ProxyOptions = {}) {
   const { timeoutMs = 30000, defaultBackendUrl = DEFAULT_BACKEND_URL } = options
 
