@@ -13,7 +13,10 @@ import jobsApp from './api/jobs';
 import monitorApp from './api/monitor';
 import optimizerApp from './api/optimizer';
 import sellersApp from './api/sellers';
+import v1AdstxtApp from './api/v1/adstxt';
+import v1SellersApp from './api/v1/sellers';
 import { logger } from './lib/logger';
+import { apiKeyAuth } from './middleware/api-key-auth';
 
 // Prefer IPv4 to avoid connectivity issues in environments with partial IPv6 support (e.g. Cloud Run)
 if (dns.setDefaultResultOrder) {
@@ -58,15 +61,19 @@ const app = new OpenAPIHono();
 app.use(
   '/*',
   cors({
-    origin: (origin) => {
-      // In production, strictly match FRONTEND_URL if set, otherwise allow all (or allow none if preferred security-wise)
+    origin: (origin, c) => {
+      // Public API (/v1/*) is authenticated via API Key — allow all origins
+      if (c.req.path.startsWith('/v1/')) {
+        return origin;
+      }
+      // Internal APIs: restrict to FRONTEND_URL in production
       if (process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL) {
         return process.env.FRONTEND_URL === origin ? origin : null;
       }
-      return origin; // Allow all in dev or if config missing (or return origin to reflect back)
+      return origin;
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key'],
     exposeHeaders: ['Content-Length'],
     maxAge: 600,
     credentials: true,
@@ -133,6 +140,11 @@ app.get('/', (c) => {
     docs: '/ui',
   });
 });
+
+// Public API v1 (API Key authenticated)
+app.use('/v1/*', apiKeyAuth);
+app.route('/v1/adstxt', v1AdstxtApp);
+app.route('/v1/sellers', v1SellersApp);
 
 // Routes
 app.route('/api/sellers', sellersApp);
