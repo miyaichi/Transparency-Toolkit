@@ -94,7 +94,7 @@ export class SupplyChainDiscoveryService {
         $1::integer AS depth,
         'pending' AS status
       FROM sellers_catalog sc
-      WHERE sc.seller_type = 'INTERMEDIARY'
+      WHERE sc.seller_type IN ('INTERMEDIARY', 'BOTH')
         AND sc.seller_domain IS NOT NULL
         AND sc.seller_domain != ''
         AND LENGTH(sc.seller_domain) BETWEEN 3 AND 253
