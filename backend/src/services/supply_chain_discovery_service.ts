@@ -98,13 +98,27 @@ export class SupplyChainDiscoveryService {
         AND sc.seller_domain IS NOT NULL
         AND sc.seller_domain != ''
         AND LENGTH(sc.seller_domain) BETWEEN 3 AND 253
+        -- Basic character validation
         AND sc.seller_domain ~ '^[a-zA-Z0-9.-]+$'
+        -- Must contain at least one dot
         AND sc.seller_domain ~ '\\.'
+        -- Must not start/end with dot or hyphen
         AND sc.seller_domain !~ '^[.-]'
         AND sc.seller_domain !~ '[.-]$'
+        -- No consecutive dots
         AND sc.seller_domain !~ '\\.\\.'
+        -- No protocol prefix
         AND sc.seller_domain !~ '^https?://'
-        AND sc.seller_domain !~ '[/?#]'
+        -- No path, query, or fragment (comprehensive)
+        AND sc.seller_domain NOT LIKE '%/%'
+        AND sc.seller_domain NOT LIKE '%?%'
+        AND sc.seller_domain NOT LIKE '%#%'
+        -- No trailing dot (additional check)
+        AND sc.seller_domain NOT LIKE '%.'
+        -- No protocol anywhere in string
+        AND sc.seller_domain NOT LIKE '%http:%'
+        AND sc.seller_domain NOT LIKE '%https:%'
+        -- Apply depth filter
         AND ${depthFilter}
         AND NOT EXISTS (
           SELECT 1 FROM raw_sellers_files rsf
