@@ -10,12 +10,12 @@
  *   ts-node src/scripts/calculate_hops.ts
  */
 
-import { HopCalculatorService } from '../services/hop_calculator_service';
+import { HopCalculatorServiceV2 } from '../services/hop_calculator_service_v2';
 
 async function main() {
   console.log('=== Supply Chain Hop Calculation ===\n');
 
-  const calculator = new HopCalculatorService();
+  const calculator = new HopCalculatorServiceV2();
 
   try {
     // Run the calculation
