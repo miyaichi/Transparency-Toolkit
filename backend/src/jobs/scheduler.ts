@@ -6,6 +6,7 @@ import { AdsTxtScanner } from '../services/adstxt_scanner';
 import { MonitoredDomainsService } from '../services/monitored_domains';
 import { SupplyChainDiscoveryService } from '../services/supply_chain_discovery_service';
 import { runCleanup } from './cleanup';
+import { runScheduledHopCalculation } from '../scheduled/calculate_hops';
 
 const monitoredDomainsService = new MonitoredDomainsService();
 const scanner = new AdsTxtScanner();
@@ -67,6 +68,17 @@ export function setupCronJobs() {
     console.log('Starting daily cleanup job...');
     await runCleanup();
     console.log('Daily cleanup job finished');
+  });
+
+  // 毎日深夜 2:00 にホップ計算を実行（クリーンアップの前）
+  cron.schedule('0 2 * * *', async () => {
+    console.log('Starting daily hop calculation job...');
+    try {
+      const result = await runScheduledHopCalculation();
+      console.log(`Hop calculation completed: ${JSON.stringify(result)}`);
+    } catch (error) {
+      console.error('Hop calculation job failed:', error);
+    }
   });
 }
 
