@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { runScheduledJobs, processSupplyChainDiscovery } from '../jobs/scheduler';
-import { SupplyChainDiscoveryService } from '../services/supply_chain_discovery_service';
+import { runScheduledJobs } from '../jobs/scheduler';
 
 const app = new OpenAPIHono();
 
@@ -60,70 +59,6 @@ app.openapi(scanRoute, async (c) => {
   return c.json({ success: true, message: 'Jobs completed' });
 });
 
-// Supply Chain Discovery endpoints
-const supplyChainDiscoveryRoute = createRoute({
-  method: 'post',
-  path: '/supply-chain-discovery',
-  responses: {
-    200: {
-      description: 'Triggered supply chain discovery job',
-      content: {
-        'application/json': {
-          schema: z.object({
-            success: z.boolean(),
-            message: z.string(),
-            stats: z.object({
-              total: z.number(),
-              byStatus: z.record(z.string(), z.number()),
-              byDepth: z.record(z.string(), z.number()),
-            }).optional(),
-          }),
-        },
-      },
-    },
-  },
-});
 
-app.openapi(supplyChainDiscoveryRoute, async (c) => {
-  await processSupplyChainDiscovery();
-  
-  const MAX_DEPTH = parseInt(process.env.SUPPLY_CHAIN_MAX_DEPTH || '2');
-  const discoveryService = new SupplyChainDiscoveryService(MAX_DEPTH);
-  const stats = await discoveryService.getQueueStats();
-
-  return c.json({ 
-    success: true, 
-    message: 'Supply chain discovery job completed',
-    stats
-  });
-});
-
-// Get supply chain discovery stats
-const supplyChainStatsRoute = createRoute({
-  method: 'get',
-  path: '/supply-chain-stats',
-  responses: {
-    200: {
-      description: 'Supply chain discovery queue statistics',
-      content: {
-        'application/json': {
-          schema: z.object({
-            total: z.number(),
-            byStatus: z.record(z.string(), z.number()),
-            byDepth: z.record(z.string(), z.number()),
-          }),
-        },
-      },
-    },
-  },
-});
-
-app.openapi(supplyChainStatsRoute, async (c) => {
-  const MAX_DEPTH = parseInt(process.env.SUPPLY_CHAIN_MAX_DEPTH || '2');
-  const discoveryService = new SupplyChainDiscoveryService(MAX_DEPTH);
-  const stats = await discoveryService.getQueueStats();
-
-  return c.json(stats);
-});
 
 export default app;
