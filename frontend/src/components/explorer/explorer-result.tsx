@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { CheckCircle2, Download, Loader2, XCircle } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Copy, Download, Loader2, XCircle } from "lucide-react"
 
 import { isExchangeEntry, isFoundInSellers, useAdsTxtData } from "@/hooks/use-ads-txt-data"
 import { ValidationRecord } from "@/types"
@@ -17,6 +17,7 @@ type Props = {
 }
 
 import { useTranslation } from "@/lib/i18n/language-context"
+import { useState } from "react"
 
 /**
  * Returns hop count for a record based on relationship + seller_type.
@@ -64,15 +65,217 @@ function HopBadge({ hop }: { hop: number | null }) {
   )
 }
 
+// ---- SSP Summary types ----
+
+type IssueKey = "deepChain" | "notVerified" | "duplicate"
+
+type SspSummary = {
+  domain: string
+  entries: ValidationRecord[]
+  directCount: number
+  resellerCount: number
+  minHop: number | null
+  foundCount: number
+  issues: Set<IssueKey>
+}
+
+function buildSspSummaries(records: ValidationRecord[]): SspSummary[] {
+  const groups = new Map<string, ValidationRecord[]>()
+  for (const r of records) {
+    if (!isExchangeEntry(r) || !r.domain) continue
+    const key = r.domain.toLowerCase()
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(r)
+  }
+
+  const summaries: SspSummary[] = []
+  for (const [domain, entries] of groups) {
+    const directCount = entries.filter((r) => r.relationship?.toUpperCase() === "DIRECT").length
+    const resellerCount = entries.filter((r) => r.relationship?.toUpperCase() === "RESELLER").length
+    const hops = entries.map(getHopCount).filter((h): h is number => h !== null)
+    const minHop = hops.length > 0 ? Math.min(...hops) : null
+    const foundCount = entries.filter(isFoundInSellers).length
+
+    const issues = new Set<IssueKey>()
+    if (hops.some((h) => h >= 3)) issues.add("deepChain")
+    if (foundCount < entries.length) issues.add("notVerified")
+
+    // Duplicate: same (account_id, relationship) pair appears more than once
+    const seen = new Set<string>()
+    for (const r of entries) {
+      const key = `${r.account_id?.toLowerCase()}|${r.relationship?.toUpperCase()}`
+      if (seen.has(key)) {
+        issues.add("duplicate")
+        break
+      }
+      seen.add(key)
+    }
+
+    summaries.push({ domain, entries, directCount, resellerCount, minHop, foundCount, issues })
+  }
+
+  return summaries.sort((a, b) => {
+    // Sort: fewer issues first, then by minHop ascending, then alphabetically
+    const scoreA = a.issues.size * 10 + (a.minHop ?? 99)
+    const scoreB = b.issues.size * 10 + (b.minHop ?? 99)
+    if (scoreA !== scoreB) return scoreA - scoreB
+    return a.domain.localeCompare(b.domain)
+  })
+}
+
+function SspStatusBadge({ summary }: { summary: SspSummary }) {
+  if (summary.issues.size === 0 && summary.directCount > 0) {
+    return (
+      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
+        ✓ Efficient
+      </Badge>
+    )
+  }
+  if (summary.issues.has("deepChain") || summary.issues.has("duplicate")) {
+    return (
+      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
+        ⚠ Attention
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
+      ～ Review
+    </Badge>
+  )
+}
+
+// ---- SSP Summary View ----
+
+function SspSummaryView({
+  summaries,
+  onSelectSsp
+}: {
+  summaries: SspSummary[]
+  onSelectSsp: (domain: string) => void
+}) {
+  const { t } = useTranslation()
+  const [filter, setFilter] = useState("")
+
+  const filtered = filter
+    ? summaries.filter((s) => s.domain.toLowerCase().includes(filter.toLowerCase()))
+    : summaries
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">{t("explorerPage.sspSummaryDescription")}</p>
+
+      <Input
+        placeholder="Filter SSPs..."
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        className="max-w-sm"
+      />
+
+      <div className="rounded-md border bg-white shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>{t("common.advertisingSystem")}</TableHead>
+                <TableHead className="w-20 text-center">{t("explorerPage.bestHop")}</TableHead>
+                <TableHead className="w-20 text-center">{t("explorerPage.directCount")}</TableHead>
+                <TableHead className="w-20 text-center">{t("explorerPage.resellerCount")}</TableHead>
+                <TableHead className="w-28 text-center">{t("explorerPage.verifiedRate")}</TableHead>
+                <TableHead>{t("explorerPage.issues")}</TableHead>
+                <TableHead className="w-28">{t("common.status")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((s) => (
+                <TableRow
+                  key={s.domain}
+                  className={
+                    s.issues.size > 0
+                      ? s.issues.has("deepChain") || s.issues.has("duplicate")
+                        ? "bg-red-50/40 hover:bg-red-50/60"
+                        : "bg-amber-50/40 hover:bg-amber-50/60"
+                      : "hover:bg-muted/50"
+                  }
+                >
+                  <TableCell className="font-medium">
+                    <button
+                      className="text-left hover:underline text-emerald-700"
+                      onClick={() => onSelectSsp(s.domain)}
+                    >
+                      {s.domain}
+                    </button>
+                    <span className="ml-2 text-xs text-muted-foreground">({s.entries.length})</span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <HopBadge hop={s.minHop} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {s.directCount > 0 ? (
+                      <span className="font-semibold text-emerald-700">{s.directCount}</span>
+                    ) : (
+                      <span className="text-muted-foreground">0</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center text-muted-foreground">{s.resellerCount}</TableCell>
+                  <TableCell className="text-center">
+                    <span
+                      className={
+                        s.foundCount === s.entries.length
+                          ? "text-emerald-600 font-semibold"
+                          : s.foundCount === 0
+                            ? "text-red-500"
+                            : "text-amber-600"
+                      }
+                    >
+                      {s.foundCount}/{s.entries.length}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {s.issues.has("deepChain") && (
+                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
+                          {t("explorerPage.issueDeepChain")}
+                        </Badge>
+                      )}
+                      {s.issues.has("notVerified") && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
+                          {t("explorerPage.issueNotVerified")}
+                        </Badge>
+                      )}
+                      {s.issues.has("duplicate") && (
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs">
+                          {t("explorerPage.issueDuplicate")}
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <SspStatusBadge summary={s} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---- Main ExplorerResult ----
+
 export function ExplorerResult({ domain, type }: Props) {
   const { t } = useTranslation()
+  const [view, setView] = useState<"records" | "summary">("records")
+  const [sspFilter, setSspFilter] = useState("")
 
   const { data, error, isLoading, filter, setFilter, validOnly, setValidOnly, filteredRecords } = useAdsTxtData(
     domain,
     type
   )
 
-  // Compute sellers.json validity stats and hop stats from all records (pre-filter)
+  // Compute stats from all records (pre-filter)
   const allRecords = data?.records ?? []
   const exchangeEntries = allRecords.filter(isExchangeEntry)
   const validCount = exchangeEntries.filter(isFoundInSellers).length
@@ -82,6 +285,25 @@ export function ExplorerResult({ domain, type }: Props) {
   const avgHop =
     hopCounts.length > 0 ? Math.round((hopCounts.reduce((a, b) => a + b, 0) / hopCounts.length) * 10) / 10 : null
 
+  // SSP-level stats
+  const sspSummaries = buildSspSummaries(exchangeEntries)
+  const directSspCount = sspSummaries.filter((s) => s.directCount > 0).length
+  const attentionCount = sspSummaries.filter(
+    (s) => s.issues.has("deepChain") || s.issues.has("duplicate")
+  ).length
+
+  // Records view: apply SSP filter from summary click, plus normal filter
+  const recordsToShow = (filteredRecords ?? []).filter((r) => {
+    if (!sspFilter) return true
+    return r.domain?.toLowerCase() === sspFilter.toLowerCase()
+  })
+
+  const handleSelectSsp = (domain: string) => {
+    setSspFilter(domain)
+    setView("records")
+    setFilter("")
+  }
+
   // Download functionality
   const handleDownload = () => {
     if (!data?.records) return
@@ -90,6 +312,7 @@ export function ExplorerResult({ domain, type }: Props) {
       t("common.advertisingSystem"),
       t("common.publisherAccountId"),
       t("common.sellerName"),
+      t("explorerPage.sellerDomain"),
       t("explorerPage.validInSellers"),
       t("explorerPage.hop"),
       t("common.relationship"),
@@ -107,6 +330,7 @@ export function ExplorerResult({ domain, type }: Props) {
           r.domain || "",
           r.account_id || "",
           r.seller_name || "",
+          r.seller_domain || "",
           validDisplay,
           hopDisplay,
           r.relationship || "",
@@ -150,7 +374,7 @@ export function ExplorerResult({ domain, type }: Props) {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
         <Card>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm text-muted-foreground">{t("common.totalRecords")}</CardTitle>
@@ -185,118 +409,202 @@ export function ExplorerResult({ domain, type }: Props) {
             {avgHop !== null ? avgHop : "-"}
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm text-emerald-700">{t("explorerPage.directSsps")}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 text-2xl font-bold text-emerald-700">
+            {directSspCount}<span className="text-base font-normal text-muted-foreground">/{sspSummaries.length}</span>
+          </CardContent>
+        </Card>
+        <Card
+          className={attentionCount > 0 ? "border-red-200 cursor-pointer hover:bg-red-50/50" : ""}
+          onClick={() => attentionCount > 0 && setView("summary")}
+        >
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className={`text-sm ${attentionCount > 0 ? "text-red-600" : "text-muted-foreground"}`}>
+              {t("explorerPage.needsAttention")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 text-2xl font-bold text-red-600">
+            {attentionCount > 0 ? (
+              <span className="flex items-center gap-1">
+                <AlertTriangle className="h-5 w-5" /> {attentionCount}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">0</span>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="relative max-w-sm w-full">
-            <Input
-              placeholder={t("common.filterPlaceholder")}
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              id="valid-only"
-              type="checkbox"
-              checked={validOnly}
-              onChange={(e) => setValidOnly(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 accent-emerald-600 cursor-pointer"
-            />
-            <Label htmlFor="valid-only" className="text-sm cursor-pointer select-none">
-              {t("explorerPage.validOnly")}
-            </Label>
-          </div>
-        </div>
-        <Button variant="outline" onClick={handleDownload} className="shrink-0">
-          <Download className="mr-2 h-4 w-4" /> {t("common.downloadCsv")}
-        </Button>
+      {/* View Toggle */}
+      <div className="flex items-center gap-2 border-b">
+        <button
+          onClick={() => { setView("records"); setSspFilter("") }}
+          className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
+            view === "records"
+              ? "border-emerald-600 text-emerald-700"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {t("explorerPage.viewRecords")}
+          {sspFilter && (
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {sspFilter}
+              <button className="ml-1 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setSspFilter("") }}>×</button>
+            </Badge>
+          )}
+        </button>
+        <button
+          onClick={() => setView("summary")}
+          className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
+            view === "summary"
+              ? "border-emerald-600 text-emerald-700"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {t("explorerPage.viewSspSummary")}
+          <span className="ml-1 text-xs text-muted-foreground">({sspSummaries.length})</span>
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="rounded-md border bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-16">{t("common.line")}</TableHead>
-                <TableHead>{t("common.advertisingSystem")}</TableHead>
-                <TableHead>{t("common.publisherAccountId")}</TableHead>
-                <TableHead>{t("common.sellerName")}</TableHead>
-                <TableHead className="w-20">{t("explorerPage.validInSellers")}</TableHead>
-                <TableHead className="w-16">{t("explorerPage.hop")}</TableHead>
-                <TableHead>{t("common.relationship")}</TableHead>
-                <TableHead>{t("common.certId")}</TableHead>
-                <TableHead>{t("common.commentRaw")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRecords?.length ? (
-                filteredRecords.map((record, i) => {
-                  const isEntry = isExchangeEntry(record)
-                  const found = isEntry && isFoundInSellers(record)
-                  const notFound = isEntry && !isFoundInSellers(record)
-                  const hop = getHopCount(record)
+      {/* SSP Summary View */}
+      {view === "summary" && (
+        <SspSummaryView summaries={sspSummaries} onSelectSsp={handleSelectSsp} />
+      )}
 
-                  return (
-                    <TableRow key={i} className={notFound ? "bg-red-50/60 hover:bg-red-50" : "hover:bg-muted/50"}>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {record.line_number === -1 ? t("common.auto") : record.line_number}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {record.domain || <span className="text-muted-foreground italic">-</span>}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {record.account_id || <span className="text-muted-foreground italic">-</span>}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {record.seller_name ? (
-                          <span className="font-medium text-emerald-600">{record.seller_name}</span>
-                        ) : (
-                          <span className="text-muted-foreground italic text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {found ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        ) : notFound ? (
-                          <XCircle className="h-4 w-4 text-red-400" />
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <HopBadge hop={hop} />
-                      </TableCell>
-                      <TableCell className="uppercase text-xs font-semibold text-muted-foreground">
-                        {record.relationship || "-"}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {record.certification_authority_id || "-"}
-                      </TableCell>
-                      <TableCell
-                        className="text-xs text-muted-foreground font-mono max-w-[300px] truncate"
-                        title={record.raw_line}
-                      >
-                        {record.raw_line}
+      {/* Records View */}
+      {view === "records" && (
+        <>
+          {/* Toolbar */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="relative max-w-sm w-full">
+                <Input
+                  placeholder={t("common.filterPlaceholder")}
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  id="valid-only"
+                  type="checkbox"
+                  checked={validOnly}
+                  onChange={(e) => setValidOnly(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 accent-emerald-600 cursor-pointer"
+                />
+                <Label htmlFor="valid-only" className="text-sm cursor-pointer select-none">
+                  {t("explorerPage.validOnly")}
+                </Label>
+              </div>
+            </div>
+            <Button variant="outline" onClick={handleDownload} className="shrink-0">
+              <Download className="mr-2 h-4 w-4" /> {t("common.downloadCsv")}
+            </Button>
+          </div>
+
+          {/* Table */}
+          <div className="rounded-md border bg-white shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-16">{t("common.line")}</TableHead>
+                    <TableHead>{t("common.advertisingSystem")}</TableHead>
+                    <TableHead>{t("common.publisherAccountId")}</TableHead>
+                    <TableHead>{t("common.sellerName")}</TableHead>
+                    <TableHead>{t("explorerPage.sellerDomain")}</TableHead>
+                    <TableHead className="w-20">{t("explorerPage.validInSellers")}</TableHead>
+                    <TableHead className="w-16">{t("explorerPage.hop")}</TableHead>
+                    <TableHead>{t("common.relationship")}</TableHead>
+                    <TableHead>{t("common.certId")}</TableHead>
+                    <TableHead>{t("common.commentRaw")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recordsToShow?.length ? (
+                    recordsToShow.map((record, i) => {
+                      const isEntry = isExchangeEntry(record)
+                      const found = isEntry && isFoundInSellers(record)
+                      const notFound = isEntry && !isFoundInSellers(record)
+                      const hop = getHopCount(record)
+
+                      // Row-level issue flags
+                      const isDeepChain = hop !== null && hop >= 3
+                      const isIntermediary = record.seller_type?.toUpperCase() === "INTERMEDIARY"
+
+                      return (
+                        <TableRow
+                          key={i}
+                          className={notFound ? "bg-red-50/60 hover:bg-red-50" : isDeepChain ? "bg-amber-50/40 hover:bg-amber-50/60" : "hover:bg-muted/50"}
+                        >
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {record.line_number === -1 ? t("common.auto") : record.line_number}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {record.domain || <span className="text-muted-foreground italic">-</span>}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {record.account_id || <span className="text-muted-foreground italic">-</span>}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {record.seller_name ? (
+                              <span className="font-medium text-emerald-600">{record.seller_name}</span>
+                            ) : (
+                              <span className="text-muted-foreground italic text-xs">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {record.seller_domain && isIntermediary ? (
+                              <span className="text-blue-600 font-mono">{record.seller_domain}</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {found ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            ) : notFound ? (
+                              <XCircle className="h-4 w-4 text-red-400" />
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <HopBadge hop={hop} />
+                          </TableCell>
+                          <TableCell className="uppercase text-xs font-semibold text-muted-foreground">
+                            {record.relationship || "-"}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {record.certification_authority_id || "-"}
+                          </TableCell>
+                          <TableCell
+                            className="text-xs text-muted-foreground font-mono max-w-[300px] truncate"
+                            title={record.raw_line}
+                          >
+                            {record.raw_line}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={10} className="h-24 text-center">
+                        {t("common.noRecords")}
                       </TableCell>
                     </TableRow>
-                  )
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={9} className="h-24 text-center">
-                    {t("common.noRecords")}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="text-xs text-muted-foreground text-right">
         {t("common.sourceUrl")}:{" "}
         <a href={data.ads_txt_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">

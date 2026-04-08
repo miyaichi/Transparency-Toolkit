@@ -265,7 +265,27 @@ export const translations = {
     invalidCount: { en: "Not Found (sellers.json)", ja: "未確認 (sellers.json)" },
     maxHop: { en: "Max Hop", ja: "最大ホップ数" },
     avgHop: { en: "Avg Hop", ja: "平均ホップ数" },
-    hop: { en: "Hop", ja: "ホップ" }
+    hop: { en: "Hop", ja: "ホップ" },
+    directSsps: { en: "Direct SSPs", ja: "DIRECT SSP数" },
+    needsAttention: { en: "Needs Attention", ja: "要注意" },
+    viewRecords: { en: "Records", ja: "レコード" },
+    viewSspSummary: { en: "SSP Summary", ja: "SSPサマリー" },
+    sellerDomain: { en: "Seller Domain", ja: "セラードメイン" },
+    issues: { en: "Issues", ja: "問題" },
+    bestHop: { en: "Best Hop", ja: "最短ホップ" },
+    directCount: { en: "Direct", ja: "DIRECT" },
+    resellerCount: { en: "Reseller", ja: "RESELLER" },
+    verifiedRate: { en: "Verified", ja: "検証済み" },
+    sspSummaryDescription: {
+      en: "Grouped by SSP domain. Choose shorter paths (lower hop) and verified entries for a more transparent supply chain.",
+      ja: "SSPドメイン単位で集計。ホップ数が少なく検証済みのパスを選ぶと、より透明なサプライチェーンを実現できます。"
+    },
+    issueDeepChain: { en: "Deep chain (3+ hops)", ja: "深いチェーン (3+ ホップ)" },
+    issueNotVerified: { en: "Not found in sellers.json", ja: "sellers.json未確認" },
+    issueDuplicate: { en: "Duplicate account ID", ja: "重複アカウントID" },
+    recommendEfficient: { en: "Efficient", ja: "効率的" },
+    recommendReview: { en: "Review", ja: "要確認" },
+    recommendAttention: { en: "Attention needed", ja: "要対応" }
   },
   sellersPage: {
     metadata: { en: "Metadata", ja: "メタデータ" },
