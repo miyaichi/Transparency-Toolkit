@@ -75,13 +75,26 @@ export async function proxyPublicApiRequest(request: Request, targetPath: string
     if (error.name === "AbortError") {
       return NextResponse.json({ error: "Upstream timeout" }, { status: 504 })
     }
-    if (error.cause?.code === "ECONNREFUSED") {
+
+    const causeCode = error.cause?.code
+    console.error(`[Proxy] Error fetching ${finalUrl}: ${error.message} (cause: ${causeCode ?? "unknown"})`)
+
+    if (causeCode === "ECONNREFUSED") {
       return NextResponse.json({ error: "Backend unavailable" }, { status: 503 })
     }
-    console.error(`[Proxy] Error: ${error.message}`)
+
+    if (causeCode === "ECONNRESET" || causeCode === "EPIPE" || error.message?.includes("socket hang up")) {
+      return NextResponse.json({ error: "Backend connection reset" }, { status: 503 })
+    }
+
+    if (causeCode === "ETIMEDOUT" || causeCode === "ENOTFOUND") {
+      return NextResponse.json({ error: "Backend unreachable" }, { status: 503 })
+    }
+
     return NextResponse.json({ error: "Internal Proxy Error" }, { status: 500 })
   }
 }
+
 
 export async function proxyRequest(request: Request, targetPath: string, options: ProxyOptions = {}) {
   const { timeoutMs = 30000, defaultBackendUrl = DEFAULT_BACKEND_URL } = options
@@ -169,13 +182,21 @@ export async function proxyRequest(request: Request, targetPath: string, options
       return NextResponse.json({ error: "Upstream timeout" }, { status: 504 })
     }
 
-    // Check for connection refused (common in dev/deploy misconfig)
-    if (error.cause?.code === "ECONNREFUSED") {
-      console.error(`[Proxy] Connection Refused to ${finalUrl}. Check BACKEND_URL or if backend is running.`)
+    const causeCode = error.cause?.code
+    console.error(`[Proxy] Error fetching ${finalUrl}: ${error.message} (cause: ${causeCode ?? "unknown"})`)
+
+    if (causeCode === "ECONNREFUSED") {
       return NextResponse.json({ error: "Backend unavailable" }, { status: 503 })
     }
 
-    console.error(`[Proxy] Error: ${error.message}`)
+    if (causeCode === "ECONNRESET" || causeCode === "EPIPE" || error.message?.includes("socket hang up")) {
+      return NextResponse.json({ error: "Backend connection reset" }, { status: 503 })
+    }
+
+    if (causeCode === "ETIMEDOUT" || causeCode === "ENOTFOUND") {
+      return NextResponse.json({ error: "Backend unreachable" }, { status: 503 })
+    }
+
     return NextResponse.json({ error: "Internal Proxy Error" }, { status: 500 })
   }
 }
