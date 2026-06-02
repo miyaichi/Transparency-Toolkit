@@ -493,7 +493,8 @@ export const translations = {
         description: {
           en: "Correct DIRECT/RESELLER relationship based on sellers.json data.",
           ja: "sellers.jsonデータに基づいてDIRECT/RESELLERの関係性を修正します。"
-        }
+        },
+        action: { en: "Action", ja: "アクション" }
       },
       step5: {
         title: { en: "5. Sellers.json Verification", ja: "5. Sellers.json 検証" },
