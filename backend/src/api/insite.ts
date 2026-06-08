@@ -7,6 +7,7 @@ import { findOpenSinceraCache, upsertOpenSinceraCache } from '../repositories/op
 const app = new Hono();
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const NOT_FOUND_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day (re-check sooner in case publisher is added)
 const ERROR_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour for upstream errors
 const MIN_FETCH_INTERVAL_MS = 1000; // throttle upstream calls
 
@@ -95,7 +96,7 @@ app.get('/publisher', zValidator('query', searchSchema), async (c) => {
         httpStatus: 404,
         errorMessage: 'Publisher not found',
         sourceUrl,
-        ttlMs: CACHE_TTL_MS,
+        ttlMs: NOT_FOUND_CACHE_TTL_MS,
       });
       return c.json({ error: 'Publisher not found' }, 404);
     }
@@ -129,7 +130,7 @@ app.get('/publisher', zValidator('query', searchSchema), async (c) => {
           httpStatus: 404,
           errorMessage: 'Publisher not found',
           sourceUrl,
-          ttlMs: CACHE_TTL_MS,
+          ttlMs: NOT_FOUND_CACHE_TTL_MS,
         });
         return c.json({ error: 'Publisher not found' }, 404);
       }

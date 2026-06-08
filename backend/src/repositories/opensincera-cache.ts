@@ -102,14 +102,29 @@ export const upsertOpenSinceraCache = async (params: UpsertOpenSinceraCacheParam
     throw new Error('Either domain or publisherId must be provided for OpenSincera cache upsert');
   }
 
+  // When both domain and publisherId are known, remove orphan rows (e.g. a prior
+  // not_found entry stored with publisher_id=NULL for this domain) to avoid a
+  // unique constraint violation: the conflict clause below only covers one column,
+  // so an INSERT with both values would trip the OTHER column's unique index.
+  if (domain && publisherId) {
+    await query(
+      `DELETE FROM opensincera_cache
+       WHERE (domain = $1 AND publisher_id IS NULL)
+          OR (publisher_id = $2 AND domain IS NULL)`,
+      [domain, publisherId],
+    );
+  }
+
   // Use partial index inference instead of ON CONFLICT ON CONSTRAINT, because
   // opensincera_cache_domain_unique and opensincera_cache_publisher_id_unique are
   // created as unique indexes (CREATE UNIQUE INDEX), not named constraints in pg_constraint.
   // ON CONFLICT ON CONSTRAINT requires a named constraint; ON CONFLICT (col) WHERE predicate
   // is the correct syntax for partial unique indexes.
-  const conflictClause = publisherId
-    ? 'ON CONFLICT (publisher_id) WHERE publisher_id IS NOT NULL'
-    : 'ON CONFLICT (domain) WHERE domain IS NOT NULL';
+  // Prefer domain conflict when domain is available: a domain lookup may previously
+  // have stored a row with publisher_id=NULL that needs to be updated in-place.
+  const conflictClause = domain
+    ? 'ON CONFLICT (domain) WHERE domain IS NOT NULL'
+    : 'ON CONFLICT (publisher_id) WHERE publisher_id IS NOT NULL';
 
   const res = await query(
     `INSERT INTO opensincera_cache (
