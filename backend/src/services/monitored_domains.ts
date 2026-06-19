@@ -20,8 +20,8 @@ function isValidDomain(d: string): boolean {
 export class MonitoredDomainsService {
   async addDomain(domain: string, fileType: 'ads.txt' | 'app-ads.txt' | 'sellers.json' = 'ads.txt') {
     const res = await query(
-      `INSERT INTO monitored_domains (domain, file_type, next_scan_at)
-       VALUES ($1, $2, NOW() + ((20160 * random()) || ' minutes')::interval)
+      `INSERT INTO monitored_domains (domain, file_type, scan_interval_minutes, next_scan_at)
+       VALUES ($1, $2, 20160, NOW() + ((20160 * random()) || ' minutes')::interval)
        ON CONFLICT (domain, file_type) DO UPDATE SET is_active = true
        RETURNING *`,
       [domain, fileType],
@@ -97,8 +97,8 @@ export class MonitoredDomainsService {
 
     // Batch insert using UNNEST for PostgreSQL
     const res = await query(
-      `INSERT INTO monitored_domains (domain, file_type, next_scan_at)
-       SELECT unnest($1::text[]), $2, NOW() + ((20160 * random()) || ' minutes')::interval
+      `INSERT INTO monitored_domains (domain, file_type, scan_interval_minutes, next_scan_at)
+       SELECT unnest($1::text[]), $2, 20160, NOW() + ((20160 * random()) || ' minutes')::interval
        ON CONFLICT (domain, file_type) DO UPDATE SET is_active = true
        RETURNING domain`,
       [unique, fileType],
