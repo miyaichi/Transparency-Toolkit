@@ -200,13 +200,31 @@ app.openapi(bulkScanRoute, async (c) => {
   const limit = batch_size || 100;
   const delay = delay_ms || 1000;
 
+  // Wall-clock budget for a single call. Node's global fetch (undici) aborts the
+  // client's request if the backend sends no response headers within its default
+  // headersTimeout of 300s — and since this endpoint responds only after the whole
+  // batch finishes, an over-long batch surfaces on the frontend as a spurious
+  // "Internal Proxy Error" even though the work succeeded. Returning partial
+  // progress well before 300s keeps every response inside that window; the caller
+  // loops on `remaining` to pick up the rest.
+  const DEADLINE_MS = 210_000;
+  const startedAt = Date.now();
+
   // Get unscanned domains filtered by file_type at the DB level
   const dueDomains = await service.getDueDomains(limit, fileType);
 
+  let processed = 0;
   let succeeded = 0;
   let failed = 0;
 
   for (const item of dueDomains) {
+    if (Date.now() - startedAt >= DEADLINE_MS) {
+      console.log(
+        `Bulk scan deadline reached after ${processed}/${dueDomains.length} domains; returning partial progress`,
+      );
+      break;
+    }
+    processed++;
     try {
       const result = await scanner.scanAndSave(item.domain, fileType as 'ads.txt' | 'app-ads.txt');
       if (result.status_code === 0 && result.error_message?.includes('ENOTFOUND')) {
@@ -234,7 +252,7 @@ app.openapi(bulkScanRoute, async (c) => {
   const stats = await service.getStats(fileType);
 
   return c.json({
-    processed: dueDomains.length,
+    processed,
     succeeded,
     failed,
     remaining: parseInt(stats.unscanned) || 0,

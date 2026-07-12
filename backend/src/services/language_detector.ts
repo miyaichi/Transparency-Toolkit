@@ -82,7 +82,7 @@ export class LanguageDetector {
 
   private async fetchRootPage(domain: string): Promise<{ html: string; status: number; contentLanguage?: string }> {
     const options = {
-      timeout: 15000,
+      timeout: 8000,
       maxRedirects: 5,
       maxContentLength: 2 * 1024 * 1024,
       responseType: 'text' as const,
@@ -91,6 +91,10 @@ export class LanguageDetector {
       headers: { 'Accept-Language': '*' },
       // Don't burn axios-retry attempts on 4xx; treat them as a definitive answer.
       validateStatus: (s: number) => s >= 200 && s < 400,
+      // Language detection is best-effort and piggybacks on scans; a slow root page
+      // must not stretch the batch. Disable the shared client's retries so a single
+      // detection is bounded to ~timeout, not timeout x (1 + retries).
+      'axios-retry': { retries: 0 },
     };
 
     try {

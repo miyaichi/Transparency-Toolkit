@@ -91,6 +91,17 @@ export async function proxyPublicApiRequest(request: Request, targetPath: string
       return NextResponse.json({ error: "Backend unreachable" }, { status: 503 })
     }
 
+    // undici (global fetch) aborts with these when the backend is too slow to send
+    // response headers/body within its own default timeouts (headersTimeout /
+    // bodyTimeout, 300s). Surface it honestly as a timeout, not a generic 500.
+    if (
+      causeCode === "UND_ERR_HEADERS_TIMEOUT" ||
+      causeCode === "UND_ERR_BODY_TIMEOUT" ||
+      error.message?.includes("terminated")
+    ) {
+      return NextResponse.json({ error: "Upstream timeout" }, { status: 504 })
+    }
+
     return NextResponse.json({ error: "Internal Proxy Error" }, { status: 500 })
   }
 }
@@ -195,6 +206,17 @@ export async function proxyRequest(request: Request, targetPath: string, options
 
     if (causeCode === "ETIMEDOUT" || causeCode === "ENOTFOUND") {
       return NextResponse.json({ error: "Backend unreachable" }, { status: 503 })
+    }
+
+    // undici (global fetch) aborts with these when the backend is too slow to send
+    // response headers/body within its own default timeouts (headersTimeout /
+    // bodyTimeout, 300s). Surface it honestly as a timeout, not a generic 500.
+    if (
+      causeCode === "UND_ERR_HEADERS_TIMEOUT" ||
+      causeCode === "UND_ERR_BODY_TIMEOUT" ||
+      error.message?.includes("terminated")
+    ) {
+      return NextResponse.json({ error: "Upstream timeout" }, { status: 504 })
     }
 
     return NextResponse.json({ error: "Internal Proxy Error" }, { status: 500 })
