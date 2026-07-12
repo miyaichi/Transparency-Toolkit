@@ -3,12 +3,14 @@ import { query } from '../db/client';
 import { StreamImporter } from '../ingest/stream_importer';
 import { parseAdsTxtContent } from '../lib/adstxt/validator';
 import { AdsTxtScanner } from '../services/adstxt_scanner';
+import { LanguageDetector } from '../services/language_detector';
 import { MonitoredDomainsService } from '../services/monitored_domains';
 
 import { runCleanup } from './cleanup';
 
 const monitoredDomainsService = new MonitoredDomainsService();
 const scanner = new AdsTxtScanner();
+const languageDetector = new LanguageDetector();
 
 // 処理中のロック（簡易版）
 let isJobRunning = false;
@@ -67,7 +69,6 @@ export function setupCronJobs() {
     await runCleanup();
     console.log('Daily cleanup job finished');
   });
-
 }
 
 /**
@@ -98,6 +99,14 @@ export async function processMonitoredDomains() {
         // ads.txt or app-ads.txt
         const result = await scanner.scanAndSave(item.domain, item.file_type);
         console.log(`Scan completed for ${item.domain} (${item.file_type}, ID: ${result.id})`);
+
+        // Piggyback content-language detection on the scan (no-op if a fresh result exists)
+        const lang = await languageDetector.detectIfDue(item.domain);
+        if (lang) {
+          console.log(
+            `Language detected for ${item.domain}: ${lang.content_lang ?? 'unknown'} (${lang.lang_source ?? 'n/a'})`,
+          );
+        }
       }
 
       await monitoredDomainsService.updateLastScanned(item.domain, item.file_type);
@@ -203,5 +212,3 @@ export async function processMissingSellers() {
     await importer.close();
   }
 }
-
-

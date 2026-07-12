@@ -1,10 +1,12 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { AdsTxtScanner } from '../services/adstxt_scanner';
+import { LanguageDetector } from '../services/language_detector';
 import { MonitoredDomainsService } from '../services/monitored_domains';
 
 const app = new OpenAPIHono();
 const service = new MonitoredDomainsService();
 const scanner = new AdsTxtScanner();
+const languageDetector = new LanguageDetector();
 
 // Schemas
 const MonitoredDomainSchema = z.object({
@@ -214,6 +216,9 @@ app.openapi(bulkScanRoute, async (c) => {
       } else {
         await service.updateLastScanned(item.domain, fileType);
         succeeded++;
+
+        // Piggyback content-language detection on the scan (no-op if a fresh result exists)
+        await languageDetector.detectIfDue(item.domain);
       }
     } catch (e: any) {
       console.error(`Bulk scan failed for ${item.domain}: ${e.message}`);
