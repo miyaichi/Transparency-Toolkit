@@ -8,6 +8,7 @@
     "dev": "nodemon --watch src --exec ts-node src/index.ts",
     "build": "tsc",
     "ingest": "ts-node src/ingest/runner.ts",
+    "discovery": "ts-node src/discovery/runner.ts",
     "migrate:04": "ts-node src/scripts/migrate_04_jitter_scheduling.ts",
     "migrate:05": "ts-node src/scripts/migrate_05_opensincera_cache.ts",
     "migrate:06": "ts-node src/scripts/migrate_06_api_keys.ts",

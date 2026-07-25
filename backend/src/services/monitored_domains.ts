@@ -89,6 +89,7 @@ export class MonitoredDomainsService {
   async bulkAddDomains(
     domains: string[],
     fileType: 'ads.txt' | 'app-ads.txt' | 'sellers.json' = 'ads.txt',
+    source = 'organic',
   ): Promise<{ added: number; total: number }> {
     if (domains.length === 0) return { added: 0, total: 0 };
 
@@ -97,11 +98,11 @@ export class MonitoredDomainsService {
 
     // Batch insert using UNNEST for PostgreSQL
     const res = await query(
-      `INSERT INTO monitored_domains (domain, file_type, scan_interval_minutes, next_scan_at)
-       SELECT unnest($1::text[]), $2, 20160, NOW() + ((20160 * random()) || ' minutes')::interval
+      `INSERT INTO monitored_domains (domain, file_type, scan_interval_minutes, next_scan_at, source)
+       SELECT unnest($1::text[]), $2, 20160, NOW() + ((20160 * random()) || ' minutes')::interval, $3
        ON CONFLICT (domain, file_type) DO UPDATE SET is_active = true
        RETURNING domain`,
-      [unique, fileType],
+      [unique, fileType, source],
     );
 
     return { added: res.rows.length, total: unique.length };
