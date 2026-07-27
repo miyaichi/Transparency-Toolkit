@@ -7,6 +7,27 @@ import { mapPool } from './util';
 const REQUEST_TIMEOUT = 12000;
 const FAILED_RETRY_DAYS = 3;
 
+/**
+ * Attempts a candidate gets before it is written off as 'dead'. Measured against the
+ * live queue: of hosts that failed to resolve, 39/40 also failed from a second network,
+ * i.e. they are genuinely gone rather than transiently unreachable.
+ */
+const MAX_RETRIES = 2;
+
+/**
+ * Record a failed attempt. The row is retired to 'dead' on the attempt that exhausts its
+ * budget, rather than lingering as 'failed' until some later run notices — that keeps the
+ * queue honest even if no further batch ever runs.
+ */
+const FAIL_SQL = `
+  UPDATE publisher_discovery
+  SET retry_count = retry_count + 1,
+      status = CASE WHEN retry_count + 1 >= $4 THEN 'dead' ELSE 'failed' END,
+      next_probe_at = CASE WHEN retry_count + 1 >= $4 THEN NULL
+                           ELSE NOW() + ($2 || ' days')::interval END,
+      error_message = $3
+  WHERE domain = $1`;
+
 /** Run a write, retrying a few times on connection-level failures (proxy blips). */
 async function updateWithRetry(sql: string, params: any[], attempts = 4): Promise<void> {
   for (let i = 1; i <= attempts; i++) {
@@ -134,12 +155,24 @@ export async function probePending(
   limit: number,
   concurrency = 20,
 ): Promise<{ probed: number; jpValid: number; failed: number }> {
+  // Retire candidates that have burned through their retry budget before selecting work,
+  // so a batch is never spent re-probing domains that are simply gone. The sellers.json
+  // universe contains a large tail of long-dead publisher domains; without this they
+  // would cycle through every retry window forever.
+  await query(
+    `UPDATE publisher_discovery SET status = 'dead'
+     WHERE status IN ('pending', 'failed') AND retry_count >= $1`,
+    [MAX_RETRIES],
+  );
+
+  // Never-tried candidates first: a fresh domain is far likelier to yield a verdict than
+  // one that already failed, so this keeps each batch's useful-work ratio high.
   const res = await query(
     `SELECT domain, discovered_ssp, seller_id
      FROM publisher_discovery
      WHERE status = 'pending'
         OR (status = 'failed' AND (next_probe_at IS NULL OR next_probe_at <= NOW()))
-     ORDER BY queued_at
+     ORDER BY retry_count, queued_at
      LIMIT $1`,
     [limit],
   );
@@ -161,25 +194,18 @@ export async function probePending(
       try {
         p = await probeOne(c);
       } catch (e: any) {
-        await updateWithRetry(
-          `UPDATE publisher_discovery
-           SET status = 'failed', retry_count = retry_count + 1,
-               next_probe_at = NOW() + ($2 || ' days')::interval, error_message = $3
-           WHERE domain = $1`,
-          [c.domain, FAILED_RETRY_DAYS, String(e?.message || e).slice(0, 500)],
-        );
+        await updateWithRetry(FAIL_SQL, [
+          c.domain,
+          FAILED_RETRY_DAYS,
+          String(e?.message || e).slice(0, 500),
+          MAX_RETRIES,
+        ]);
         failed++;
         return;
       }
 
       if (!p.reached) {
-        await updateWithRetry(
-          `UPDATE publisher_discovery
-           SET status = 'failed', retry_count = retry_count + 1,
-               next_probe_at = NOW() + ($2 || ' days')::interval, error_message = 'unreachable'
-           WHERE domain = $1`,
-          [c.domain, FAILED_RETRY_DAYS],
-        );
+        await updateWithRetry(FAIL_SQL, [c.domain, FAILED_RETRY_DAYS, 'unreachable', MAX_RETRIES]);
         failed++;
         return;
       }

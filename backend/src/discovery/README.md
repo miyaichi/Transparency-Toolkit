@@ -19,6 +19,15 @@ not by TLD. Candidate generation excludes `*.jp`.
 | probe | `prober.ts` | Fetch `ads.txt` (validate the `(ssp, seller_id)` relationship) + fetch homepage → `services/language_detector.ts`. Writes verdict for **every** candidate (JP and non-JP). |
 | enroll | `enroller.ts` | JP + ads.txt-valid → `bulkAddDomains(..., 'discovery')`, throttled by `--max`. Non-JP / invalid probed rows → `rejected`. |
 
+Statuses: `pending` → `probed` → `enrolled` / `rejected`; unreachable candidates go
+`failed` (retried after 3 days) and then `dead` once they exhaust `MAX_RETRIES`. Probing
+takes never-tried candidates first (`ORDER BY retry_count, queued_at`), so a batch is spent
+on fresh domains rather than grinding the dead tail.
+
+The sellers.json universe carries a large tail of long-dead publisher domains — measured on
+the live queue, 39 of 40 hosts that failed to resolve also failed from a second network. The
+retry cap keeps them from cycling through every retry window forever.
+
 Language detection reuses the shared `services/language_detector.ts`
 (`detectLanguageFromHtml`), which weighs actual page script (kana) **above** declared
 metadata. That ordering is essential here: many Japanese publishers on gTLDs ship a
