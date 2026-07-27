@@ -14,7 +14,7 @@ on:
         description: "runner command"
         type: choice
         default: probe
-        options: [refresh, probe, enroll, stats]
+        options: [refresh, probe, enroll, reset-language-rejections, stats]
       extra_args:
         description: "comma-separated args (e.g. --limit,20000,--concurrency,40 or --max,1000,--wave1)"
         default: "--limit,20000,--concurrency,40"

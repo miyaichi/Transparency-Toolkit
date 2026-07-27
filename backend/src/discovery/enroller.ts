@@ -57,3 +57,20 @@ export async function enroll(opts: EnrollOptions): Promise<{ enrolled: number; r
 
   return { enrolled, rejected: rej.rows.length };
 }
+
+/**
+ * Re-queue candidates that were rejected purely on a language verdict while their
+ * ads.txt was valid. Needed after a detector change: those rows carry a verdict from the
+ * old logic, and 'rejected' otherwise permanently suppresses re-probing. Rows rejected
+ * for an invalid ads.txt are left alone — the language call never mattered for them.
+ */
+export async function resetLanguageRejections(): Promise<{ requeued: number }> {
+  const res = await query(
+    `UPDATE publisher_discovery
+     SET status = 'pending', probed_at = NULL, error_message = NULL,
+         is_japanese = NULL, jp_method = NULL, jp_confidence = NULL
+     WHERE status = 'rejected' AND ads_txt_valid = true AND is_japanese = false
+     RETURNING domain`,
+  );
+  return { requeued: res.rows.length };
+}

@@ -6,7 +6,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 import { pool, query } from '../db/client';
 import { generateCandidates } from './candidate_generator';
 import { probePending } from './prober';
-import { enroll } from './enroller';
+import { enroll, resetLanguageRejections } from './enroller';
 
 /**
  * Publisher discovery runner.
@@ -14,6 +14,7 @@ import { enroll } from './enroller';
  *   ts-node src/discovery/runner.ts refresh
  *   ts-node src/discovery/runner.ts probe   [--limit 2000] [--concurrency 20]
  *   ts-node src/discovery/runner.ts enroll  [--max 1000] [--wave1]
+ *   ts-node src/discovery/runner.ts reset-language-rejections
  *   ts-node src/discovery/runner.ts stats
  *
  * Recommended first wave (report-safe, ~10% of current base):
@@ -72,11 +73,16 @@ async function main() {
       console.log(`Enrolled ${r.enrolled} domain(s) into monitored_domains (source=discovery). Rejected ${r.rejected}.`);
       break;
     }
+    case 'reset-language-rejections': {
+      const r = await resetLanguageRejections();
+      console.log(`Re-queued ${r.requeued} candidate(s) rejected under the previous language detector.`);
+      break;
+    }
     case 'stats':
       await printStats();
       break;
     default:
-      console.error('Usage: runner.ts <refresh|probe|enroll|stats> [options]');
+      console.error('Usage: runner.ts <refresh|probe|enroll|reset-language-rejections|stats> [options]');
       process.exitCode = 1;
   }
 }

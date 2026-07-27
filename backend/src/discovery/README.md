@@ -33,6 +33,9 @@ npm run discovery -- refresh
 npm run discovery -- probe  --limit 20000 --concurrency 20
 npm run discovery -- enroll --max 1000 --wave1   # --wave1 = html_lang=ja only
 npm run discovery -- stats
+
+# after a detector change: re-queue rows rejected under the old language logic
+npm run discovery -- reset-language-rejections
 ```
 
 ## Report safety
