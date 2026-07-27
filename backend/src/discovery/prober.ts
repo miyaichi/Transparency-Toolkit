@@ -1,7 +1,7 @@
 import http from '../lib/http';
 import { parseAdsTxtContent, isAdsTxtRecord } from '../lib/adstxt/validator';
 import { query } from '../db/client';
-import { detectJapanese, JpVerdict } from './lang_detector';
+import { detectLanguageFromHtml } from '../services/language_detector';
 import { mapPool } from './util';
 
 const REQUEST_TIMEOUT = 12000;
@@ -83,12 +83,20 @@ function adsTxtDeclares(content: string, domain: string, ssp: string | null, sel
   return false;
 }
 
+interface JpVerdict {
+  isJapanese: boolean;
+  method: string;
+  confidence: number;
+}
+
 interface Probe {
   adsTxtValid: boolean;
   httpStatus: number | null;
   jp: JpVerdict;
   reached: boolean;
 }
+
+const NO_JP: JpVerdict = { isJapanese: false, method: 'none', confidence: 0 };
 
 async function probeOne(c: Candidate): Promise<Probe> {
   // --- ads.txt ---
@@ -99,12 +107,21 @@ async function probeOne(c: Candidate): Promise<Probe> {
     adsTxtValid = adsTxtDeclares(adsRes.data, c.domain, c.discovered_ssp, c.seller_id);
   }
 
-  // --- homepage / JP detection ---
+  // --- homepage / language detection ---
+  // Uses the shared detector, which weighs actual page script (kana) ABOVE declared
+  // metadata. That ordering matters here: many Japanese publishers on gTLDs ship a
+  // template default of lang="en", and trusting the attribute would reject exactly the
+  // population this pipeline exists to find.
   const homeRes = await fetchFirst([`https://${c.domain}`, `http://${c.domain}`, `https://www.${c.domain}`]);
-  const jp =
-    homeRes && homeRes.status >= 200 && homeRes.status < 300 && homeRes.data
-      ? detectJapanese(homeRes.data, homeRes.headers)
-      : { isJapanese: false, method: 'none' as const, confidence: 0, charRatio: 0, kanaRatio: 0 };
+  let jp = NO_JP;
+  if (homeRes && homeRes.status >= 200 && homeRes.status < 300 && homeRes.data) {
+    const signal = detectLanguageFromHtml(homeRes.data, homeRes.headers['content-language']);
+    jp = {
+      isJapanese: signal.content_lang === 'ja',
+      method: signal.lang_source ?? 'none',
+      confidence: signal.lang_confidence ?? 0,
+    };
+  }
 
   return { adsTxtValid, httpStatus, jp, reached: !!(adsRes || homeRes) };
 }
@@ -171,9 +188,9 @@ export async function probePending(
         `UPDATE publisher_discovery
          SET status = 'probed', probed_at = NOW(), error_message = NULL,
              ads_txt_valid = $2, http_status = $3,
-             is_japanese = $4, jp_method = $5, jp_confidence = $6, jp_char_ratio = $7
+             is_japanese = $4, jp_method = $5, jp_confidence = $6
          WHERE domain = $1`,
-        [c.domain, p.adsTxtValid, p.httpStatus, p.jp.isJapanese, p.jp.method, p.jp.confidence, p.jp.charRatio],
+        [c.domain, p.adsTxtValid, p.httpStatus, p.jp.isJapanese, p.jp.method, p.jp.confidence],
       );
       probed++;
       if (p.jp.isJapanese && p.adsTxtValid) jpValid++;

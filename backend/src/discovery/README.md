@@ -16,12 +16,15 @@ not by TLD. Candidate generation excludes `*.jp`.
 | Stage | File | What it does |
 |---|---|---|
 | refresh | `candidate_generator.ts` | `sellers_catalog` − `monitored_domains` − queued → `publisher_discovery` (pending). Domains normalized to registrable root via `psl`. |
-| probe | `prober.ts` | Fetch `ads.txt` (validate the `(ssp, seller_id)` relationship) + fetch homepage → `lang_detector.ts`. Writes verdict for **every** candidate (JP and non-JP). |
+| probe | `prober.ts` | Fetch `ads.txt` (validate the `(ssp, seller_id)` relationship) + fetch homepage → `services/language_detector.ts`. Writes verdict for **every** candidate (JP and non-JP). |
 | enroll | `enroller.ts` | JP + ads.txt-valid → `bulkAddDomains(..., 'discovery')`, throttled by `--max`. Non-JP / invalid probed rows → `rejected`. |
 
-`lang_detector.ts` is a dependency-free port of the Python tool's multi-dimensional JP
-detection (`<html lang>`, `og:locale`, `Content-Language`, kana density). Kana is scored
-separately from kanji so Chinese pages are not misclassified as Japanese.
+Language detection reuses the shared `services/language_detector.ts`
+(`detectLanguageFromHtml`), which weighs actual page script (kana) **above** declared
+metadata. That ordering is essential here: many Japanese publishers on gTLDs ship a
+template default of `lang="en"`, and trusting the attribute would reject exactly the
+population this pipeline exists to find. Kana is scored separately from kanji, so Chinese
+pages are not misclassified as Japanese.
 
 ## Usage
 
@@ -30,6 +33,9 @@ npm run discovery -- refresh
 npm run discovery -- probe  --limit 20000 --concurrency 20
 npm run discovery -- enroll --max 1000 --wave1   # --wave1 = html_lang=ja only
 npm run discovery -- stats
+
+# after a detector change: re-queue rows rejected under the old language logic
+npm run discovery -- reset-language-rejections
 ```
 
 ## Report safety
