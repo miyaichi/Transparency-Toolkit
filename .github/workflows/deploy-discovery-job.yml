@@ -1,0 +1,90 @@
+name: Deploy Discovery Cloud Run Job
+
+# Runs the publisher-discovery pipeline in GCP as a Cloud Run Job, where it belongs:
+#   - Cloud SQL over a Unix socket (no auth-proxy token to expire)
+#   - GCP's resolver (no local DNS rate-limiting on a 300k-domain crawl)
+#
+# Manually dispatched. Deploys/updates the `ttkit-discovery` job with the chosen
+# command + args, and optionally executes it once immediately.
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "runner command"
+        type: choice
+        default: probe
+        options: [refresh, probe, enroll, stats]
+      extra_args:
+        description: "comma-separated args (e.g. --limit,20000,--concurrency,40 or --max,1000,--wave1)"
+        default: "--limit,20000,--concurrency,40"
+      execute_now:
+        description: "execute the job once after deploying"
+        type: boolean
+        default: true
+
+env:
+  PROJECT_ID: apti-ttkit
+  REGION: asia-northeast1
+  REPO_NAME: ttkit-repo
+  JOB_NAME: ttkit-discovery
+  DB_INSTANCE: ttkit-db-instance
+
+jobs:
+  deploy-job:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build and Push Backend image
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
+          docker build --platform linux/amd64 -t "$IMAGE" ./backend
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy Cloud Run Job
+        run: |
+          DB_CONNECTION_NAME=$(gcloud sql instances describe ${{ env.DB_INSTANCE }} --project ${{ env.PROJECT_ID }} --format="value(connectionName)")
+
+          # Build the args list: dist/discovery/runner.js,<command>,<extra_args>
+          ARGS="dist/discovery/runner.js,${{ github.event.inputs.command }}"
+          if [ -n "${{ github.event.inputs.extra_args }}" ]; then
+            ARGS="$ARGS,${{ github.event.inputs.extra_args }}"
+          fi
+
+          gcloud run jobs deploy ${{ env.JOB_NAME }} \
+            --image "$IMAGE" \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --set-cloudsql-instances "$DB_CONNECTION_NAME" \
+            --command node \
+            --args "$ARGS" \
+            --set-env-vars DATABASE_URL="postgres://postgres:${{ secrets.DB_PASSWORD }}@/${{ secrets.DB_NAME }}?host=/cloudsql/${DB_CONNECTION_NAME}",UV_THREADPOOL_SIZE=64 \
+            --task-timeout=3600 \
+            --max-retries=1 \
+            --memory=1Gi \
+            --cpu=1
+
+      - name: Execute once
+        if: ${{ github.event.inputs.execute_now == 'true' }}
+        run: |
+          gcloud run jobs execute ${{ env.JOB_NAME }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --wait
