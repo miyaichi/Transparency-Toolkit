@@ -83,14 +83,19 @@ gcloud run jobs execute ttkit-discovery --region asia-northeast1 --project apti-
 
 ### Recurring schedule (Cloud Scheduler → Job)
 
-```bash
-# probe a chunk hourly until the queue drains (job's baked args = probe)
-gcloud scheduler jobs create http ttkit-discovery-probe \
-  --location=asia-northeast1 --schedule="0 * * * *" \
-  --uri="https://asia-northeast1-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/apti-ttkit/jobs/ttkit-discovery:run" \
-  --http-method=POST \
-  --oauth-service-account-email=<run-invoker-sa>@apti-ttkit.iam.gserviceaccount.com
-```
+Run the **Schedule Discovery Probe** GitHub Action; it creates/updates the
+`ttkit-discovery-probe-hourly` Cloud Scheduler job (inputs: schedule, limit, concurrency).
 
-Keep `enroll` on a slower cadence (e.g. daily, `--max` capped) so the monthly-report base
-grows smoothly rather than in one step.
+The schedule pins the runner arguments through Cloud Run `containerOverrides` instead of
+inheriting the ones baked into the job. This is deliberate: an ad-hoc dispatch of *Deploy
+Discovery Cloud Run Job* rewrites the baked arguments, so a schedule that inherited them
+could silently begin running `enroll` — which changes the monthly-report base — instead of
+`probe`.
+
+Sizing: 20,000 domains at concurrency 40 takes ~36 min, so an hourly schedule should stay
+near 10,000 per run. Runs are **not** mutually exclusive — the probe selects candidates
+without claiming them, so two overlapping runs would pick the same rows. Keep each run
+comfortably shorter than the interval.
+
+Keep `enroll` manual, or on a much slower cadence with `--max` capped, so the
+monthly-report base grows smoothly rather than in one step.
