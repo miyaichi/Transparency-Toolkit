@@ -1,0 +1,50 @@
+name: Discovery Status
+
+# Read-only report on the discovery pipeline: whether the hourly schedule is firing,
+# whether its Cloud Run executions succeed, and what the recent probe runs found.
+# Exists because the local Cloud SQL auth proxy expires hourly, so checking from a
+# workstation is unreliable; this reads everything from GCP itself.
+
+on:
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: apti-ttkit
+  REGION: asia-northeast1
+  JOB_NAME: ttkit-discovery
+  SCHEDULER_NAME: ttkit-discovery-probe-hourly
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Schedule state and last attempt
+        run: |
+          gcloud scheduler jobs describe ${{ env.SCHEDULER_NAME }} \
+            --location ${{ env.REGION }} --project ${{ env.PROJECT_ID }} \
+            --format="yaml(name,schedule,timeZone,state,status,lastAttemptTime,scheduleTime)"
+
+      - name: Recent Cloud Run executions
+        run: |
+          gcloud run jobs executions list --job ${{ env.JOB_NAME }} \
+            --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }} --limit 8
+
+      - name: Recent probe results from job logs
+        run: |
+          gcloud logging read \
+            'resource.type="cloud_run_job" AND resource.labels.job_name="${{ env.JOB_NAME }}"' \
+            --project ${{ env.PROJECT_ID }} --limit 400 --freshness=6h \
+            --format="value(timestamp,textPayload)" \
+            | grep -iE "Probed|Enrolled|Re-queued|Skipped|Container called" \
+            | head -20 || echo "(no matching log lines in the last 6h)"
