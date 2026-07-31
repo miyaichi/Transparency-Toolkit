@@ -1,5 +1,7 @@
 import psl from 'psl';
 
+export { mapPool } from '../lib/concurrency';
+
 const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,}$/;
 
 /**
@@ -15,25 +17,6 @@ export function toRootDomain(input: string): string | null {
   const root = psl.get(raw);
   if (!root) return null;
   return DOMAIN_RE.test(root) ? root : null;
-}
-
-/** Run `worker` over `items` with a bounded number of concurrent executions. */
-export async function mapPool<T, R>(
-  items: T[],
-  concurrency: number,
-  worker: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let cursor = 0;
-  async function run(): Promise<void> {
-    while (cursor < items.length) {
-      const idx = cursor++;
-      results[idx] = await worker(items[idx]);
-    }
-  }
-  const runners = Array.from({ length: Math.min(concurrency, items.length) }, run);
-  await Promise.all(runners);
-  return results;
 }
 
 export function chunk<T>(arr: T[], size: number): T[][] {
