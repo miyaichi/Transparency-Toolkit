@@ -9,7 +9,6 @@ const INSERT_CHUNK = 5000;
  *
  * Filters:
  *   - seller_type PUBLISHER/BOTH (actual publishers, not pure intermediaries)
- *   - NOT `.jp` (handled by a separate crawler)
  *   - not already in monitored_domains (ads.txt)
  *   - not already queued in publisher_discovery
  *
@@ -26,7 +25,6 @@ export async function generateCandidates(): Promise<{ scanned: number; inserted:
      FROM sellers_catalog
      WHERE seller_domain LIKE '%.%'
        AND seller_domain NOT LIKE '% %'
-       AND seller_domain NOT LIKE '%.jp'
        AND seller_type IN ('PUBLISHER', 'BOTH')
      ORDER BY lower(seller_domain)`,
   );
