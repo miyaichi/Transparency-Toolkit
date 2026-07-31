@@ -7,9 +7,17 @@ import { LanguageDetector } from '../services/language_detector';
 import { MonitoredDomainsService } from '../services/monitored_domains';
 
 import { runCleanup } from './cleanup';
+import { mapPool } from '../lib/concurrency';
 
 const monitoredDomainsService = new MonitoredDomainsService();
 const scanner = new AdsTxtScanner();
+
+// Scan throughput. The previous sequential loop managed ~50 domains per run at ~6s each
+// (a 1s politeness sleep plus two HTTP fetches), which could not keep a growing monitored
+// set inside its 14-day cycle. Distinct hosts are fetched concurrently instead; the
+// politeness sleep is dropped because consecutive items are different domains.
+const SCAN_BATCH_SIZE = Number(process.env.SCAN_BATCH_SIZE ?? 200);
+const SCAN_CONCURRENCY = Number(process.env.SCAN_CONCURRENCY ?? 8);
 const languageDetector = new LanguageDetector();
 
 // 処理中のロック（簡易版）
@@ -76,48 +84,65 @@ export function setupCronJobs() {
  */
 export async function processMonitoredDomains() {
   console.log('Checking for monitored domains due for scan...');
-  const dueDomains = await monitoredDomainsService.getDueDomains();
+  const dueDomains = await monitoredDomainsService.getDueDomains(SCAN_BATCH_SIZE);
   console.log(`Found ${dueDomains.length} domains due for ads.txt scan.`);
 
   const importer = new StreamImporter();
 
-  for (const item of dueDomains) {
+  // ads.txt/app-ads.txt fetches are independent hosts, so they run concurrently.
+  // sellers.json stays sequential: those files are frequently hundreds of MB and
+  // streaming several at once would blow up memory.
+  const fileScans = dueDomains.filter(
+    (d): d is typeof d & { file_type: 'ads.txt' | 'app-ads.txt' } => d.file_type !== 'sellers.json',
+  );
+  const sellersScans = dueDomains.filter((d) => d.file_type === 'sellers.json');
+
+  const started = Date.now();
+
+  await mapPool(fileScans, SCAN_CONCURRENCY, async (item) => {
+    try {
+      const result = await scanner.scanAndSave(item.domain, item.file_type);
+      console.log(`Scan completed for ${item.domain} (${item.file_type}, ID: ${result.id})`);
+
+      // Piggyback content-language detection on the scan (no-op if a fresh result exists)
+      const lang = await languageDetector.detectIfDue(item.domain);
+      if (lang) {
+        console.log(
+          `Language detected for ${item.domain}: ${lang.content_lang ?? 'unknown'} (${lang.lang_source ?? 'n/a'})`,
+        );
+      }
+      await monitoredDomainsService.updateLastScanned(item.domain, item.file_type);
+    } catch (e: any) {
+      console.error(`Failed to scan ${item.domain} (${item.file_type}): ${e.message}`);
+      // Still reschedule, so one bad domain cannot block the queue forever.
+      await monitoredDomainsService.updateLastScanned(item.domain, item.file_type);
+    }
+  });
+
+  for (const item of sellersScans) {
     console.log(`Scanning ${item.file_type} for monitored domain: ${item.domain}`);
     try {
-      if (item.file_type === 'sellers.json') {
-        let url = `https://${item.domain}/sellers.json`;
-        if (item.domain in SPECIAL_DOMAINS) {
-          url = SPECIAL_DOMAINS[item.domain];
-        }
-
-        await importer.importSellersJson({ domain: item.domain, url });
-        console.log(`Sellers.json import completed for ${item.domain}`);
-
-        // Wait a bit
-        await new Promise((r) => setTimeout(r, 1000));
-      } else {
-        // ads.txt or app-ads.txt
-        const result = await scanner.scanAndSave(item.domain, item.file_type);
-        console.log(`Scan completed for ${item.domain} (${item.file_type}, ID: ${result.id})`);
-
-        // Piggyback content-language detection on the scan (no-op if a fresh result exists)
-        const lang = await languageDetector.detectIfDue(item.domain);
-        if (lang) {
-          console.log(
-            `Language detected for ${item.domain}: ${lang.content_lang ?? 'unknown'} (${lang.lang_source ?? 'n/a'})`,
-          );
-        }
+      let url = `https://${item.domain}/sellers.json`;
+      if (item.domain in SPECIAL_DOMAINS) {
+        url = SPECIAL_DOMAINS[item.domain];
       }
+
+      await importer.importSellersJson({ domain: item.domain, url });
+      console.log(`Sellers.json import completed for ${item.domain}`);
 
       await monitoredDomainsService.updateLastScanned(item.domain, item.file_type);
 
-      // Wait to be polite
-      if (item.file_type !== 'sellers.json') await new Promise((r) => setTimeout(r, 1000));
+      // Wait a bit
+      await new Promise((r) => setTimeout(r, 1000));
     } catch (e: any) {
       console.error(`Failed to scan ${item.domain} (${item.file_type}): ${e.message}`);
       await monitoredDomainsService.updateLastScanned(item.domain, item.file_type);
     }
   }
+
+  console.log(
+    `Scanned ${fileScans.length} file(s) + ${sellersScans.length} sellers.json in ${Math.round((Date.now() - started) / 1000)}s`,
+  );
 
   // StreamImporter creates a connection pool in its constructor; close it when done.
   await importer.close();
