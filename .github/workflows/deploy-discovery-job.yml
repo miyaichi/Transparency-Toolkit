@@ -78,7 +78,7 @@ jobs:
             --set-env-vars DATABASE_URL="postgres://postgres:${{ secrets.DB_PASSWORD }}@/${{ secrets.DB_NAME }}?host=/cloudsql/${DB_CONNECTION_NAME}",UV_THREADPOOL_SIZE=64 \
             --task-timeout=3600 \
             --max-retries=1 \
-            --memory=1Gi \
+            --memory=2Gi \
             --cpu=1
 
       - name: Execute once

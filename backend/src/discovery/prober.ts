@@ -5,6 +5,8 @@ import { detectLanguageFromHtml } from '../services/language_detector';
 import { mapPool } from './util';
 
 const REQUEST_TIMEOUT = 12000;
+/** Largest response body to buffer per request; see the note in fetchUrl. */
+const MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
 const FAILED_RETRY_DAYS = 3;
 
 /**
@@ -63,6 +65,13 @@ async function fetchUrl(url: string): Promise<FetchResult | null> {
       responseType: 'text',
       maxRedirects: 5,
       validateStatus: () => true,
+      // Cap the body. Nothing this pipeline decides needs more than the head of a
+      // document — the language detector only reads the first 200k chars and ads.txt
+      // validation only needs the records — but without a cap, `concurrency` large
+      // responses are held in memory at once, which is what exhausted the heap when
+      // .jp portals entered the queue.
+      maxContentLength: MAX_RESPONSE_BYTES,
+      maxBodyLength: MAX_RESPONSE_BYTES,
       // Discovery probes millions of mostly-junk domains; the shared client's 3 retries
       // would dominate runtime on dead hosts. One retry is enough for transient blips.
       'axios-retry': { retries: 1 },
