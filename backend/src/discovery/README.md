@@ -5,11 +5,20 @@ publisher domains referenced in `sellers_catalog` that we do **not** yet crawl, 
 their `ads.txt` and detects Japanese content, and enrolls qualifying domains into
 `monitored_domains` (tagged `source='discovery'`).
 
-## Why gTLD-focused
+## What counts as Japanese inventory
 
-`.jp` ccTLD publishers are already covered by a separate crawler, so this pipeline targets
-**gTLD (mainly `.com`) Japanese publishers**, which are only identifiable by page content —
-not by TLD. Candidate generation excludes `*.jp`.
+Two different signals, because the market is what matters — not the page language:
+
+- **`.jp` registration is sufficient on its own.** `japantimes.co.jp` publishes in English
+  for residents of Japan and carries Japanese advertisers' spend; gating it on kana would
+  drop it. Language is still detected and stored, just not used as a gate.
+- **Every other TLD is decided by page content**, since the TLD carries no signal. This is
+  where the bulk of the work is: Japanese publishers on `.com` are invisible to any
+  TLD-based rule.
+
+This pipeline originally excluded `.jp` because a separate crawler covered it. That
+separation is no longer needed — one pipeline now handles both, so discovery logic is not
+maintained twice and the `source` tag stops being a proxy for "which crawler found it".
 
 ## Pipeline
 
@@ -17,7 +26,7 @@ not by TLD. Candidate generation excludes `*.jp`.
 |---|---|---|
 | refresh | `candidate_generator.ts` | `sellers_catalog` − `monitored_domains` − queued → `publisher_discovery` (pending). Domains normalized to registrable root via `psl`. |
 | probe | `prober.ts` | Fetch `ads.txt` (validate the `(ssp, seller_id)` relationship) + fetch homepage → `services/language_detector.ts`. Writes verdict for **every** candidate (JP and non-JP). |
-| enroll | `enroller.ts` | JP + ads.txt-valid → `bulkAddDomains(..., 'discovery')`, throttled by `--max`. Non-JP / invalid probed rows → `rejected`. |
+| enroll | `enroller.ts` | Japanese inventory (`.jp` **or** JP content) + ads.txt-valid → `bulkAddDomains(..., 'discovery')`, throttled by `--max`. Everything else probed → `rejected`. |
 
 Statuses: `pending` → `probed` → `enrolled` / `rejected`; unreachable candidates go
 `failed` (retried after 3 days) and then `dead` once they exhaust `MAX_RETRIES`. Probing

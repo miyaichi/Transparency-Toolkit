@@ -18,19 +18,32 @@ export interface EnrollOptions {
 const HIGH_CONFIDENCE = 0.9;
 
 /**
- * Enroll probed, Japanese, ads.txt-valid candidates into monitored_domains (tagged
+ * Qualifies as Japanese inventory.
+ *
+ * A `.jp` registration is sufficient on its own — the market, not the page language, is
+ * what makes inventory Japanese. japantimes.co.jp publishes in English for residents of
+ * Japan and carries Japanese advertisers' spend; gating it on kana would drop it. For
+ * every other TLD there is no such signal, so content detection decides.
+ */
+const IS_JP_INVENTORY = `(domain LIKE '%.jp' OR is_japanese = true)`;
+
+/**
+ * Enroll probed, ads.txt-valid Japanese inventory into monitored_domains (tagged
  * source='discovery'), then mark the rest of the probed batch as rejected so they are
  * not re-probed.
  */
 export async function enroll(opts: EnrollOptions): Promise<{ enrolled: number; rejected: number }> {
-  const confFilter = opts.highConfidenceOnly ? `AND jp_confidence >= ${HIGH_CONFIDENCE}` : '';
+  // `.jp` counts as hard evidence too, so it is never held back by the conservative wave.
+  const confFilter = opts.highConfidenceOnly
+    ? `AND (jp_confidence >= ${HIGH_CONFIDENCE} OR domain LIKE '%.jp')`
+    : '';
 
   const res = await query(
     `SELECT domain
      FROM publisher_discovery
-     WHERE status = 'probed' AND is_japanese = true AND ads_txt_valid = true
+     WHERE status = 'probed' AND ads_txt_valid = true AND ${IS_JP_INVENTORY}
      ${confFilter}
-     ORDER BY jp_confidence DESC
+     ORDER BY jp_confidence DESC NULLS LAST
      LIMIT $1`,
     [opts.max],
   );
@@ -47,11 +60,13 @@ export async function enroll(opts: EnrollOptions): Promise<{ enrolled: number; r
     enrolled = upd.rows.length;
   }
 
-  // Retire probed candidates that will never be enrolled (not JP, or ads.txt invalid)
-  // so future probe passes skip them.
+  // Retire probed candidates that will never be enrolled (not Japanese inventory, or
+  // ads.txt invalid) so future probe passes skip them. This must use the same predicate
+  // as the selection above, or an English-language `.jp` site would be rejected here
+  // instead of waiting for the next batch.
   const rej = await query(
     `UPDATE publisher_discovery SET status = 'rejected'
-     WHERE status = 'probed' AND (is_japanese = false OR ads_txt_valid = false)
+     WHERE status = 'probed' AND (NOT ${IS_JP_INVENTORY} OR ads_txt_valid = false)
      RETURNING domain`,
   );
 

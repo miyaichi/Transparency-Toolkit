@@ -7,13 +7,11 @@ const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61
 /**
  * Normalize a raw seller_domain to its registrable root (e.g. www.sub.example.com ->
  * example.com), matching how ssp-inventory treats domains. Returns null for invalid or
- * non-registrable inputs. `.jp` is intentionally excluded upstream, but we also drop it
- * here as a safety net.
+ * non-registrable inputs.
  */
 export function toRootDomain(input: string): string | null {
   const raw = input.trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].replace(/:\d+$/, '');
   if (!raw || !raw.includes('.')) return null;
-  if (raw.endsWith('.jp')) return null;
   const root = psl.get(raw);
   if (!root) return null;
   return DOMAIN_RE.test(root) ? root : null;
