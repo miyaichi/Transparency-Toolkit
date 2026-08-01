@@ -26,7 +26,16 @@ maintained twice and the `source` tag stops being a proxy for "which crawler fou
 |---|---|---|
 | refresh | `candidate_generator.ts` | `sellers_catalog` − `monitored_domains` − queued → `publisher_discovery` (pending). Domains normalized to registrable root via `psl`. |
 | probe | `prober.ts` | Fetch `ads.txt` (validate the `(ssp, seller_id)` relationship) + fetch homepage → `services/language_detector.ts`. Writes verdict for **every** candidate (JP and non-JP). |
-| enroll | `enroller.ts` | Japanese inventory (`.jp` **or** JP content) + ads.txt-valid → `bulkAddDomains(..., 'discovery')`, throttled by `--max`. Everything else probed → `rejected`. |
+| enroll | `enroller.ts` | Japanese inventory (`.jp` **or** JP content) that serves an ads.txt (`ads_txt_records >= 1`) → `bulkAddDomains(..., 'discovery')`, throttled by `--max`. Everything else probed → `rejected`. |
+
+Enrollment deliberately does **not** require `ads_txt_valid` — that the ads.txt declares
+the one `(SSP, seller_id)` pair the candidate was generated from. Measured on the live
+queue, that gate was the dominant constraint: of 765 `.jp` candidates serving a real
+ads.txt, only 161 (21%) declared the SSP we happened to check, because Japanese publishers
+are typically listed by domestic SSPs whose sellers.json entries go stale. The pipeline
+exists to widen ads.txt crawl coverage, so publishing an ads.txt is the criterion that
+matters; whether a given seller relationship is still live is visible from the crawled
+file. `ads_txt_valid` is still recorded as a signal.
 
 Statuses: `pending` → `probed` → `enrolled` / `rejected`; unreachable candidates go
 `failed` (retried after 3 days) and then `dead` once they exhaust `MAX_RETRIES`. Probing

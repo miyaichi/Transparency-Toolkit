@@ -6,7 +6,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 import { pool, query } from '../db/client';
 import { generateCandidates } from './candidate_generator';
 import { probePending } from './prober';
-import { enroll, resetLanguageRejections } from './enroller';
+import { enroll, resetLanguageRejections, requeueAdsTxtHolders } from './enroller';
 
 /**
  * Publisher discovery runner.
@@ -78,11 +78,16 @@ async function main() {
       console.log(`Re-queued ${r.requeued} candidate(s) rejected under the previous language detector.`);
       break;
     }
+    case 'requeue-adstxt-holders': {
+      const r = await requeueAdsTxtHolders();
+      console.log(`Re-queued ${r.requeued} candidate(s) that serve an ads.txt but failed the old SSP-match gate.`);
+      break;
+    }
     case 'stats':
       await printStats();
       break;
     default:
-      console.error('Usage: runner.ts <refresh|probe|enroll|reset-language-rejections|stats> [options]');
+      console.error('Usage: runner.ts <refresh|probe|enroll|reset-language-rejections|requeue-adstxt-holders|stats> [options]');
       process.exitCode = 1;
   }
 }
