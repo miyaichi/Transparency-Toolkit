@@ -99,18 +99,33 @@ async function fetchFirst(urls: string[]): Promise<FetchResult | null> {
   return last;
 }
 
-/** Does the ads.txt content declare the (ssp, seller_id) relationship? */
-function adsTxtDeclares(content: string, domain: string, ssp: string | null, sellerId: string | null): boolean {
-  if (!ssp || !sellerId) return false;
+/**
+ * Parse an ads.txt once and report both how many records it publishes and whether it
+ * declares the (ssp, seller_id) pair this candidate was generated from.
+ *
+ * The record count is what gates enrollment; `declares` is kept as a signal because a
+ * candidate is generated from a single arbitrary pair, so a mismatch usually means the
+ * SSP's sellers.json is stale rather than that the domain is not a publisher.
+ */
+function inspectAdsTxt(
+  content: string,
+  domain: string,
+  ssp: string | null,
+  sellerId: string | null,
+): { records: number; declares: boolean } {
   const entries = parseAdsTxtContent(content, domain);
-  const wantSsp = ssp.trim().toLowerCase();
-  const wantId = sellerId.trim();
+  const wantSsp = ssp?.trim().toLowerCase();
+  const wantId = sellerId?.trim();
+  let records = 0;
+  let declares = false;
   for (const entry of entries) {
-    if (isAdsTxtRecord(entry) && entry.domain?.trim().toLowerCase() === wantSsp && entry.account_id?.trim() === wantId) {
-      return true;
+    if (!isAdsTxtRecord(entry)) continue;
+    records++;
+    if (wantSsp && wantId && entry.domain?.trim().toLowerCase() === wantSsp && entry.account_id?.trim() === wantId) {
+      declares = true;
     }
   }
-  return false;
+  return { records, declares };
 }
 
 interface JpVerdict {
@@ -121,6 +136,7 @@ interface JpVerdict {
 
 interface Probe {
   adsTxtValid: boolean;
+  adsTxtRecords: number | null;
   httpStatus: number | null;
   jp: JpVerdict;
   reached: boolean;
@@ -132,9 +148,12 @@ async function probeOne(c: Candidate): Promise<Probe> {
   // --- ads.txt ---
   const adsRes = await fetchFirst([`https://${c.domain}/ads.txt`, `http://${c.domain}/ads.txt`]);
   let adsTxtValid = false;
+  let adsTxtRecords: number | null = null;
   const httpStatus = adsRes?.status ?? null;
   if (adsRes && adsRes.status >= 200 && adsRes.status < 300 && adsRes.data && !adsRes.data.trimStart().startsWith('<')) {
-    adsTxtValid = adsTxtDeclares(adsRes.data, c.domain, c.discovered_ssp, c.seller_id);
+    const seen = inspectAdsTxt(adsRes.data, c.domain, c.discovered_ssp, c.seller_id);
+    adsTxtRecords = seen.records;
+    adsTxtValid = seen.declares;
   }
 
   // --- homepage / language detection ---
@@ -153,7 +172,7 @@ async function probeOne(c: Candidate): Promise<Probe> {
     };
   }
 
-  return { adsTxtValid, httpStatus, jp, reached: !!(adsRes || homeRes) };
+  return { adsTxtValid, adsTxtRecords, httpStatus, jp, reached: !!(adsRes || homeRes) };
 }
 
 /**
@@ -223,12 +242,12 @@ export async function probePending(
         `UPDATE publisher_discovery
          SET status = 'probed', probed_at = NOW(), error_message = NULL,
              ads_txt_valid = $2, http_status = $3,
-             is_japanese = $4, jp_method = $5, jp_confidence = $6
+             is_japanese = $4, jp_method = $5, jp_confidence = $6, ads_txt_records = $7
          WHERE domain = $1`,
-        [c.domain, p.adsTxtValid, p.httpStatus, p.jp.isJapanese, p.jp.method, p.jp.confidence],
+        [c.domain, p.adsTxtValid, p.httpStatus, p.jp.isJapanese, p.jp.method, p.jp.confidence, p.adsTxtRecords],
       );
       probed++;
-      if (p.jp.isJapanese && p.adsTxtValid) jpValid++;
+      if ((p.jp.isJapanese || c.domain.endsWith('.jp')) && (p.adsTxtRecords ?? 0) > 0) jpValid++;
     } catch {
       // DB write still failing after retries — leave the row pending and move on.
       skipped++;
