@@ -12,6 +12,5 @@ export const getGeminiModel = () => {
     genAI = new GoogleGenerativeAI(API_KEY);
   }
 
-  // TODO: Switch to the stable release once gemini-3-flash graduates from preview.
-  return genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+  return genAI.getGenerativeModel({ model: 'gemini-3.7-flash' });
 };
