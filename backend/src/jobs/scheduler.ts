@@ -184,6 +184,9 @@ export async function processMissingSellers() {
   //    "Due" means: never fetched, OR next_fetch_at has passed (jitter-based),
   //    OR next_fetch_at is NULL with fetched_at older than 6h (pre-migration rows).
   const MAX_PROCESS_LIMIT = 50;
+  // Give up on a host after this many consecutive failures. A successful fetch resets
+  // the count, so a host that comes back online is picked up again normally.
+  const MAX_SELLERS_FETCH_FAILURES = 5;
 
   const dueDomainRes = await query(
     `WITH latest_fetches AS (
@@ -194,16 +197,43 @@ export async function processMissingSellers() {
        FROM raw_sellers_files
        WHERE domain = ANY($1::text[])
        ORDER BY domain, fetched_at DESC
+     ),
+     -- Consecutive failures since the last successful fetch, per domain.
+     fail_counts AS (
+       SELECT domain, count(*) FILTER (
+                WHERE http_status IS DISTINCT FROM 200
+                  AND fetched_at > COALESCE(last_ok, '-infinity'::timestamptz)
+              ) AS failures
+       FROM (
+         SELECT domain, http_status, fetched_at,
+                max(fetched_at) FILTER (WHERE http_status = 200)
+                  OVER (PARTITION BY domain) AS last_ok
+         FROM raw_sellers_files
+         WHERE domain = ANY($1::text[])
+       ) t
+       GROUP BY domain
      )
+     -- Never-fetched domains first, then least-recently-attempted.
+     --
+     -- Without an ORDER BY this query kept returning the same head of the list, and
+     -- domains that fail fast become due again immediately, so a handful of permanently
+     -- broken hosts monopolised every batch: sonobi.com had been attempted 78 times and
+     -- publishers.logicad.jp 75, while only 736 of 16,374 supply domains had ever been
+     -- tried once. Ordering by attempt count drains the backlog instead.
      SELECT candidate.domain
      FROM unnest($1::text[]) AS candidate(domain)
      LEFT JOIN latest_fetches lf ON lf.domain = candidate.domain
+     LEFT JOIN fail_counts fc ON fc.domain = candidate.domain
      WHERE
-       lf.domain IS NULL
-       OR lf.next_fetch_at <= NOW()
-       OR (lf.next_fetch_at IS NULL AND lf.fetched_at < NOW() - INTERVAL '6 hours')
+       (lf.domain IS NULL
+        OR lf.next_fetch_at <= NOW()
+        OR (lf.next_fetch_at IS NULL AND lf.fetched_at < NOW() - INTERVAL '6 hours'))
+       -- Stop hammering hosts that have refused us many times over. 200s reset the
+       -- count, so a host that starts working again is picked up normally.
+       AND COALESCE(fc.failures, 0) < $3
+     ORDER BY lf.fetched_at ASC NULLS FIRST
      LIMIT $2`,
-    [Array.from(supplyDomains), MAX_PROCESS_LIMIT],
+    [Array.from(supplyDomains), MAX_PROCESS_LIMIT, MAX_SELLERS_FETCH_FAILURES],
   );
 
   const domainsDue: string[] = dueDomainRes.rows.map((r: { domain: string }) => r.domain);
