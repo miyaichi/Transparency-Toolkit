@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { runCleanup } from '../jobs/cleanup';
 import { runScheduledJobs } from '../jobs/scheduler';
 
 const app = new OpenAPIHono();
@@ -59,6 +60,32 @@ app.openapi(scanRoute, async (c) => {
   return c.json({ success: true, message: 'Jobs completed' });
 });
 
+// Cleanup is triggered over HTTP for the same reason as the scan job: on Cloud
+// Run the in-process timer that used to run it fires outside a request, where
+// CPU is throttled, so its queries time out. Point a Cloud Scheduler job at this
+// on the schedule the timer used (0 3 * * *).
+const cleanupRoute = createRoute({
+  method: 'post',
+  path: '/cleanup',
+  responses: {
+    200: {
+      description: 'Ran data retention cleanup',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean(),
+            message: z.string(),
+          }),
+        },
+      },
+    },
+  },
+});
 
+app.openapi(cleanupRoute, async (c) => {
+  await runCleanup();
+
+  return c.json({ success: true, message: 'Cleanup completed' });
+});
 
 export default app;
