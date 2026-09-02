@@ -17,6 +17,36 @@ export interface ScanResult {
   file_type?: 'ads.txt' | 'app-ads.txt';
 }
 
+// A hostname: labels of alphanumerics and hyphens, at least one dot, no leading
+// or trailing hyphen or dot.
+const HOSTNAME_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+
+/**
+ * Normalize an exchange domain from an ads.txt record, or reject it.
+ *
+ * Real ads.txt files are full of junk that still parses as a record: a UTF-8 BOM
+ * glued to the first line's domain, stray quotes from copy-paste, HTML and JSON
+ * fragments from broken templates, wrapped `<http://...>` autolinks. Left alone,
+ * these reach the sellers.json sync as fetch targets and it burns entire runs on
+ * DNS lookups for hosts like "39\tappnexus.com" that can never resolve — three
+ * retries each, thousands of times over.
+ *
+ * Returns null for anything that is not a plain hostname.
+ */
+export function normalizeSupplyDomain(raw: string): string | null {
+  const cleaned = raw
+    .replace(/^\uFEFF+/, '') // BOM, repeated when files are concatenated
+    .trim()
+    .toLowerCase()
+    .replace(/^[<"'?]+/, '')
+    .replace(/[>"'.,;]+$/, '');
+
+  if (!HOSTNAME_RE.test(cleaned)) return null;
+  // Hostname labels cap at 63 characters and the whole name at 253.
+  if (cleaned.length > 253) return null;
+  return cleaned;
+}
+
 export class AdsTxtScanner {
   /**
    * Helper to fetch content (HTTPS fallback to HTTP)
@@ -195,8 +225,8 @@ export class AdsTxtScanner {
         ...new Set(
           parsed
             .filter((r): r is typeof r & { domain: string } => 'domain' in r && typeof r.domain === 'string')
-            .map((r) => r.domain.toLowerCase().trim())
-            .filter((d) => d.includes('.') && !d.includes(' ')),
+            .map((r) => normalizeSupplyDomain(r.domain))
+            .filter((d): d is string => d !== null),
         ),
       ];
 
