@@ -1,7 +1,6 @@
 import cron from 'node-cron';
 import { query } from '../db/client';
 import { StreamImporter } from '../ingest/stream_importer';
-import { parseAdsTxtContent } from '../lib/adstxt/validator';
 import { AdsTxtScanner } from '../services/adstxt_scanner';
 import { LanguageDetector } from '../services/language_detector';
 import { MonitoredDomainsService } from '../services/monitored_domains';
@@ -165,33 +164,26 @@ export async function processMonitoredDomains() {
  * Ads.txtの履歴から、まだ取り込んでいないSellers.jsonドメインを探して取り込む
  */
 export async function processMissingSellers() {
-  // 1. ads.txtの履歴からユニークなドメインリスト（Relationship=DIRECT/RESELLER の system domain）を抽出
-  //    本来はバリデーション済みの結果を使うべきだが、ここでは簡易的に ads_txt_scans の最新コンテンツをパースする
+  // 1. Supply domains (google.com, rubiconproject.com, ...) come from
+  //    supply_domain_refs, which AdsTxtScanner maintains as each file is scanned.
+  //
+  //    This used to select the latest content for EVERY scanned domain and parse
+  //    it here. At 26,738 domains that meant pulling and parsing 291 MB every 15
+  //    minutes, which OOMed the container and left sellers.json fetching dead for
+  //    over a week in August 2026. The set is now read as short strings and the
+  //    cost no longer grows with the size of the stored corpus.
+  const supplyRes = await query(`SELECT DISTINCT supply_domain AS domain FROM supply_domain_refs`);
+  const supplyDomains = new Set<string>(supplyRes.rows.map((r: { domain: string }) => r.domain));
 
-  // 最近スキャンされたドメインを取得 (直近1時間とかにするのが良いが、まずは全件から最新1件ずつ)
-  const scansRes = await query(`
-        SELECT DISTINCT ON (domain) domain, content 
-        FROM ads_txt_scans 
-        WHERE content IS NOT NULL AND content != ''
-        ORDER BY domain, scanned_at DESC
-    `);
+  console.log(`Found ${supplyDomains.size} unique supply domains from supply_domain_refs`);
 
-  // 抽出された供給元ドメイン (google.com, rubiconproject.com etc...)
-  const supplyDomains = new Set<string>();
-
-  for (const scan of scansRes.rows) {
-    const entries = parseAdsTxtContent(scan.content, scan.domain);
-    for (const entry of entries) {
-      // Ads.txt Recordかつ、domainが有効なもの
-      if ('domain' in entry && entry.domain && entry.domain.includes('.')) {
-        supplyDomains.add(entry.domain.toLowerCase().trim());
-      }
-    }
+  if (supplyDomains.size === 0) {
+    console.warn(
+      'supply_domain_refs is empty; run the backfill (scripts/backfill_supply_domain_refs.ts) ' +
+        'or wait for ads.txt scans to repopulate it.',
+    );
+    return;
   }
-
-  console.log(`Found ${supplyDomains.size} unique supply domains from scanned ads.txt files`);
-
-  if (supplyDomains.size === 0) return;
 
   // 2. Single set-based query to find supply domains due for a (re-)fetch.
   //    "Due" means: never fetched, OR next_fetch_at has passed (jitter-based),
