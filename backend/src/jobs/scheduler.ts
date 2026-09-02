@@ -73,10 +73,32 @@ export async function runScheduledJobs() {
 }
 
 export function setupCronJobs() {
+  // On Cloud Run, work started by an in-process timer runs OUTSIDE a request,
+  // and CPU is throttled to near zero there unless the service is deployed with
+  // --no-cpu-throttling. Cloud Scheduler already calls /api/jobs/scan on the
+  // same */15 schedule, but the in-process cron won the race by a few hundred
+  // milliseconds every time and took the isJobRunning lock, so the request that
+  // *would* have had CPU was rejected in ~2ms and the job always ran starved.
+  //
+  // Starved, establishing a connection through the Cloud SQL auth proxy blew
+  // past connectionTimeoutMillis, which is why every run logged "Connection
+  // terminated due to connection timeout" while CPU, memory and connection
+  // counts all looked idle.
+  //
+  // So on Cloud Run (K_SERVICE is set by the runtime) the timers stay off and
+  // Cloud Scheduler drives everything. Locally there is no scheduler, so they
+  // run as before. ENABLE_INTERNAL_CRON=true forces them on either way.
+  const onCloudRun = Boolean(process.env.K_SERVICE);
+  const forced = process.env.ENABLE_INTERNAL_CRON === 'true';
+
+  if (onCloudRun && !forced) {
+    console.log('Cloud Run detected: in-process cron disabled; Cloud Scheduler drives /api/jobs/*');
+    return;
+  }
+
   console.log('Setting up cron jobs...');
 
   // Production: Every 15 minutes, Development: Every 1 minute
-  // Note: In Cloud Run, this cron might not run reliably. We recommend using Cloud Scheduler triggering /api/jobs/scan
   const schedule = process.env.NODE_ENV === 'production' ? '*/15 * * * *' : '*/1 * * * *';
 
   cron.schedule(schedule, async () => {
