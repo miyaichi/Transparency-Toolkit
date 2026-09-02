@@ -153,6 +153,12 @@ export class AdsTxtScanner {
          RETURNING *`,
         [domain, finalUrl, content, statusCode, recordsCount, validCount, fileType],
       );
+
+      // 4. Record which exchanges this file references, for the sellers.json sync.
+      // Reuses `parsed`, so the sync no longer has to re-read and re-parse every
+      // stored ads.txt to rebuild its candidate set.
+      await this.recordSupplyDomains(domain, fileType, parsed);
+
       return res.rows[0];
     } catch (err: any) {
       // Save failed scan record
@@ -164,6 +170,48 @@ export class AdsTxtScanner {
         [domain, finalUrl || `http://${domain}/${filename}`, '', statusCode, errorMessage || err.message, fileType],
       );
       return failRes.rows[0];
+    }
+  }
+
+  /**
+   * Replace this file's rows in supply_domain_refs with the exchange domains it
+   * currently declares.
+   *
+   * Written as delete-then-insert for the one publisher so the set stays exact:
+   * an exchange the publisher dropped disappears on the next scan instead of
+   * lingering as a phantom sellers.json fetch target forever.
+   *
+   * Failures here must not fail the scan. The scan itself is already committed
+   * and is the valuable artifact; a missed refs update is corrected by the next
+   * scan of the same domain.
+   */
+  private async recordSupplyDomains(
+    domain: string,
+    fileType: 'ads.txt' | 'app-ads.txt',
+    parsed: ReturnType<typeof parseAdsTxtContent>,
+  ): Promise<void> {
+    try {
+      const supplyDomains = [
+        ...new Set(
+          parsed
+            .filter((r): r is typeof r & { domain: string } => 'domain' in r && typeof r.domain === 'string')
+            .map((r) => r.domain.toLowerCase().trim())
+            .filter((d) => d.includes('.') && !d.includes(' ')),
+        ),
+      ];
+
+      await query('DELETE FROM supply_domain_refs WHERE publisher_domain = $1 AND file_type = $2', [domain, fileType]);
+
+      if (supplyDomains.length === 0) return;
+
+      await query(
+        `INSERT INTO supply_domain_refs (publisher_domain, file_type, supply_domain)
+         SELECT $1, $2, unnest($3::text[])
+         ON CONFLICT DO NOTHING`,
+        [domain, fileType, supplyDomains],
+      );
+    } catch (e: any) {
+      console.error(`Failed to record supply domains for ${domain} (${fileType}): ${e.message}`);
     }
   }
 
