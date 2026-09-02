@@ -54,7 +54,7 @@ async function main() {
     await query(
       `INSERT INTO supply_domain_refs (publisher_domain, file_type, supply_domain)
        SELECT s.domain, s.file_type,
-              lower(btrim(split_part(split_part(line, '#', 1), ',', 1)))
+              lower(btrim(split_part(split_part(line, '#', 1), ',', 1), E' \t\r\n\uFEFF\"''<>?'))
        FROM (
          SELECT DISTINCT ON (domain, file_type) domain, file_type, content
          FROM ads_txt_scans
@@ -63,8 +63,11 @@ async function main() {
        ) s,
        LATERAL unnest(string_to_array(s.content, E'\\n')) AS line
        WHERE array_length(string_to_array(split_part(line, '#', 1), ','), 1) >= 3
-         AND position('.' IN lower(btrim(split_part(line, ',', 1)))) > 0
-         AND position(' ' IN lower(btrim(split_part(line, ',', 1)))) = 0
+         -- Mirrors normalizeSupplyDomain(). btrim() alone leaves tabs, BOMs and
+         -- stray quotes attached, and those reached the sync as unresolvable
+         -- fetch targets that burned whole runs on DNS retries.
+         AND lower(btrim(split_part(split_part(line, '#', 1), ',', 1), E' \t\r\n\uFEFF\"''<>?'))
+             ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$'
        ON CONFLICT DO NOTHING`,
       [domains],
     );
