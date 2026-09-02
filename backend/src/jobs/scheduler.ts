@@ -44,16 +44,29 @@ export async function runScheduledJobs() {
   isJobRunning = true;
   console.log('Starting scheduled jobs...');
 
+  // The two phases are isolated. They previously shared one try, so a single
+  // connection-pool timeout while scanning ads.txt aborted the run before
+  // sellers.json was ever synced. That is how sellers.json fetching stayed dead
+  // for over a week in August while ads.txt scanning looked healthy: the logs
+  // showed "Job failed: Connection terminated due to connection timeout" every
+  // 15 minutes, and phase 2 never ran. A failure in one phase must not starve
+  // the other.
   try {
-    // 1. Monitored Ads.txt Scans
-    await processMonitoredDomains();
+    try {
+      // 1. Monitored Ads.txt Scans
+      await processMonitoredDomains();
+    } catch (e) {
+      console.error('Ads.txt scan phase failed:', e);
+    }
 
-    // 2. Sync Sellers.json
-    await processMissingSellers();
+    try {
+      // 2. Sync Sellers.json
+      await processMissingSellers();
+    } catch (e) {
+      console.error('Sellers.json sync phase failed:', e);
+    }
 
     // 3. Supply Chain Discovery removed (2026-04-04)
-  } catch (e) {
-    console.error('Job failed:', e);
   } finally {
     isJobRunning = false;
     console.log('Scheduled jobs finished');
