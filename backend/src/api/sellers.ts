@@ -95,6 +95,33 @@ app.openapi(getFilesRoute, async (c) => {
   return c.json(files as any);
 });
 
+const SyncHealthSchema = z.object({
+  status: z.enum(['ok', 'warning', 'critical']).openapi({ example: 'ok' }),
+  last_success_at: z.string().nullable().openapi({ example: '2026-09-02T06:20:34Z' }),
+  hours_since_success: z.number().nullable().openapi({ example: 1.2 }),
+  successes_24h: z.number().openapi({ example: 137 }),
+  attempts_24h: z.number().openapi({ example: 210 }),
+  catalog_domains: z.number().openapi({ example: 261 }),
+  supply_domains: z.number().openapi({ example: 2248 }),
+  stale_domains: z.number().openapi({ example: 6 }),
+});
+
+const getSyncHealthRoute = createRoute({
+  method: 'get',
+  path: '/sync-health',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: SyncHealthSchema } },
+      description: 'Health of the sellers.json sync job',
+    },
+  },
+});
+
+app.openapi(getSyncHealthRoute, async (c) => {
+  const health = await service.getSyncHealth();
+  return c.json(health as any);
+});
+
 // New Route: Fetch and Import Sellers.json
 const fetchRoute = createRoute({
   method: 'get',

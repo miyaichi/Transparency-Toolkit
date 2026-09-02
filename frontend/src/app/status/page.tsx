@@ -18,6 +18,17 @@ type SellersFile = {
   etag: string | null
 }
 
+type SyncHealth = {
+  status: "ok" | "warning" | "critical"
+  last_success_at: string | null
+  hours_since_success: number | null
+  successes_24h: number
+  attempts_24h: number
+  catalog_domains: number
+  supply_domains: number
+  stale_domains: number
+}
+
 type AdsTxtScan = {
   id: string
   domain: string
@@ -47,6 +58,112 @@ const ClientDate = ({ date, locale = "en" }: { date: string; locale?: string }) 
       <Clock className="mr-1 h-3 w-3" />
       {formatted}
     </div>
+  )
+}
+
+const HEALTH_STYLES = {
+  ok: {
+    card: "border-green-200 bg-green-50/50 dark:bg-green-900/10",
+    badge: "bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-400",
+    Icon: CheckCircle2,
+    iconClass: "text-green-600 dark:text-green-400",
+  },
+  warning: {
+    card: "border-amber-200 bg-amber-50/50 dark:bg-amber-900/10",
+    badge: "bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-400",
+    Icon: AlertTriangle,
+    iconClass: "text-amber-600 dark:text-amber-400",
+  },
+  critical: {
+    card: "border-red-200 bg-red-50/50 dark:bg-red-900/10",
+    badge: "bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-400",
+    Icon: AlertCircle,
+    iconClass: "text-red-600 dark:text-red-400",
+  },
+} as const
+
+function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="space-y-1">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-2xl font-bold tabular-nums">{value}</div>
+      {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
+    </div>
+  )
+}
+
+/**
+ * Surfaces whether the sellers.json sync is actually running.
+ *
+ * The sync stalled on 2026-08-25 and went unnoticed for eight days because
+ * ads.txt scanning stayed healthy and nothing else on this page distinguishes
+ * the two. This card is deliberately at the top, above the tabs, so a stall is
+ * visible without knowing which tab to open.
+ */
+function SyncHealthCard() {
+  const { t, language } = useTranslation()
+  // Refresh while the page is open; a stall that begins mid-session should surface.
+  const { data, isLoading, error } = useSWR<SyncHealth>("/api/proxy/sellers/sync-health", fetcher, {
+    refreshInterval: 60_000,
+  })
+
+  if (isLoading || error || !data) return null
+
+  const style = HEALTH_STYLES[data.status] ?? HEALTH_STYLES.critical
+  const { Icon } = style
+
+  const lastSuccess = data.last_success_at
+    ? new Date(data.last_success_at).toLocaleString(language === "ja" ? "ja-JP" : "en-US")
+    : t("scanStatusPage.syncHealth.never")
+
+  const age =
+    data.hours_since_success === null
+      ? ""
+      : `${data.hours_since_success} ${t("scanStatusPage.syncHealth.hoursAgo")}`
+
+  return (
+    <Card className={style.card}>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+              <Icon className={`h-5 w-5 ${style.iconClass}`} />
+              {t("scanStatusPage.syncHealth.title")}
+            </CardTitle>
+            <CardDescription>{t("scanStatusPage.syncHealth.description")}</CardDescription>
+          </div>
+          <span
+            className={`inline-flex shrink-0 items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${style.badge}`}
+          >
+            {t(`scanStatusPage.syncHealth.status.${data.status}`)}
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <Metric
+            label={t("scanStatusPage.syncHealth.lastSuccess")}
+            value={lastSuccess}
+            hint={age}
+          />
+          <Metric
+            label={t("scanStatusPage.syncHealth.successes24h")}
+            value={data.successes_24h.toLocaleString()}
+            hint={`${data.attempts_24h.toLocaleString()} ${t("scanStatusPage.syncHealth.attempts24h")}`}
+          />
+          <Metric
+            label={t("scanStatusPage.syncHealth.catalogDomains")}
+            value={data.catalog_domains.toLocaleString()}
+            hint={`${data.supply_domains.toLocaleString()} ${t("scanStatusPage.syncHealth.supplyDomains")}`}
+          />
+          <Metric
+            label={t("scanStatusPage.syncHealth.staleDomains")}
+            value={data.stale_domains.toLocaleString()}
+            hint={data.stale_domains > 0 ? t("scanStatusPage.syncHealth.staleHint") : undefined}
+          />
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -242,6 +359,8 @@ export default function StatusPage() {
         <h1 className="text-3xl font-bold tracking-tight">{t("common.scanStatus")}</h1>
         <p className="text-muted-foreground">{t("common.scanStatusDescription")}</p>
       </div>
+
+      <SyncHealthCard />
 
       <Tabs defaultValue="adstxt" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 max-w-[400px] mx-auto">

@@ -148,6 +148,60 @@ export class SellersService {
     return res.rows;
   }
 
+  /**
+   * Health of the sellers.json sync.
+   *
+   * Exists because the sync died on 2026-08-25 and nobody noticed for eight days:
+   * ads.txt scanning kept running, so every visible signal looked fine while the
+   * catalog quietly aged out and domains were dropped by the retention job. The
+   * numbers below are the ones that would have shown it immediately.
+   *
+   * `status`:
+   *   ok       - fetched successfully within the last 24h
+   *   warning  - last success is 1-3 days old (a slow backlog, or a partial stall)
+   *   critical - no success for over 3 days, or none at all
+   */
+  async getSyncHealth() {
+    const res = await query(`
+      SELECT
+        (SELECT MAX(fetched_at) FROM raw_sellers_files WHERE http_status = 200) AS last_success_at,
+        (SELECT COUNT(*) FROM raw_sellers_files
+          WHERE http_status = 200 AND fetched_at > NOW() - INTERVAL '24 hours') AS successes_24h,
+        (SELECT COUNT(*) FROM raw_sellers_files
+          WHERE fetched_at > NOW() - INTERVAL '24 hours') AS attempts_24h,
+        (SELECT COUNT(DISTINCT domain) FROM sellers_catalog) AS catalog_domains,
+        (SELECT COUNT(DISTINCT supply_domain) FROM supply_domain_refs) AS supply_domains,
+        -- Domains kept past the retention window because nothing newer succeeded.
+        -- A rising count means fetching is falling behind.
+        (SELECT COUNT(DISTINCT domain) FROM raw_sellers_files
+          WHERE fetched_at < NOW() - INTERVAL '30 days') AS stale_domains
+    `);
+
+    const row = res.rows[0];
+    const lastSuccessAt: Date | null = row.last_success_at;
+    const ageHours = lastSuccessAt ? (Date.now() - new Date(lastSuccessAt).getTime()) / 3_600_000 : null;
+
+    let status: 'ok' | 'warning' | 'critical';
+    if (ageHours === null || ageHours > 72) {
+      status = 'critical';
+    } else if (ageHours > 24) {
+      status = 'warning';
+    } else {
+      status = 'ok';
+    }
+
+    return {
+      status,
+      last_success_at: lastSuccessAt ? new Date(lastSuccessAt).toISOString() : null,
+      hours_since_success: ageHours === null ? null : Math.round(ageHours * 10) / 10,
+      successes_24h: Number(row.successes_24h),
+      attempts_24h: Number(row.attempts_24h),
+      catalog_domains: Number(row.catalog_domains),
+      supply_domains: Number(row.supply_domains),
+      stale_domains: Number(row.stale_domains),
+    };
+  }
+
   async fetchAndProcessSellers(domain: string, save: boolean): Promise<FetchResult> {
     let url = `https://${domain}/sellers.json`;
     const lowerDomain = domain.toLowerCase().trim();

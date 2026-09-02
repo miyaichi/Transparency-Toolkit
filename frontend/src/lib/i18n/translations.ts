@@ -428,6 +428,30 @@ export const translations = {
       loading: { en: "Loading...", ja: "読み込み中..." },
       failed: { en: "Failed to load data.", ja: "データの読み込みに失敗しました。" },
       noScans: { en: "No scans found yet.", ja: "スキャンデータはまだありません。" }
+    },
+    syncHealth: {
+      title: { en: "Sellers.json Sync Health", ja: "Sellers.json 同期の状態" },
+      description: {
+        en: "The sync runs continuously. If it stalls, the catalog ages out silently, so check this first.",
+        ja: "同期は常時稼働します。停止するとカタログが静かに古くなるため、まずここを確認してください。"
+      },
+      status: {
+        ok: { en: "Running normally", ja: "正常に稼働中" },
+        warning: { en: "Falling behind", ja: "遅延しています" },
+        critical: { en: "Stalled", ja: "停止しています" }
+      },
+      lastSuccess: { en: "Last successful fetch", ja: "最終成功取得" },
+      successes24h: { en: "Successful fetches (24h)", ja: "成功取得（24時間）" },
+      attempts24h: { en: "attempts", ja: "試行" },
+      catalogDomains: { en: "SSPs in catalog", ja: "カタログ掲載 SSP" },
+      supplyDomains: { en: "Supply domains tracked", ja: "追跡中の供給ドメイン" },
+      staleDomains: { en: "Domains past retention", ja: "保持期間超過のドメイン" },
+      staleHint: {
+        en: "Kept because nothing newer succeeded. A rising count means fetching is falling behind.",
+        ja: "より新しい取得が成功していないため保持されています。増加は取得の遅れを示します。"
+      },
+      never: { en: "Never", ja: "実績なし" },
+      hoursAgo: { en: "hours ago", ja: "時間前" }
     }
   },
   optimizerPage: {
