@@ -76,7 +76,7 @@ export async function fetchViaBrightData(url: string): Promise<{ data: string; s
   const res = await client.get(url, {
     proxy: {
       host: 'brd.superproxy.io',
-      port: 22225,
+      port: 44445,
       auth: { username: user, password: pass },
     },
     headers: {
